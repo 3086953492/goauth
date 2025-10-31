@@ -9,11 +9,10 @@ import (
 )
 
 type Container struct {
-	UserController *controllers.UserController
-
-	UserService *services.UserService
-
 	UserRepository *repositories.UserRepository
+
+	AuthController *controllers.AuthController
+	AuthService    *services.AuthService
 }
 
 func NewContainer() *Container {
@@ -22,9 +21,8 @@ func NewContainer() *Container {
 
 	c.UserRepository = repositories.NewUserRepository(db)
 
-	c.UserService = services.NewUserService(c.UserRepository)
-
-	c.UserController = controllers.NewUserController(c.UserService)
+	c.AuthController = controllers.NewAuthController(c.AuthService)
+	c.AuthService = services.NewAuthService(c.UserRepository)
 
 	return c
 }

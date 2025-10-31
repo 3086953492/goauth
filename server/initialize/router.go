@@ -14,6 +14,7 @@ func InitRouters(container *Container) *gin.Engine {
 	middlewareManager.LoadGlobal(router)
 
 	// 注册路由
-	routers.LoadUserRoutes(router, container.UserController)
+	routers.LoadAuthRoutes(router, container.AuthController)
+	
 	return router
 }
