@@ -11,8 +11,8 @@ import (
 type Container struct {
 	UserRepository *repositories.UserRepository
 
-	AuthController *controllers.AuthController
 	AuthService    *services.AuthService
+	AuthController *controllers.AuthController
 }
 
 func NewContainer() *Container {
@@ -21,8 +21,8 @@ func NewContainer() *Container {
 
 	c.UserRepository = repositories.NewUserRepository(db)
 
-	c.AuthController = controllers.NewAuthController(c.AuthService)
 	c.AuthService = services.NewAuthService(c.UserRepository)
+	c.AuthController = controllers.NewAuthController(c.AuthService)
 
 	return c
 }
