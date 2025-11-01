@@ -19,11 +19,12 @@ import (
 // AuthService 授权服务实现
 type AuthService struct {
 	userRepository *repositories.UserRepository
+	userService    *UserService
 }
 
 // NewAuthService 创建授权服务实例
 func NewAuthService(userRepository *repositories.UserRepository) *AuthService {
-	return &AuthService{userRepository: userRepository}
+	return &AuthService{userRepository: userRepository, userService: NewUserService(userRepository)}
 }
 
 func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) error {
@@ -32,16 +33,24 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) er
 	lockKey := fmt.Sprintf("user:register:%s", req.Username)
 	lock := redis.NewDistributedLock(lockKey, 10*time.Second)
 	if err := lock.Acquire(); err != nil {
-		return errors.Validation().Msg("当前用户已被注册").Err(err).Field("username", req.Username).Build()
+		return errors.Internal().Msg("系统繁忙，请稍后再试").Err(err).Field("username", req.Username).Build()
 	}
 	defer lock.Release()
+
+	user, err := s.userService.GetUser(ctx, map[string]any{"username": req.Username})
+	if err != nil && !errors.IsNotFoundError(err) {
+		return err
+	}
+	if user != nil {
+		return errors.Validation().Msg("当前用户已被注册").Field("username", req.Username).Build()
+	}
 
 	hashedPassword, err := crypto.HashPassword(req.Password)
 	if err != nil {
 		return errors.Internal().Msg("密码哈希失败").Err(err).Field("password", req.Password).Log()
 	}
 
-	user := &models.User{
+	user = &models.User{
 		Username: req.Username,
 		Password: hashedPassword,
 		Nickname: req.Nickname,
