@@ -16,12 +16,12 @@ import (
 	"goauth/repositories"
 )
 
-// AuthService 用户服务实现
+// AuthService 授权服务实现
 type AuthService struct {
 	userRepository *repositories.UserRepository
 }
 
-// NewUserService 创建用户服务实例
+// NewAuthService 创建授权服务实例
 func NewAuthService(userRepository *repositories.UserRepository) *AuthService {
 	return &AuthService{userRepository: userRepository}
 }
