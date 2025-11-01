@@ -25,23 +25,19 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 	return r.db.WithContext(ctx).Create(user).Error
 }
 
-// GetByID 根据ID查询用户
-func (r *UserRepository) GetByID(ctx context.Context, id uint) (*models.User, error) {
+// Get 根据传入的条件查询用户
+func (r *UserRepository) Get(ctx context.Context, conds map[string]any) (*models.User, error) {
 	var user models.User
-	err := r.db.WithContext(ctx).Where("id = ?", id).First(&user).Error
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
+	query := r.db.WithContext(ctx).Model(&models.User{})
 
-// GetByUsername 根据用户名查询用户
-func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*models.User, error) {
-	var user models.User
-	err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
-	if err != nil {
+	for key, value := range conds {
+		query = query.Where(key, value)
+	}
+
+	if err := query.First(&user).Error; err != nil {
 		return nil, err
 	}
+
 	return &user, nil
 }
 
@@ -78,45 +74,3 @@ func (r *UserRepository) List(ctx context.Context, page, pageSize int) ([]models
 
 	return users, total, nil
 }
-
-// ExistsByUsername 检查用户名是否已存在
-func (r *UserRepository) ExistsByUsername(ctx context.Context, username string) (bool, error) {
-	var count int64
-	err := r.db.WithContext(ctx).
-		Model(&models.User{}).
-		Where("username = ?", username).
-		Count(&count).Error
-
-	if err != nil {
-		return false, err
-	}
-
-	return count > 0, nil
-}
-
-// GetByStatus 根据状态查询用户
-func (r *UserRepository) GetByStatus(ctx context.Context, status int, page, pageSize int) ([]models.User, int64, error) {
-	var users []models.User
-	var total int64
-
-	// 计算总数
-	query := r.db.WithContext(ctx).Model(&models.User{}).Where("status = ?", status)
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	// 分页查询
-	offset := (page - 1) * pageSize
-	err := r.db.WithContext(ctx).
-		Where("status = ?", status).
-		Offset(offset).
-		Limit(pageSize).
-		Find(&users).Error
-
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return users, total, nil
-}
-
