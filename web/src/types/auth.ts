@@ -1,6 +1,7 @@
 export interface RegisterRequest {
   username: string
   password: string
+  confirm_password: string
   nickname: string
   avatar?: string
 }

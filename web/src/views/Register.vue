@@ -113,6 +113,7 @@ const handleRegister = async () => {
         const requestData: RegisterRequest = {
           username: registerForm.username,
           password: registerForm.password,
+          confirm_password: registerForm.confirmPassword,
           nickname: registerForm.nickname,
           avatar: registerForm.avatar || undefined
         }
