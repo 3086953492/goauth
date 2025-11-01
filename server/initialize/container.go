@@ -10,6 +10,7 @@ import (
 
 type Container struct {
 	UserRepository *repositories.UserRepository
+	UserService    *services.UserService
 
 	AuthService    *services.AuthService
 	AuthController *controllers.AuthController
@@ -20,7 +21,8 @@ func NewContainer() *Container {
 	db := database.GetGlobalDB()
 
 	c.UserRepository = repositories.NewUserRepository(db)
-
+	c.UserService = services.NewUserService(c.UserRepository)
+	
 	c.AuthService = services.NewAuthService(c.UserRepository)
 	c.AuthController = controllers.NewAuthController(c.AuthService)
 
