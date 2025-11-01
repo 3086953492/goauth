@@ -47,7 +47,7 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) er
 
 	hashedPassword, err := crypto.HashPassword(req.Password)
 	if err != nil {
-		return errors.Internal().Msg("密码哈希失败").Err(err).Field("password", req.Password).Log()
+		return errors.Internal().Msg("密码哈希失败").Err(err).Log()
 	}
 
 	user = &models.User{
