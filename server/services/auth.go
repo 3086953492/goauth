@@ -37,20 +37,12 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) er
 	}
 	defer lock.Release()
 
-	user, err := s.userService.GetUser(ctx, map[string]any{"username": req.Username})
-	if err != nil && !errors.IsNotFoundError(err) {
-		return err
-	}
-	if user != nil {
-		return errors.Validation().Msg("当前用户已被注册").Field("username", req.Username).Build()
-	}
-
 	hashedPassword, err := crypto.HashPassword(req.Password)
 	if err != nil {
 		return errors.Internal().Msg("密码哈希失败").Err(err).Log()
 	}
 
-	user = &models.User{
+	user := &models.User{
 		Username: req.Username,
 		Password: hashedPassword,
 		Nickname: req.Nickname,

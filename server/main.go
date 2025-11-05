@@ -61,6 +61,8 @@ func main() {
 
 	container := initialize.NewContainer()
 
+	initialize.InitValidator(container)
+
 	// 获取端口号，优先使用命令行参数
 	port := cfg.Server.Port
 	if len(os.Args) > 1 {
