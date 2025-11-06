@@ -15,7 +15,7 @@ func InitValidator(container *Container) {
 	if err := v.RegisterRules([]validator.Rule{
 		{
 			Tag:     "username_unique",
-			Message: "用户名 {value} 已被占用",
+			Message: "用户名（{field}） “{value}” 已被占用",
 			Func:    userValidators.UsernameUnique,
 		},
 	}); err != nil {
