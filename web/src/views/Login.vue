@@ -37,8 +37,11 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { login } from '@/api/auth'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const loginFormRef = ref<FormInstance>()
 const loading = ref(false)
 
@@ -49,19 +52,38 @@ const loginForm = reactive({
 
 const rules = reactive<FormRules>({
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' }
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 3, max: 20, message: '用户名长度为3-20个字符', trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' }
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度为6-20个字符', trigger: 'blur' }
   ]
 })
 
 const handleLogin = async () => {
   if (!loginFormRef.value) return
 
-  await loginFormRef.value.validate((valid) => {
+  await loginFormRef.value.validate(async (valid) => {
     if (valid) {
-      ElMessage.info('登录功能待实现')
+      loading.value = true
+      try {
+        const response = await login(loginForm)
+        
+        // 保存 token 和用户信息到 store
+        authStore.setToken(response.data.token)
+        authStore.setUser(response.data.user)
+        
+        ElMessage.success('登录成功')
+        
+        // 跳转到主页
+        router.push('/home')
+      } catch (error: any) {
+        console.error('登录失败:', error)
+        ElMessage.error(error.message || '登录失败，请检查用户名和密码')
+      } finally {
+        loading.value = false
+      }
     } else {
       ElMessage.warning('请填写完整的登录信息')
     }

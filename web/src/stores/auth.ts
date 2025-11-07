@@ -1,18 +1,39 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { User } from '@/types/auth'
+import type { User, TokenResponse } from '@/types/auth'
+
+// 从 localStorage 恢复用户信息
+const getUserFromStorage = (): User | null => {
+  const userStr = localStorage.getItem('user')
+  if (userStr) {
+    try {
+      return JSON.parse(userStr) as User
+    } catch {
+      return null
+    }
+  }
+  return null
+}
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string>(localStorage.getItem('token') || '')
-  const user = ref<User | null>(null)
+  const refreshToken = ref<string>(localStorage.getItem('refreshToken') || '')
+  const expiresIn = ref<number>(Number(localStorage.getItem('expiresIn') || 0))
+  const user = ref<User | null>(getUserFromStorage())
   const isLoggedIn = ref<boolean>(!!token.value)
 
   /**
-   * 设置令牌
+   * 设置令牌信息
    */
-  const setToken = (newToken: string) => {
-    token.value = newToken
-    localStorage.setItem('token', newToken)
+  const setToken = (tokenData: TokenResponse) => {
+    token.value = tokenData.access_token
+    refreshToken.value = tokenData.refresh_token
+    expiresIn.value = tokenData.expires_in
+    
+    localStorage.setItem('token', tokenData.access_token)
+    localStorage.setItem('refreshToken', tokenData.refresh_token)
+    localStorage.setItem('expiresIn', tokenData.expires_in.toString())
+    
     isLoggedIn.value = true
   }
 
@@ -21,6 +42,8 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const setUser = (userData: User) => {
     user.value = userData
+    // 持久化用户信息到 localStorage
+    localStorage.setItem('user', JSON.stringify(userData))
   }
 
   /**
@@ -28,9 +51,15 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const logout = () => {
     token.value = ''
+    refreshToken.value = ''
+    expiresIn.value = 0
     user.value = null
     isLoggedIn.value = false
+    
     localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('expiresIn')
+    localStorage.removeItem('user')
   }
 
   /**
@@ -42,6 +71,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     token,
+    refreshToken,
+    expiresIn,
     user,
     isLoggedIn,
     setToken,

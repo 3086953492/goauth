@@ -1,5 +1,5 @@
 import request from './request'
-import type { RegisterRequest, ApiResponse } from '@/types/auth'
+import type { RegisterRequest, LoginRequest, ApiResponse, LoginResponse } from '@/types/auth'
 
 /**
  * 用户注册
@@ -13,9 +13,9 @@ export const register = (data: RegisterRequest): Promise<ApiResponse> => {
 }
 
 /**
- * 用户登录 (预留接口)
+ * 用户登录
  */
-export const login = (data: { username: string; password: string }): Promise<ApiResponse> => {
+export const login = (data: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
   return request({
     url: '/auth/login',
     method: 'post',
