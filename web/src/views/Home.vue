@@ -81,16 +81,29 @@ const handleLogout = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: 
+    linear-gradient(135deg, rgba(245, 247, 250, 0.8) 0%, rgba(228, 231, 235, 0.9) 100%),
+    repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 0, 0, 0.02) 35px, rgba(0, 0, 0, 0.02) 70px),
+    repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(0, 0, 0, 0.01) 35px, rgba(0, 0, 0, 0.01) 70px),
+    #f8f9fa;
   padding: 20px;
 }
 
 .user-card {
   width: 100%;
   max-width: 600px;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border-radius: 24px;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.06),
+    0 16px 48px rgba(0, 0, 0, 0.08);
   background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+}
+
+:deep(.el-card__body) {
+  padding: 32px;
 }
 
 .user-info {
@@ -101,8 +114,8 @@ const handleLogout = async () => {
 
 .avatar {
   flex-shrink: 0;
-  border: 4px solid #f0f2f5;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 4px solid #f5f7fa;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .info-content {
@@ -133,11 +146,13 @@ const handleLogout = async () => {
 }
 
 .user-meta {
-  background: #f5f7fa;
-  padding: 16px;
-  border-radius: 12px;
+  background: #f8f9fa;
+  padding: 18px 20px;
+  border-radius: 14px;
   font-size: 14px;
   line-height: 1.8;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 .user-meta p {
@@ -162,10 +177,17 @@ const handleLogout = async () => {
 }
 
 :deep(.el-button) {
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 12px 32px;
   font-size: 16px;
   font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+:deep(.el-button:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 </style>
 
