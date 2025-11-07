@@ -15,7 +15,7 @@ type User struct {
 	Password  string         `gorm:"type:varchar(255);comment:密码哈希;not null" json:"-"`
 	Nickname  string         `gorm:"type:varchar(100);comment:昵称" json:"nickname"`
 	Avatar    string         `gorm:"type:varchar(500);comment:头像URL" json:"avatar"`
-	Status    int            `gorm:"type:tinyint;comment:状态;default:1" json:"status"` // 1:正常 0:禁用
+	Status    int            `gorm:"type:tinyint;comment:状态;default:0" json:"status"` // 1:正常 0:禁用
 	Role      string         `gorm:"type:varchar(50);comment:角色" json:"role"`
 }
 

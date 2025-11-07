@@ -47,7 +47,6 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) er
 		Password: hashedPassword,
 		Nickname: req.Nickname,
 		Avatar:   req.Avatar,
-		Status:   0, //默认禁用
 		Role:     "user",
 	}
 	if err := s.userRepository.Create(ctx, user); err != nil {
