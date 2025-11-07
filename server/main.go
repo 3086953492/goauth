@@ -12,6 +12,7 @@ import (
 	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
+	"github.com/3086953492/gokit/jwt"
 	"gorm.io/driver/mysql"
 
 	"goauth/initialize"
@@ -56,6 +57,11 @@ func main() {
 	// 初始化缓存
 	if err := cache.InitCache(); err != nil {
 		errors.Internal().Msg("初始化缓存失败").Err(err).Log()
+		return
+	}
+
+	if err := jwt.InitJWT(cfg.JWT); err != nil {
+		errors.Internal().Msg("初始化 JWT 失败").Err(err).Log()
 		return
 	}
 
