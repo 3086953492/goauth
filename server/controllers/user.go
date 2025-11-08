@@ -66,6 +66,7 @@ func (ctrl *UserController) UpdateUserHandler(ctx *gin.Context) {
 		Avatar:   req.Avatar,
 		Status:   req.Status,
 		Role:     req.Role,
+		Password: req.Password,
 	}); err != nil {
 		response.Error(ctx, err)
 		return
