@@ -6,7 +6,7 @@ import type { RegisterRequest, LoginRequest, ApiResponse, LoginResponse } from '
  */
 export const register = (data: RegisterRequest): Promise<ApiResponse> => {
   return request({
-    url: '/users',
+    url: '/api/v1/users',
     method: 'post',
     data
   })
@@ -17,7 +17,7 @@ export const register = (data: RegisterRequest): Promise<ApiResponse> => {
  */
 export const login = (data: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
   return request({
-    url: '/auth/login',
+    url: '/api/v1/auth/login',
     method: 'post',
     data
   })
