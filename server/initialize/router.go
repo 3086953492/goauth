@@ -15,6 +15,7 @@ func InitRouters(container *Container) *gin.Engine {
 
 	// 注册路由
 	routers.LoadAuthRoutes(router, container.AuthController)
+	routers.LoadUserRoutes(router, container.UserController)
 	
 	return router
 }
