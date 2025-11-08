@@ -1,5 +1,7 @@
 <template>
-  <div class="profile-container">
+  <div class="profile-wrapper">
+    <Navbar />
+    <div class="profile-container">
     <el-card class="profile-card" v-loading="pageLoading">
       <template #header>
         <div class="card-header">
@@ -18,7 +20,7 @@
         <el-form ref="profileFormRef" :model="profileForm" :rules="profileRules" label-width="90px" size="large">
           <div class="form-section">
             <h3 class="section-title">基本信息</h3>
-
+            
             <el-form-item label="用户名" prop="username">
               <el-input v-model="targetUser.username" disabled :prefix-icon="User" />
             </el-form-item>
@@ -47,13 +49,25 @@
             <el-collapse-transition>
               <div v-show="showPasswordSection" class="password-fields">
                 <el-form-item label="新密码" prop="password">
-                  <el-input v-model="profileForm.password" type="password" placeholder="留空表示不修改密码" show-password
-                    clearable :prefix-icon="Lock" />
+                  <el-input 
+                    v-model="profileForm.password" 
+                    type="password" 
+                    placeholder="留空表示不修改密码" 
+                    show-password 
+                    clearable 
+                    :prefix-icon="Lock" 
+                  />
                 </el-form-item>
 
                 <el-form-item label="确认密码" prop="confirmPassword">
-                  <el-input v-model="profileForm.confirmPassword" type="password" placeholder="请再次输入新密码" show-password
-                    clearable :prefix-icon="Lock" />
+                  <el-input 
+                    v-model="profileForm.confirmPassword" 
+                    type="password" 
+                    placeholder="请再次输入新密码" 
+                    show-password 
+                    clearable 
+                    :prefix-icon="Lock" 
+                  />
                 </el-form-item>
               </div>
             </el-collapse-transition>
@@ -62,7 +76,7 @@
           <!-- 管理员专属区域 -->
           <div v-if="isAdmin" class="form-section admin-section">
             <h3 class="section-title">管理员设置</h3>
-
+            
             <el-form-item label="账户状态" prop="status">
               <el-radio-group v-model="profileForm.status">
                 <el-radio :label="1">启用</el-radio>
@@ -89,6 +103,7 @@
         </el-form>
       </div>
     </el-card>
+    </div>
   </div>
 </template>
 
@@ -101,6 +116,7 @@ import { User, Lock, Avatar, Picture, ArrowRight } from '@element-plus/icons-vue
 import { getUserInfo, updateUser } from '@/api/user'
 import { useAuthStore } from '@/stores/auth'
 import type { User as UserType, UpdateUserRequest } from '@/types/auth'
+import Navbar from '@/components/Navbar.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -195,16 +211,16 @@ const loadUserInfo = async () => {
   try {
     pageLoading.value = true
     const response = await getUserInfo(targetUserId.value)
-
+    
     if (response.data) {
       targetUser.value = response.data
-
+      
       // 填充表单
       profileForm.nickname = response.data.nickname
       profileForm.avatar = response.data.avatar || ''
       profileForm.status = response.data.status
       profileForm.role = response.data.role
-
+      
       // 保存原始数据
       originalData = {
         nickname: response.data.nickname,
@@ -232,21 +248,21 @@ const handleSubmit = async () => {
       try {
         // 构建更新数据 - 只发送已修改的字段
         const updateData: UpdateUserRequest = {}
-
+        
         if (profileForm.nickname !== originalData.nickname) {
           updateData.nickname = profileForm.nickname
         }
-
+        
         if (profileForm.avatar !== originalData.avatar) {
           updateData.avatar = profileForm.avatar || undefined
         }
-
+        
         // 密码修改
         if (profileForm.password) {
           updateData.password = profileForm.password
           updateData.confirm_password = profileForm.confirmPassword
         }
-
+        
         // 管理员可修改状态和角色
         if (isAdmin.value) {
           if (profileForm.status !== originalData.status) {
@@ -264,9 +280,9 @@ const handleSubmit = async () => {
         }
 
         const response = await updateUser(targetUserId.value, updateData)
-
+        
         ElMessage.success(response.message || '更新成功！')
-
+        
         // 如果编辑的是当前用户，更新 authStore
         if (isEditingSelf.value) {
           const updatedUserResponse = await getUserInfo(targetUserId.value)
@@ -274,15 +290,15 @@ const handleSubmit = async () => {
             authStore.setUser(updatedUserResponse.data)
           }
         }
-
+        
         // 清空密码字段
         profileForm.password = ''
         profileForm.confirmPassword = ''
         showPasswordSection.value = false
-
+        
         // 重新加载用户信息
         await loadUserInfo()
-
+        
       } catch (error: any) {
         console.error('更新失败:', error)
         // 错误已在拦截器中处理
@@ -307,17 +323,21 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.profile-wrapper {
+  min-height: 100vh;
+  background: #f0f2f5;
+  background-image: 
+    radial-gradient(circle at 25px 25px, rgba(0, 0, 0, 0.03) 2%, transparent 0%),
+    radial-gradient(circle at 75px 75px, rgba(0, 0, 0, 0.03) 2%, transparent 0%);
+  background-size: 100px 100px;
+}
+
 .profile-container {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f0f2f5;
-  background-image:
-    radial-gradient(circle at 25px 25px, rgba(0, 0, 0, 0.03) 2%, transparent 0%),
-    radial-gradient(circle at 75px 75px, rgba(0, 0, 0, 0.03) 2%, transparent 0%);
-  background-size: 100px 100px;
-  padding: 20px;
+  padding: 84px 20px 20px;
 }
 
 .profile-card {
@@ -464,3 +484,4 @@ onMounted(() => {
   margin-right: 0;
 }
 </style>
+
