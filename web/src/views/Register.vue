@@ -52,7 +52,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { User, Lock, Avatar, Picture } from '@element-plus/icons-vue'
-import { register } from '@/api/auth'
+import { register } from '@/api/user'
 import type { RegisterRequest } from '@/types/auth'
 
 const router = useRouter()

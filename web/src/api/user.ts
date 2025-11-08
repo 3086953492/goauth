@@ -1,5 +1,16 @@
 import request from './request'
-import type { User, ApiResponse } from '@/types/auth'
+import type { User, ApiResponse, RegisterRequest } from '@/types/auth'
+
+/**
+ * 用户注册
+ */
+export const register = (data: RegisterRequest): Promise<ApiResponse> => {
+  return request({
+    url: '/api/v1/users',
+    method: 'post',
+    data
+  })
+}
 
 /**
  * 获取用户信息
