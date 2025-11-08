@@ -75,9 +75,14 @@ func (s *UserService) GetUser(ctx context.Context, conds map[string]any) (*model
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, user *dto.UpdateUserRequest) error {
+	hashedPassword, err := crypto.HashPassword(user.Password)
+	if err != nil {
+		return errors.Internal().Msg("密码哈希失败").Err(err).Log()
+	}
 	updatedUser, err := s.userRepository.Update(ctx, &models.User{
 		Username: user.Username,
 		Nickname: user.Nickname,
+		Password: hashedPassword,
 		Avatar:   *user.Avatar,
 		Status:   *user.Status,
 		Role:     user.Role,
