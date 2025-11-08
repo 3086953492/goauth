@@ -42,8 +42,14 @@ func (r *UserRepository) Get(ctx context.Context, conds map[string]any) (*models
 }
 
 // Update 更新用户信息
-func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
-	return r.db.WithContext(ctx).Save(user).Error
+func (r *UserRepository) Update(ctx context.Context, user *models.User) (models.User, error) {
+	if err := r.db.WithContext(ctx).Save(user).Error; err != nil {
+		return models.User{}, err
+	}
+	if err := r.db.WithContext(ctx).First(user).Error; err != nil {
+		return models.User{}, err
+	}
+	return *user, nil
 }
 
 // Delete 软删除用户

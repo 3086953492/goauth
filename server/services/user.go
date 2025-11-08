@@ -8,6 +8,7 @@ import (
 	"github.com/3086953492/gokit/cache"
 	"github.com/3086953492/gokit/errors"
 
+	"goauth/dto"
 	"goauth/models"
 	"goauth/repositories"
 )
@@ -37,4 +38,22 @@ func (s *UserService) GetUser(ctx context.Context, conds map[string]any) (*model
 		return nil, errors.NotFound().Msg("未找到用户").Err(err).Build()
 	}
 	return user, err
+}
+
+func (s *UserService) UpdateUser(ctx context.Context, user *dto.UpdateUserRequest) error {
+	updatedUser, err := s.userRepository.Update(ctx, &models.User{
+		Username: user.Username,
+		Nickname: user.Nickname,
+		Avatar:   *user.Avatar,
+		Status:   *user.Status,
+		Role:     user.Role,
+	})
+	if err != nil {
+		return errors.Database().Msg("更新用户失败").Err(err).Field("user", user).Log()
+	}
+	if err := cache.DeleteByContainsList(ctx, []string{fmt.Sprintf("user_id:%v", updatedUser.ID), fmt.Sprintf("username:%v", updatedUser.Username), fmt.Sprintf("nickname:%v", updatedUser.Nickname)}); err != nil {
+		errors.Database().Msg("删除缓存失败").Err(err).Field("user_id", updatedUser.ID).Log()	// 记录日志，但继续执行
+		return nil
+	}
+	return nil
 }

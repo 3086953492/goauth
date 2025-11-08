@@ -5,6 +5,7 @@ import (
 	"github.com/3086953492/gokit/config/types"
 	"github.com/gin-gonic/gin"
 
+	"goauth/middleware/auth"
 	"goauth/middleware/oauth"
 	"goauth/middleware/security"
 )
@@ -47,4 +48,16 @@ func (m *Manager) CORS() gin.HandlerFunc {
 
 func (m *Manager) OAuth(requiredScopes ...string) gin.HandlerFunc {
 	return oauth.OAuthTokenMiddleware(requiredScopes...)
+}
+
+func (m *Manager) Auth() gin.HandlerFunc {
+	return auth.AuthTokenMiddleware()
+}
+
+func (m *Manager) Role(requiredRole string) gin.HandlerFunc {
+	return auth.RoleMiddleware(requiredRole)
+}
+
+func (m *Manager) ResourceOwner(source string) gin.HandlerFunc {
+	return auth.ResourceOwnerMiddleware(source)
 }
