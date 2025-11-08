@@ -15,6 +15,25 @@ type UserController struct {
 	userService *services.UserService
 }
 
+
+func (ctrl *UserController) CreateUserHandler(ctx *gin.Context) {
+	var req dto.CreateUserRequest
+	if result, err := validator.BindAndValidate(ctx, &req); err != nil {
+		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", req).Build())
+		return
+	} else if !result.Valid {
+		response.Error(ctx, errors.InvalidInput().Msg(result.Message).Err(result.Err).Field("request", req).Build())
+		return
+	}
+
+	if err := ctrl.userService.CreateUser(ctx.Request.Context(), &req); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+
+	response.Success(ctx, "创建用户成功", nil)
+}
+
 func (ctrl *UserController) UpdateUserHandler(ctx *gin.Context) {
 	userID := ctx.Param("id")
 	var req dto.UpdateUserRequest
