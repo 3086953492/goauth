@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"strconv"
+
 	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/response"
 	"github.com/3086953492/gokit/validator"
@@ -38,7 +40,6 @@ func (ctrl *UserController) CreateUserHandler(ctx *gin.Context) {
 }
 
 func (ctrl *UserController) UpdateUserHandler(ctx *gin.Context) {
-	userID := ctx.Param("id")
 	var req dto.UpdateUserRequest
 	if result, err := validator.BindAndValidate(ctx, &req); err != nil {
 		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", req).Build())
@@ -53,8 +54,14 @@ func (ctrl *UserController) UpdateUserHandler(ctx *gin.Context) {
 		req.Role = ""
 	}
 
-	if err := ctrl.userService.UpdateUser(ctx.Request.Context(), &dto.UpdateUserRequest{
-		Username: userID,
+	userID := ctx.Param("user_id")
+	userIDUint, err := strconv.ParseUint(userID, 10, 64)
+	if err != nil {
+		response.Error(ctx, errors.InvalidInput().Msg("用户ID格式错误").Err(err).Build())
+		return
+	}
+
+	if err := ctrl.userService.UpdateUser(ctx.Request.Context(), uint(userIDUint), &dto.UpdateUserRequest{
 		Nickname: req.Nickname,
 		Avatar:   req.Avatar,
 		Status:   req.Status,

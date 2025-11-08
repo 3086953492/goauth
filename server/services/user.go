@@ -74,25 +74,50 @@ func (s *UserService) GetUser(ctx context.Context, conds map[string]any) (*model
 	return user, err
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, user *dto.UpdateUserRequest) error {
-	hashedPassword, err := crypto.HashPassword(user.Password)
+func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.UpdateUserRequest) error {
+
+	// 获取更新前的用户信息
+	existingUser, err := s.GetUser(ctx, map[string]any{"id": userID})
 	if err != nil {
-		return errors.Internal().Msg("密码哈希失败").Err(err).Log()
+		return err
 	}
-	updatedUser, err := s.userRepository.Update(ctx, &models.User{
-		Username: user.Username,
-		Nickname: user.Nickname,
-		Password: hashedPassword,
-		Avatar:   *user.Avatar,
-		Status:   *user.Status,
-		Role:     user.Role,
-	})
-	if err != nil {
+
+	// 构建更新字段 map
+	updates := make(map[string]any)
+
+	if user.Nickname != "" {
+		updates["nickname"] = user.Nickname
+	}
+
+	if user.Password != "" {
+		hashedPassword, err := crypto.HashPassword(user.Password)
+		if err != nil {
+			return errors.Internal().Msg("密码哈希失败").Err(err).Log()
+		}
+		updates["password"] = hashedPassword
+	}
+
+	if user.Avatar != nil {
+		updates["avatar"] = *user.Avatar
+	}
+
+	if user.Status != nil {
+		updates["status"] = *user.Status
+	}
+
+	if user.Role != "" {
+		updates["role"] = user.Role
+	}
+
+	// 执行更新
+	if err := s.userRepository.Update(ctx, userID, updates); err != nil {
 		return errors.Database().Msg("更新用户失败").Err(err).Field("user", user).Log()
 	}
-	if err := cache.DeleteByContainsList(ctx, []string{fmt.Sprintf("user_id:%v", updatedUser.ID), fmt.Sprintf("username:%v", updatedUser.Username), fmt.Sprintf("nickname:%v", updatedUser.Nickname)}); err != nil {
-		errors.Database().Msg("删除缓存失败").Err(err).Field("user_id", updatedUser.ID).Log() // 记录日志，但继续执行
-		return nil
+
+	// 删除相关缓存
+	if err := cache.DeleteByContainsList(ctx, []string{fmt.Sprintf("id:%v", userID), fmt.Sprintf("nickname:%v", existingUser.Nickname), fmt.Sprintf("username:%v", existingUser.Username),fmt.Sprintf("nickname:%v", user.Nickname)}); err != nil {
+		errors.Database().Msg("删除缓存失败").Err(err).Field("user_id", userID).Log() // 记录日志，但继续执行
 	}
+
 	return nil
 }

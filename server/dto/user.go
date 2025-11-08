@@ -14,7 +14,6 @@ type UserResponse struct {
 }
 
 type UpdateUserRequest struct { // *字段传递空值会更新为空值，不传递则不更新
-	Username string  `json:"username" validate:"omitempty,min=3,max=20,username_unique"`
 	Nickname string  `json:"nickname" validate:"omitempty,min=1,max=20"`
 	Password string  `json:"password" validate:"omitempty,min=6,max=20"`
 	ConfirmPassword string `json:"confirm_password" validate:"omitempty,eqfield=Password"`
