@@ -62,3 +62,13 @@ func (ctrl *UserController) UpdateUserHandler(ctx *gin.Context) {
 	}
 	response.Success(ctx, "更新用户成功", nil)
 }
+
+func (ctrl *UserController) GetUserHandler(ctx *gin.Context) {
+	userID := ctx.Param("user_id")
+	user, err := ctrl.userService.GetUser(ctx.Request.Context(), map[string]any{"id": userID})
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	response.Success(ctx, "获取用户成功", user)
+}
