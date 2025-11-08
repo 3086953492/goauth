@@ -39,3 +39,12 @@ export interface LoginResponse {
   token: TokenResponse
 }
 
+export interface UpdateUserRequest {
+  nickname?: string
+  avatar?: string
+  password?: string
+  confirm_password?: string
+  status?: number
+  role?: string
+}
+

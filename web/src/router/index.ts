@@ -33,6 +33,15 @@ const routes: Array<RouteRecordRaw> = [
       title: '主页',
       requiresAuth: true
     }
+  },
+  {
+    path: '/profile/:id?',
+    name: 'Profile',
+    component: () => import('@/views/Profile.vue'),
+    meta: {
+      title: '个人信息',
+      requiresAuth: true
+    }
   }
 ]
 

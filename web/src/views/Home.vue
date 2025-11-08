@@ -25,6 +25,9 @@
       <el-divider />
       
       <div class="actions">
+        <el-button type="primary" :icon="Edit" @click="goToProfile">
+          个人中心
+        </el-button>
         <el-button type="danger" :icon="SwitchButton" @click="handleLogout">
           退出登录
         </el-button>
@@ -37,7 +40,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { SwitchButton } from '@element-plus/icons-vue'
+import { SwitchButton, Edit } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -56,6 +59,10 @@ const formatDate = (dateString?: string) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+const goToProfile = () => {
+  router.push('/profile')
 }
 
 const handleLogout = async () => {
@@ -169,6 +176,7 @@ const handleLogout = async () => {
 .actions {
   display: flex;
   justify-content: center;
+  gap: 16px;
   padding-top: 8px;
 }
 
