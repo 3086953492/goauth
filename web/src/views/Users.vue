@@ -83,10 +83,11 @@ import { ElMessage } from 'element-plus'
 import Navbar from '@/components/Navbar.vue'
 import { listUsers } from '@/api/user'
 import type { UserListResponse } from '@/types/user'
+import { DEFAULT_AVATAR } from '@/constants'
 
 const loading = ref(false)
 const userList = ref<UserListResponse[]>([])
-const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+const defaultAvatar = DEFAULT_AVATAR
 
 const filters = ref({
   status: undefined as number | string | undefined,

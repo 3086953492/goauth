@@ -32,11 +32,12 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import Navbar from '@/components/Navbar.vue'
+import { DEFAULT_AVATAR } from '@/constants'
 
 const authStore = useAuthStore()
 
 const user = computed(() => authStore.user)
-const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+const defaultAvatar = DEFAULT_AVATAR
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return '未知'

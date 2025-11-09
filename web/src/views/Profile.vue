@@ -2,132 +2,58 @@
   <div class="profile-wrapper">
     <Navbar />
     <div class="profile-container">
-    <el-card class="profile-card" v-loading="pageLoading">
-      <template #header>
-        <div class="card-header">
-          <h2>{{ isEditingSelf ? '个人信息' : '编辑用户信息' }}</h2>
-          <p>{{ isEditingSelf ? '管理您的账户信息' : `编辑用户 @${targetUser?.username}` }}</p>
+      <el-card class="profile-card" v-loading="pageLoading">
+        <template #header>
+          <div class="card-header">
+            <h2>{{ isEditingSelf ? '个人信息' : '编辑用户信息' }}</h2>
+            <p>{{ isEditingSelf ? '管理您的账户信息' : `编辑用户 @${targetUser?.username}` }}</p>
+          </div>
+        </template>
+
+        <div class="form-content">
+          <el-form ref="profileFormRef" :model="formData" :rules="formRules" label-width="90px" size="large">
+            <UserInfoForm v-model="userInfo" :username="targetUser.username"
+              :can-edit-permission="isAdmin && !isEditingSelf" />
+
+            <PasswordForm v-model="passwordData" />
+
+            <el-form-item label-width="0" class="button-form-item">
+              <el-button type="primary" :loading="submitLoading" @click="handleSubmit" class="submit-button">
+                {{ submitLoading ? '保存中...' : '保存修改' }}
+              </el-button>
+              <el-button @click="handleCancel" class="cancel-button">
+                返回
+              </el-button>
+            </el-form-item>
+          </el-form>
         </div>
-      </template>
-
-      <div class="form-content">
-        <!-- 头像预览 -->
-        <div class="avatar-preview">
-          <el-avatar :size="100" :src="profileForm.avatar || defaultAvatar" />
-        </div>
-
-        <!-- 基本信息表单 -->
-        <el-form ref="profileFormRef" :model="profileForm" :rules="profileRules" label-width="90px" size="large">
-          <div class="form-section">
-            <h3 class="section-title">基本信息</h3>
-            
-            <el-form-item label="用户名" prop="username">
-              <el-input v-model="targetUser.username" disabled :prefix-icon="User" />
-            </el-form-item>
-
-            <el-form-item label="昵称" prop="nickname">
-              <el-input v-model="profileForm.nickname" placeholder="请输入昵称" clearable :prefix-icon="Avatar" />
-            </el-form-item>
-
-            <el-form-item label="头像URL" prop="avatar">
-              <el-input v-model="profileForm.avatar" placeholder="请输入头像URL" clearable :prefix-icon="Picture" />
-            </el-form-item>
-          </div>
-
-          <!-- 密码修改区域 -->
-          <div class="form-section">
-            <div class="section-header" @click="showPasswordSection = !showPasswordSection">
-              <h3 class="section-title">
-                <el-icon class="collapse-icon" :class="{ 'is-active': showPasswordSection }">
-                  <ArrowRight />
-                </el-icon>
-                修改密码
-              </h3>
-              <span class="section-hint">(可选，不修改请留空)</span>
-            </div>
-
-            <el-collapse-transition>
-              <div v-show="showPasswordSection" class="password-fields">
-                <el-form-item label="新密码" prop="password">
-                  <el-input 
-                    v-model="profileForm.password" 
-                    type="password" 
-                    placeholder="留空表示不修改密码" 
-                    show-password 
-                    clearable 
-                    :prefix-icon="Lock" 
-                  />
-                </el-form-item>
-
-                <el-form-item label="确认密码" prop="confirmPassword">
-                  <el-input 
-                    v-model="profileForm.confirmPassword" 
-                    type="password" 
-                    placeholder="请再次输入新密码" 
-                    show-password 
-                    clearable 
-                    :prefix-icon="Lock" 
-                  />
-                </el-form-item>
-              </div>
-            </el-collapse-transition>
-          </div>
-
-          <!-- 管理员专属区域 -->
-          <div v-if="isAdmin" class="form-section admin-section">
-            <h3 class="section-title">管理员设置</h3>
-            
-            <el-form-item label="账户状态" prop="status">
-              <el-radio-group v-model="profileForm.status">
-                <el-radio :label="1">启用</el-radio>
-                <el-radio :label="0">禁用</el-radio>
-              </el-radio-group>
-            </el-form-item>
-
-            <el-form-item label="用户角色" prop="role">
-              <el-radio-group v-model="profileForm.role">
-                <el-radio label="user">普通用户</el-radio>
-                <el-radio label="admin">管理员</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </div>
-
-          <el-form-item label-width="0" class="button-form-item">
-            <el-button type="primary" :loading="submitLoading" @click="handleSubmit" class="submit-button">
-              {{ submitLoading ? '保存中...' : '保存修改' }}
-            </el-button>
-            <el-button @click="handleCancel" class="cancel-button">
-              返回
-            </el-button>
-          </el-form-item>
-        </el-form>
-      </div>
-    </el-card>
+      </el-card>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { User, Lock, Avatar, Picture, ArrowRight } from '@element-plus/icons-vue'
 import { getUserInfo, updateUser } from '@/api/user'
 import { useAuthStore } from '@/stores/auth'
 import type { User as UserType, UpdateUserRequest } from '@/types/user'
+import { createPasswordValidator, createConfirmPasswordValidator } from '@/utils/validators'
 import Navbar from '@/components/Navbar.vue'
+import UserInfoForm from '@/components/profile/UserInfoForm.vue'
+import PasswordForm from '@/components/profile/PasswordForm.vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+console.log(authStore.user)
 
 const profileFormRef = ref<FormInstance>()
 const pageLoading = ref(true)
 const submitLoading = ref(false)
-const showPasswordSection = ref(false)
 const targetUser = ref<UserType>({} as UserType)
-const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 
 // 目标用户ID
 const targetUserId = computed(() => {
@@ -143,32 +69,31 @@ const isEditingSelf = computed(() => {
   return targetUserId.value === authStore.user?.id.toString()
 })
 
-// 表单数据
-const profileForm = reactive({
+// 用户信息数据
+const userInfo = ref({
   nickname: '',
   avatar: '',
-  password: '',
-  confirmPassword: '',
   status: 1,
   role: 'user'
 })
 
+// 密码数据
+const passwordData = ref({
+  password: '',
+  confirmPassword: ''
+})
+
+// 合并的表单数据（用于验证）
+const formData = computed(() => ({
+  ...userInfo.value,
+  ...passwordData.value
+}))
+
 // 原始数据（用于对比变化）
 let originalData: any = {}
 
-// 自定义验证：确认密码
-const validateConfirmPassword = (_rule: any, value: any, callback: any) => {
-  if (profileForm.password && !value) {
-    callback(new Error('请再次输入新密码'))
-  } else if (value && value !== profileForm.password) {
-    callback(new Error('两次输入的密码不一致'))
-  } else {
-    callback()
-  }
-}
-
 // 表单验证规则
-const profileRules = reactive<FormRules>({
+const formRules = computed<FormRules>(() => ({
   nickname: [
     { required: true, message: '请输入昵称', trigger: 'blur' },
     { min: 1, max: 20, message: '昵称长度在 1 到 20 个字符', trigger: 'blur' }
@@ -176,13 +101,11 @@ const profileRules = reactive<FormRules>({
   avatar: [
     { type: 'url', message: '请输入有效的URL', trigger: 'blur' }
   ],
-  password: [
-    { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' }
-  ],
+  password: createPasswordValidator(),
   confirmPassword: [
-    { validator: validateConfirmPassword, trigger: 'blur' }
+    { validator: createConfirmPasswordValidator(() => passwordData.value.password), trigger: 'blur' }
   ]
-})
+}))
 
 // 权限检查
 const checkPermission = () => {
@@ -211,16 +134,18 @@ const loadUserInfo = async () => {
   try {
     pageLoading.value = true
     const response = await getUserInfo(targetUserId.value)
-    
+
     if (response.data) {
       targetUser.value = response.data
-      
-      // 填充表单
-      profileForm.nickname = response.data.nickname
-      profileForm.avatar = response.data.avatar || ''
-      profileForm.status = response.data.status
-      profileForm.role = response.data.role
-      
+
+      // 填充用户信息表单
+      userInfo.value = {
+        nickname: response.data.nickname,
+        avatar: response.data.avatar || '',
+        status: response.data.status,
+        role: response.data.role
+      }
+
       // 保存原始数据
       originalData = {
         nickname: response.data.nickname,
@@ -248,28 +173,28 @@ const handleSubmit = async () => {
       try {
         // 构建更新数据 - 只发送已修改的字段
         const updateData: UpdateUserRequest = {}
-        
-        if (profileForm.nickname !== originalData.nickname) {
-          updateData.nickname = profileForm.nickname
+
+        if (userInfo.value.nickname !== originalData.nickname) {
+          updateData.nickname = userInfo.value.nickname
         }
-        
-        if (profileForm.avatar !== originalData.avatar) {
-          updateData.avatar = profileForm.avatar || undefined
+
+        if (userInfo.value.avatar !== originalData.avatar) {
+          updateData.avatar = userInfo.value.avatar || undefined
         }
-        
+
         // 密码修改
-        if (profileForm.password) {
-          updateData.password = profileForm.password
-          updateData.confirm_password = profileForm.confirmPassword
+        if (passwordData.value.password) {
+          updateData.password = passwordData.value.password
+          updateData.confirm_password = passwordData.value.confirmPassword
         }
-        
+
         // 管理员可修改状态和角色
         if (isAdmin.value) {
-          if (profileForm.status !== originalData.status) {
-            updateData.status = profileForm.status
+          if (userInfo.value.status !== originalData.status) {
+            updateData.status = userInfo.value.status
           }
-          if (profileForm.role !== originalData.role) {
-            updateData.role = profileForm.role
+          if (userInfo.value.role !== originalData.role) {
+            updateData.role = userInfo.value.role
           }
         }
 
@@ -280,9 +205,9 @@ const handleSubmit = async () => {
         }
 
         const response = await updateUser(targetUserId.value, updateData)
-        
+
         ElMessage.success(response.message || '更新成功！')
-        
+
         // 如果编辑的是当前用户，更新 authStore
         if (isEditingSelf.value) {
           const updatedUserResponse = await getUserInfo(targetUserId.value)
@@ -290,15 +215,14 @@ const handleSubmit = async () => {
             authStore.setUser(updatedUserResponse.data)
           }
         }
-        
+
         // 清空密码字段
-        profileForm.password = ''
-        profileForm.confirmPassword = ''
-        showPasswordSection.value = false
-        
+        passwordData.value.password = ''
+        passwordData.value.confirmPassword = ''
+
         // 重新加载用户信息
         await loadUserInfo()
-        
+
       } catch (error: any) {
         console.error('更新失败:', error)
         // 错误已在拦截器中处理
@@ -326,7 +250,7 @@ onMounted(() => {
 .profile-wrapper {
   min-height: 100vh;
   background: #f0f2f5;
-  background-image: 
+  background-image:
     radial-gradient(circle at 25px 25px, rgba(0, 0, 0, 0.03) 2%, transparent 0%),
     radial-gradient(circle at 75px 75px, rgba(0, 0, 0, 0.03) 2%, transparent 0%);
   background-size: 100px 100px;
@@ -369,85 +293,6 @@ onMounted(() => {
   padding: 8px 0;
 }
 
-.avatar-preview {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 32px;
-}
-
-.avatar-preview :deep(.el-avatar) {
-  border: 4px solid #f5f7fa;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-}
-
-.form-section {
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.form-section:last-of-type {
-  border-bottom: none;
-}
-
-.section-title {
-  margin: 0 0 20px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.section-header {
-  cursor: pointer;
-  user-select: none;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.section-header:hover .section-title {
-  color: #409eff;
-}
-
-.section-header .section-title {
-  margin-bottom: 0;
-}
-
-.section-hint {
-  font-size: 13px;
-  color: #909399;
-  font-weight: 400;
-}
-
-.collapse-icon {
-  transition: transform 0.3s ease;
-  font-size: 16px;
-}
-
-.collapse-icon.is-active {
-  transform: rotate(90deg);
-}
-
-.password-fields {
-  padding-top: 8px;
-}
-
-.admin-section {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid #e9ecef;
-}
-
-.admin-section .section-title {
-  margin-top: 0;
-  color: #e6a23c;
-}
-
 .button-form-item {
   text-align: center;
   margin-top: 32px;
@@ -478,14 +323,4 @@ onMounted(() => {
 :deep(.el-button) {
   border-radius: 6px;
 }
-
-:deep(.el-radio-group) {
-  display: flex;
-  gap: 16px;
-}
-
-:deep(.el-radio) {
-  margin-right: 0;
-}
 </style>
-

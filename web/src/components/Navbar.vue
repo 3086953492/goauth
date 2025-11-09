@@ -42,12 +42,13 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit, SwitchButton, User } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { DEFAULT_AVATAR } from '@/constants'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 const user = computed(() => authStore.user)
-const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+const defaultAvatar = DEFAULT_AVATAR
 
 const goToProfile = () => {
   router.push('/profile')
