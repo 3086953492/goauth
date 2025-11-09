@@ -7,6 +7,8 @@
                     <div class="card-header">
                         <h2 class="page-title">用户列表</h2>
                         <div class="filter-bar">
+                            <el-input v-model="filters.nickname" placeholder="搜索昵称" clearable style="width: 200px"
+                                @input="handleFilterChange" />
                             <el-select v-model="filters.status" placeholder="状态筛选" clearable style="width: 140px"
                                 @change="handleFilterChange">
                                 <el-option label="正常" :value="1" />

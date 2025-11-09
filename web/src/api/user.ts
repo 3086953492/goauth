@@ -42,6 +42,7 @@ export const listUsers = (params?: {
   page_size?: number
   status?: number | string
   role?: string
+  nickname?: string
 }): Promise<ApiResponse<PaginationResponse<UserListResponse>>> => {
   return request({
     url: '/api/v1/users',

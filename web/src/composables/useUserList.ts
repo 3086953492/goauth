@@ -13,7 +13,8 @@ export function useUserList() {
 
   const filters = ref({
     status: undefined as number | string | undefined,
-    role: undefined as string | undefined
+    role: undefined as string | undefined,
+    nickname: undefined as string | undefined
   })
 
   const pagination = ref({
@@ -38,6 +39,9 @@ export function useUserList() {
       }
       if (filters.value.role !== undefined && filters.value.role !== '') {
         params.role = filters.value.role
+      }
+      if (filters.value.nickname !== undefined && filters.value.nickname !== '') {
+        params.nickname = filters.value.nickname
       }
 
       const response = await listUsers(params)
