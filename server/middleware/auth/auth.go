@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/3086953492/gokit/errors"
@@ -40,7 +41,14 @@ func AuthTokenMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("user_id", claims.UserID)
+		userID, err := strconv.ParseUint(claims.UserID, 10, 64)
+		if err != nil {
+			response.Error(c, errors.Unauthorized().Msg("用户ID格式错误").Build())
+			c.Abort()
+			return
+		}
+
+		c.Set("user_id", userID)
 		c.Set("role", claims.Extra["role"])
 
 		c.Next()
