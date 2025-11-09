@@ -4,6 +4,9 @@ import { ElMessage } from 'element-plus'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
 
+// 防抖标志，避免多个401请求重复重定向
+let isRedirecting = false
+
 const request: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:9000',
   timeout: 10000,
@@ -58,11 +61,33 @@ request.interceptors.response.use(
           break
         case 401:
           errorMessage = errorMessage || '未授权，请登录'
-          // 清除所有认证状态
-          const authStore = useAuthStore()
-          authStore.logout()
-          // 重定向到登录页
-          router.push('/login')
+          
+          // 防止多次重定向
+          if (!isRedirecting) {
+            isRedirecting = true
+            
+            // 1. 直接清理localStorage（主要机制）
+            localStorage.removeItem('token')
+            localStorage.removeItem('refreshToken')
+            localStorage.removeItem('expiresIn')
+            localStorage.removeItem('user')
+            
+            // 2. 尝试清理store状态
+            try {
+              const authStore = useAuthStore()
+              authStore.logout()
+            } catch (e) {
+              console.warn('清理认证状态失败:', e)
+            }
+            
+            // 3. 使用replace强制重定向到登录页
+            router.replace('/login').finally(() => {
+              // 重置防抖标志
+              setTimeout(() => {
+                isRedirecting = false
+              }, 1000)
+            })
+          }
           break
         case 403:
           errorMessage = errorMessage || '拒绝访问'
