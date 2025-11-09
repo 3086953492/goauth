@@ -1,6 +1,8 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
+import router from '@/router'
+import { useAuthStore } from '@/stores/auth'
 
 const request: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:9000',
@@ -53,8 +55,11 @@ request.interceptors.response.use(
           break
         case 401:
           ElMessage.error('未授权，请登录')
-          localStorage.removeItem('token')
-          // 可以跳转到登录页
+          // 清除所有认证状态
+          const authStore = useAuthStore()
+          authStore.logout()
+          // 重定向到登录页
+          router.push('/login')
           break
         case 403:
           ElMessage.error('拒绝访问')
