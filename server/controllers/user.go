@@ -99,12 +99,16 @@ func (ctrl *UserController) ListUsersHandler(ctx *gin.Context) {
 	
 	status := ctx.Query("status")
 	role := ctx.Query("role")
+	nickname := ctx.Query("nickname")
 	conds := map[string]any{}
 	if status != "" {
 		conds["status"] = status
 	}
 	if role != "" {
 		conds["role"] = role
+	}
+	if nickname != "" {
+		conds["nickname LIKE ?"] = "%" + nickname + "%"
 	}
 
 	users, err := ctrl.userService.ListUsers(ctx.Request.Context(), pageInt, pageSizeInt, conds)
