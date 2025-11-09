@@ -1,7 +1,8 @@
 import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { listUsers } from '@/api/user'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { listUsers, deleteUser } from '@/api/user'
 import type { UserListResponse } from '@/types/user'
+import { useAuthStore } from '@/stores/auth'
 
 /**
  * 用户列表管理相关的组合式函数
@@ -80,6 +81,48 @@ export function useUserList() {
     fetchUserList()
   }
 
+  /**
+   * 删除用户
+   */
+  const handleDeleteUser = async (userId: number) => {
+    const authStore = useAuthStore()
+    
+    // 检查是否删除当前登录用户
+    if (authStore.user?.id === userId) {
+      ElMessage.warning('不能删除当前登录用户')
+      return
+    }
+
+    try {
+      await ElMessageBox.confirm(
+        '确定要删除该用户吗？此操作不可恢复。',
+        '删除用户',
+        {
+          confirmButtonText: '确定删除',
+          cancelButtonText: '取消',
+          type: 'warning',
+          confirmButtonClass: 'el-button--danger'
+        }
+      )
+
+      // 执行删除
+      const response = await deleteUser(userId)
+      if (response.success) {
+        ElMessage.success('删除用户成功')
+        // 重新获取用户列表
+        await fetchUserList()
+      } else {
+        ElMessage.error(response.message || '删除用户失败')
+      }
+    } catch (error: any) {
+      // 用户取消操作
+      if (error === 'cancel') {
+        return
+      }
+      ElMessage.error(error.message || '删除用户失败')
+    }
+  }
+
   return {
     loading,
     userList,
@@ -88,7 +131,8 @@ export function useUserList() {
     fetchUserList,
     handleFilterChange,
     handlePageChange,
-    handleSizeChange
+    handleSizeChange,
+    handleDeleteUser
   }
 }
 

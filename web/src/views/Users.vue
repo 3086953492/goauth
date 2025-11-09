@@ -43,10 +43,14 @@
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column label="操作" width="120">
+                    <el-table-column label="操作" width="160">
                         <template #default="{ row }">
                             <el-button type="primary" link @click="handleViewUser(row.id)">
                                 查看
+                            </el-button>
+                            <el-button v-if="authStore.user?.id !== row.id" type="danger" link
+                                @click="handleDeleteUser(row.id)">
+                                删除
                             </el-button>
                         </template>
                     </el-table-column>
@@ -68,10 +72,12 @@ import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Navbar from '@/components/Navbar.vue'
 import { useUserList } from '@/composables/useUserList'
+import { useAuthStore } from '@/stores/auth'
 import { DEFAULT_AVATAR } from '@/constants'
 
 const defaultAvatar = DEFAULT_AVATAR
 const router = useRouter()
+const authStore = useAuthStore()
 
 // 使用 composable 管理业务逻辑
 const {
@@ -82,7 +88,8 @@ const {
     fetchUserList,
     handleFilterChange,
     handlePageChange,
-    handleSizeChange
+    handleSizeChange,
+    handleDeleteUser
 } = useUserList()
 
 // 查看用户详情

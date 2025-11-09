@@ -50,3 +50,13 @@ export const listUsers = (params?: {
   })
 }
 
+/**
+ * 删除用户
+ */
+export const deleteUser = (userId: string | number): Promise<ApiResponse> => {
+  return request({
+    url: `/api/v1/users/${userId}`,
+    method: 'delete'
+  })
+}
+
