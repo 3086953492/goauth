@@ -114,3 +114,23 @@ func (ctrl *UserController) ListUsersHandler(ctx *gin.Context) {
 	}
 	response.Success(ctx, "获取用户列表成功", users)
 }
+
+func (ctrl *UserController) DeleteUserHandler(ctx *gin.Context) {
+	userID := ctx.Param("user_id")
+	userIDUint, err := strconv.ParseUint(userID, 10, 64)
+	if err != nil {
+		response.Error(ctx, errors.InvalidInput().Msg("用户ID格式错误").Err(err).Build())
+		return
+	}
+
+	if uint(userIDUint) == ctx.GetUint("user_id") {
+		response.Error(ctx, errors.Forbidden().Msg("不能删除自己").Build())
+		return
+	}
+
+	if err := ctrl.userService.DeleteUser(ctx.Request.Context(), uint(userIDUint)); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	response.Success(ctx, "删除用户成功", nil)
+}

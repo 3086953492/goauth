@@ -14,4 +14,5 @@ func LoadUserRoutes(router *gin.Engine, ctrl *controllers.UserController) {
 	userRouter.GET("/:user_id", m.Auth(), m.ResourceOwner("param"), ctrl.GetUserHandler)
 	userRouter.PATCH("/:user_id", m.Auth(), m.ResourceOwner("param"), ctrl.UpdateUserHandler)
 	userRouter.GET("", m.Auth(), m.Role("admin"), ctrl.ListUsersHandler)
+	userRouter.DELETE("/:user_id", m.Auth(), m.Role("admin"), ctrl.DeleteUserHandler)
 }

@@ -157,3 +157,30 @@ func (s *UserService) ListUsers(ctx context.Context, page, pageSize int, conds m
 	}
 	return usersPagination, nil
 }
+
+func (s *UserService) DeleteUser(ctx context.Context, userID uint) error {
+	lockKey := fmt.Sprintf("user:delete:%v", userID)
+	lock := redis.NewDistributedLock(lockKey, 10*time.Second)
+	if err := lock.Acquire(); err != nil {
+		return errors.Internal().Msg("系统繁忙，请稍后再试").Err(err).Field("user_id", userID).Build()
+	}
+	defer lock.Release()
+
+	user, err := s.GetUser(ctx, map[string]any{"id": userID})
+	if err != nil {
+		return err
+	}
+
+	if err := s.userRepository.Delete(ctx, userID); err != nil {
+		return errors.Database().Msg("删除用户失败").Err(err).Field("user_id", userID).Log()
+	}
+
+	if err := cache.DeleteByContainsList(ctx, []string{fmt.Sprintf("id:%v", userID), fmt.Sprintf("nickname:%v", user.Nickname), fmt.Sprintf("username:%v", user.Username)}); err != nil {
+		errors.Database().Msg("删除缓存失败").Err(err).Field("user_id", userID).Log() // 记录日志，但继续执行
+	}
+	if err := cache.DeleteByPrefix(ctx, "list_users:"); err != nil {
+		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
+	}
+	logger.Info("用户删除成功", zap.Uint("userID", userID))
+	return nil
+}
