@@ -41,6 +41,7 @@ func main() {
 
 	models := []any{
 		models.User{},
+		models.OAuthClient{},
 	}
 
 	if err := database.AutoMigrateModels(models...); err != nil {
