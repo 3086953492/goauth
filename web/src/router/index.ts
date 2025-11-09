@@ -42,6 +42,15 @@ const routes: Array<RouteRecordRaw> = [
       title: '个人信息',
       requiresAuth: true
     }
+  },
+  {
+    path: '/users',
+    name: 'Users',
+    component: () => import('@/views/Users.vue'),
+    meta: {
+      title: '用户列表',
+      requiresAuth: true
+    }
   }
 ]
 

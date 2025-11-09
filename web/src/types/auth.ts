@@ -12,7 +12,7 @@ export interface LoginRequest {
 }
 
 export interface ApiResponse<T = any> {
-  code: number
+  success: boolean
   message: string
   data: T
 }
@@ -46,5 +46,21 @@ export interface UpdateUserRequest {
   confirm_password?: string
   status?: number
   role?: string
+}
+
+export interface UserListResponse {
+  id: number
+  nickname: string
+  avatar: string
+  status: number
+  role: string
+}
+
+export interface PaginationResponse<T> {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
 }
 

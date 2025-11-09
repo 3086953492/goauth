@@ -34,7 +34,7 @@ request.interceptors.response.use(
     const res = response.data
     
     // 处理成功响应
-    if (res.code === 0 || response.status === 200) {
+    if (res.success === true || response.status === 200) {
       return res
     }
     

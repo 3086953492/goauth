@@ -15,6 +15,15 @@
         </div>
 
         <div class="navbar-actions">
+          <el-button
+            v-if="user?.role === 'admin'"
+            type="info"
+            :icon="User"
+            @click="goToUsers"
+            class="nav-button"
+          >
+            用户列表
+          </el-button>
           <el-button type="primary" :icon="Edit" @click="goToProfile" class="nav-button">
             个人中心
           </el-button>
@@ -31,7 +40,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Edit, SwitchButton } from '@element-plus/icons-vue'
+import { Edit, SwitchButton, User } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -42,6 +51,10 @@ const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726
 
 const goToProfile = () => {
   router.push('/profile')
+}
+
+const goToUsers = () => {
+  router.push('/users')
 }
 
 const handleLogout = async () => {
