@@ -1,4 +1,4 @@
-package models
+package dto
 
 type PaginationResponse[T any] struct {
 	Items      []T   `json:"items"`
