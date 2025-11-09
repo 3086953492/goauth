@@ -59,6 +59,17 @@
               </el-tag>
             </template>
           </el-table-column>
+          <el-table-column label="操作" width="120" fixed="right">
+            <template #default="{ row }">
+              <el-button 
+                type="primary" 
+                link 
+                @click="handleViewUser(row.id)"
+              >
+                查看
+              </el-button>
+            </template>
+          </el-table-column>
         </el-table>
 
         <div class="pagination-wrapper">
@@ -79,11 +90,13 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import Navbar from '@/components/Navbar.vue'
 import { useUserList } from '@/composables/useUserList'
 import { DEFAULT_AVATAR } from '@/constants'
 
 const defaultAvatar = DEFAULT_AVATAR
+const router = useRouter()
 
 // 使用 composable 管理业务逻辑
 const {
@@ -96,6 +109,11 @@ const {
   handlePageChange,
   handleSizeChange
 } = useUserList()
+
+// 查看用户详情
+const handleViewUser = (userId: number) => {
+  router.push(`/profile/${userId}`)
+}
 
 onMounted(() => {
   fetchUserList()
