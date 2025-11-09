@@ -10,7 +10,7 @@
       <h3 class="section-title">基本信息</h3>
 
       <el-form-item label="用户名" prop="username">
-        <el-input :model-value="username" disabled :prefix-icon="User" />
+        <el-input :model-value="username || '加载中...'" disabled :prefix-icon="User" />
       </el-form-item>
 
       <el-form-item label="昵称" prop="nickname">
@@ -58,7 +58,7 @@ interface UserInfo {
 
 interface Props {
   modelValue: UserInfo
-  username: string
+  username?: string
   canEditPermission: boolean
 }
 
