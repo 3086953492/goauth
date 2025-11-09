@@ -34,209 +34,46 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { getUserInfo, updateUser } from '@/api/user'
-import { useAuthStore } from '@/stores/auth'
-import type { User as UserType, UpdateUserRequest } from '@/types/user'
-import { createPasswordValidator, createConfirmPasswordValidator } from '@/utils/validators'
+import { createPasswordValidator, createConfirmPasswordValidator, nicknameRules, avatarRules } from '@/utils/validators'
+import { useUserProfile } from '@/composables/useUserProfile'
 import Navbar from '@/components/Navbar.vue'
 import UserInfoForm from '@/components/profile/UserInfoForm.vue'
 import PasswordForm from '@/components/profile/PasswordForm.vue'
 
-const router = useRouter()
-const route = useRoute()
-const authStore = useAuthStore()
-
 const profileFormRef = ref<FormInstance>()
-const pageLoading = ref(true)
-const submitLoading = ref(false)
-const targetUser = ref<UserType>({} as UserType)
 
-// 目标用户ID
-const targetUserId = computed(() => {
-  const routeId = route.params.id as string
-  return routeId || authStore.user?.id.toString() || ''
-})
-
-// 是否是管理员
-const isAdmin = computed(() => authStore.user?.role === 'admin')
-
-// 是否在编辑自己
-const isEditingSelf = computed(() => {
-  return targetUserId.value === authStore.user?.id.toString()
-})
-
-// 用户信息数据
-const userInfo = ref({
-  nickname: '',
-  avatar: '',
-  status: 1,
-  role: 'user'
-})
-
-// 密码数据
-const passwordData = ref({
-  password: '',
-  confirmPassword: ''
-})
-
-// 合并的表单数据（用于验证）
-const formData = computed(() => ({
-  ...userInfo.value,
-  ...passwordData.value
-}))
-
-// 原始数据（用于对比变化）
-let originalData: any = {}
+// 使用 composable 管理业务逻辑
+const {
+  pageLoading,
+  submitLoading,
+  targetUser,
+  userInfo,
+  passwordData,
+  formData,
+  isEditingSelf,
+  isAdmin,
+  loadUserInfo,
+  submitForm,
+  cancel
+} = useUserProfile()
 
 // 表单验证规则
 const formRules = computed<FormRules>(() => ({
-  nickname: [
-    { required: true, message: '请输入昵称', trigger: 'blur' },
-    { min: 1, max: 20, message: '昵称长度在 1 到 20 个字符', trigger: 'blur' }
-  ],
-  avatar: [
-    { type: 'url', message: '请输入有效的URL', trigger: 'blur' }
-  ],
+  nickname: nicknameRules,
+  avatar: avatarRules,
   password: createPasswordValidator(),
-  confirmPassword: [
-    { validator: createConfirmPasswordValidator(() => passwordData.value.password), trigger: 'blur' }
-  ]
+  confirmPassword: [createConfirmPasswordValidator(() => passwordData.value.password)]
 }))
-
-// 权限检查
-const checkPermission = () => {
-  if (!authStore.user) {
-    ElMessage.error('未登录，请先登录')
-    router.push('/login')
-    return false
-  }
-
-  // 非管理员尝试编辑其他用户
-  if (!isAdmin.value && !isEditingSelf.value) {
-    ElMessage.error('您没有权限编辑其他用户的信息')
-    router.push(`/profile`)
-    return false
-  }
-
-  return true
-}
-
-// 加载用户信息
-const loadUserInfo = async () => {
-  if (!checkPermission()) {
-    return
-  }
-
-  try {
-    pageLoading.value = true
-    const response = await getUserInfo(targetUserId.value)
-
-    if (response.data) {
-      targetUser.value = response.data
-
-      // 填充用户信息表单
-      userInfo.value = {
-        nickname: response.data.nickname,
-        avatar: response.data.avatar || '',
-        status: response.data.status,
-        role: response.data.role
-      }
-
-      // 保存原始数据
-      originalData = {
-        nickname: response.data.nickname,
-        avatar: response.data.avatar || '',
-        status: response.data.status,
-        role: response.data.role
-      }
-    }
-  } catch (error: any) {
-    console.error('加载用户信息失败:', error)
-    ElMessage.error('加载用户信息失败')
-    router.push('/home')
-  } finally {
-    pageLoading.value = false
-  }
-}
 
 // 提交表单
 const handleSubmit = async () => {
-  if (!profileFormRef.value) return
-
-  await profileFormRef.value.validate(async (valid) => {
-    if (valid) {
-      submitLoading.value = true
-      try {
-        // 构建更新数据 - 只发送已修改的字段
-        const updateData: UpdateUserRequest = {}
-
-        if (userInfo.value.nickname !== originalData.nickname) {
-          updateData.nickname = userInfo.value.nickname
-        }
-
-        if (userInfo.value.avatar !== originalData.avatar) {
-          updateData.avatar = userInfo.value.avatar || undefined
-        }
-
-        // 密码修改
-        if (passwordData.value.password) {
-          updateData.password = passwordData.value.password
-          updateData.confirm_password = passwordData.value.confirmPassword
-        }
-
-        // 管理员可修改状态和角色
-        if (isAdmin.value) {
-          if (userInfo.value.status !== originalData.status) {
-            updateData.status = userInfo.value.status
-          }
-          if (userInfo.value.role !== originalData.role) {
-            updateData.role = userInfo.value.role
-          }
-        }
-
-        // 如果没有任何修改
-        if (Object.keys(updateData).length === 0) {
-          ElMessage.info('没有任何修改')
-          return
-        }
-
-        const response = await updateUser(targetUserId.value, updateData)
-
-        ElMessage.success(response.message || '更新成功！')
-
-        // 如果编辑的是当前用户，更新 authStore
-        if (isEditingSelf.value) {
-          const updatedUserResponse = await getUserInfo(targetUserId.value)
-          if (updatedUserResponse.data) {
-            authStore.setUser(updatedUserResponse.data)
-          }
-        }
-
-        // 清空密码字段
-        passwordData.value.password = ''
-        passwordData.value.confirmPassword = ''
-
-        // 重新加载用户信息
-        await loadUserInfo()
-
-      } catch (error: any) {
-        console.error('更新失败:', error)
-        // 错误已在拦截器中处理
-      } finally {
-        submitLoading.value = false
-      }
-    } else {
-      ElMessage.warning('请填写正确的表单信息')
-    }
-  })
+  await submitForm(profileFormRef.value)
 }
 
 // 取消/返回
 const handleCancel = () => {
-  router.back()
+  cancel()
 }
 
 // 页面加载

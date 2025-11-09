@@ -1,0 +1,84 @@
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { useAuthStore } from '@/stores/auth'
+
+/**
+ * 权限检查相关的组合式函数
+ */
+export function usePermission() {
+  const router = useRouter()
+  const authStore = useAuthStore()
+
+  // 是否是管理员
+  const isAdmin = computed(() => authStore.user?.role === 'admin')
+
+  // 是否已登录
+  const isLoggedIn = computed(() => !!authStore.user)
+
+  /**
+   * 检查用户是否已登录
+   */
+  const checkLogin = (): boolean => {
+    if (!authStore.user) {
+      ElMessage.error('未登录，请先登录')
+      router.push('/login')
+      return false
+    }
+    return true
+  }
+
+  /**
+   * 检查用户是否有权限编辑指定用户
+   * @param targetUserId 目标用户ID
+   * @param currentUserId 当前用户ID
+   */
+  const checkEditPermission = (targetUserId: string | number, currentUserId?: string | number): boolean => {
+    if (!checkLogin()) {
+      return false
+    }
+
+    const currentId = currentUserId || authStore.user?.id.toString() || ''
+    const targetId = targetUserId.toString()
+
+    // 管理员可以编辑任何人
+    if (isAdmin.value) {
+      return true
+    }
+
+    // 普通用户只能编辑自己
+    if (targetId === currentId) {
+      return true
+    }
+
+    ElMessage.error('您没有权限编辑其他用户的信息')
+    router.push('/profile')
+    return false
+  }
+
+  /**
+   * 检查用户是否有管理员权限
+   */
+  const checkAdminPermission = (): boolean => {
+    if (!checkLogin()) {
+      return false
+    }
+
+    if (!isAdmin.value) {
+      ElMessage.error('您没有管理员权限')
+      router.push('/home')
+      return false
+    }
+
+    return true
+  }
+
+  return {
+    isAdmin,
+    isLoggedIn,
+    checkLogin,
+    checkEditPermission,
+    checkAdminPermission
+  }
+}
+

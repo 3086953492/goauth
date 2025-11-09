@@ -39,13 +39,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { Edit, SwitchButton, User } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { useAuth } from '@/composables/useAuth'
 import { DEFAULT_AVATAR } from '@/constants'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { handleLogout: logout } = useAuth()
 
 const user = computed(() => authStore.user)
 const defaultAvatar = DEFAULT_AVATAR
@@ -66,9 +68,7 @@ const handleLogout = async () => {
       type: 'warning'
     })
 
-    authStore.logout()
-    ElMessage.success('已退出登录')
-    router.push('/login')
+    logout()
   } catch {
     // 用户取消操作
   }

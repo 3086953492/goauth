@@ -78,74 +78,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { onMounted } from 'vue'
 import Navbar from '@/components/Navbar.vue'
-import { listUsers } from '@/api/user'
-import type { UserListResponse } from '@/types/user'
+import { useUserList } from '@/composables/useUserList'
 import { DEFAULT_AVATAR } from '@/constants'
 
-const loading = ref(false)
-const userList = ref<UserListResponse[]>([])
 const defaultAvatar = DEFAULT_AVATAR
 
-const filters = ref({
-  status: undefined as number | string | undefined,
-  role: undefined as string | undefined
-})
-
-const pagination = ref({
-  page: 1,
-  pageSize: 10,
-  total: 0
-})
-
-const fetchUserList = async () => {
-  loading.value = true
-  try {
-    const params: any = {
-      page: pagination.value.page,
-      page_size: pagination.value.pageSize
-    }
-
-    if (filters.value.status !== undefined && filters.value.status !== '') {
-      params.status = filters.value.status
-    }
-    if (filters.value.role !== undefined && filters.value.role !== '') {
-      params.role = filters.value.role
-    }
-
-    const response = await listUsers(params)
-    if (response.success && response.data) {
-      userList.value = response.data.items
-      pagination.value.total = response.data.total
-      pagination.value.page = response.data.page
-      pagination.value.pageSize = response.data.pageSize
-    } else {
-      ElMessage.error(response.message || '获取用户列表失败')
-    }
-  } catch (error: any) {
-    ElMessage.error(error.message || '获取用户列表失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-const handleFilterChange = () => {
-  pagination.value.page = 1
-  fetchUserList()
-}
-
-const handlePageChange = (page: number) => {
-  pagination.value.page = page
-  fetchUserList()
-}
-
-const handleSizeChange = (size: number) => {
-  pagination.value.pageSize = size
-  pagination.value.page = 1
-  fetchUserList()
-}
+// 使用 composable 管理业务逻辑
+const {
+  loading,
+  userList,
+  filters,
+  pagination,
+  fetchUserList,
+  handleFilterChange,
+  handlePageChange,
+  handleSizeChange
+} = useUserList()
 
 onMounted(() => {
   fetchUserList()

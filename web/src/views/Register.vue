@@ -49,15 +49,13 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { User, Lock, Avatar, Picture } from '@element-plus/icons-vue'
-import { register } from '@/api/user'
-import type { RegisterRequest } from '@/types/user'
+import { useAuth } from '@/composables/useAuth'
+import { usernameRules, passwordRules, nicknameRules, avatarRules, createConfirmPasswordValidator } from '@/utils/validators'
 
 const router = useRouter()
 const registerFormRef = ref<FormInstance>()
-const loading = ref(false)
 
 // 表单数据
 const registerForm = reactive({
@@ -68,74 +66,21 @@ const registerForm = reactive({
   avatar: ''
 })
 
-// 自定义验证：确认密码
-const validateConfirmPassword = (_rule: any, value: any, callback: any) => {
-  if (value === '') {
-    callback(new Error('请再次输入密码'))
-  } else if (value !== registerForm.password) {
-    callback(new Error('两次输入的密码不一致'))
-  } else {
-    callback()
-  }
-}
-
 // 表单验证规则
 const rules = reactive<FormRules>({
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 50, message: '用户名长度在 3 到 50 个字符', trigger: 'blur' },
-    { pattern: /^[a-zA-Z0-9_]+$/, message: '用户名只能包含字母、数字和下划线', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 50, message: '密码长度至少 6 个字符', trigger: 'blur' }
-  ],
-  confirmPassword: [
-    { required: true, validator: validateConfirmPassword, trigger: 'blur' }
-  ],
-  nickname: [
-    { required: true, message: '请输入昵称', trigger: 'blur' },
-    { min: 2, max: 100, message: '昵称长度在 2 到 100 个字符', trigger: 'blur' }
-  ],
-  avatar: [
-    { type: 'url', message: '请输入有效的URL', trigger: 'blur' }
-  ]
+  username: usernameRules,
+  password: passwordRules,
+  confirmPassword: [createConfirmPasswordValidator(() => registerForm.password, true)],
+  nickname: nicknameRules,
+  avatar: avatarRules
 })
+
+// 使用 composable 管理认证逻辑
+const { loading, handleRegister: register } = useAuth()
 
 // 注册处理
 const handleRegister = async () => {
-  if (!registerFormRef.value) return
-
-  await registerFormRef.value.validate(async (valid) => {
-    if (valid) {
-      loading.value = true
-      try {
-        const requestData: RegisterRequest = {
-          username: registerForm.username,
-          password: registerForm.password,
-          confirm_password: registerForm.confirmPassword,
-          nickname: registerForm.nickname,
-          avatar: registerForm.avatar || undefined
-        }
-
-        const response = await register(requestData)
-        
-        ElMessage.success(response.message || '注册成功！')
-        
-        // 延迟跳转到登录页
-        setTimeout(() => {
-          router.push('/login')
-        }, 1500)
-      } catch (error: any) {
-        console.error('注册失败:', error)
-        // 错误已在拦截器中处理
-      } finally {
-        loading.value = false
-      }
-    } else {
-      ElMessage.warning('请填写完整的表单信息')
-    }
-  })
+  await register(registerFormRef.value, registerForm)
 }
 
 // 跳转到登录页
