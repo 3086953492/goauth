@@ -21,7 +21,7 @@
                     </div>
                 </template>
 
-                <el-table v-loading="loading" :data="userList" stripe style="width: 100%" class="users-table">
+                <el-table v-loading="loading" :data="userList" stripe style="width: 100%">
                     <el-table-column prop="id" label="ID" width="80" />
                     <el-table-column label="头像" width="100">
                         <template #default="{ row }">
@@ -43,7 +43,7 @@
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column label="操作" width="120" fixed="right">
+                    <el-table-column label="操作" width="120">
                         <template #default="{ row }">
                             <el-button type="primary" link @click="handleViewUser(row.id)">
                                 查看
@@ -153,16 +153,12 @@ onMounted(() => {
     padding: 32px;
 }
 
-.users-table {
-    margin-bottom: 24px;
-}
-
 :deep(.el-table) {
     border-radius: 12px;
     overflow: hidden;
 }
 
-:deep(.el-table th) {
+:deep(.el-table__header-wrapper th) {
     background-color: #f5f7fa;
     color: #303133;
     font-weight: 600;
