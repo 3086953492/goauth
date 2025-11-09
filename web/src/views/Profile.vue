@@ -413,6 +413,10 @@ onMounted(() => {
   color: #409eff;
 }
 
+.section-header .section-title {
+  margin-bottom: 0;
+}
+
 .section-hint {
   font-size: 13px;
   color: #909399;
