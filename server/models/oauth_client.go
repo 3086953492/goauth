@@ -12,7 +12,7 @@ type OAuthClient struct {
 	CreatedAt    time.Time      `gorm:"type:datetime;comment:创建时间" json:"created_at"`
 	UpdatedAt    time.Time      `gorm:"type:datetime;comment:更新时间" json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `gorm:"type:datetime;comment:删除时间;index" json:"-"`
-	ClientSecret string         `gorm:"type:varchar(255);comment:客户端密钥;not null" json:"-"`
+	ClientSecret string         `gorm:"type:text;comment:客户端密钥;not null" json:"-"`
 	Name         string         `gorm:"type:varchar(100);comment:应用名称;not null" json:"name"`
 	Description  string         `gorm:"type:text;comment:应用描述" json:"description"`
 	Logo         string         `gorm:"type:varchar(500);comment:应用Logo URL" json:"logo"`
