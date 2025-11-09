@@ -1,5 +1,6 @@
 import request from './request'
-import type { LoginRequest, ApiResponse, LoginResponse } from '@/types/auth'
+import type { LoginRequest, LoginResponse } from '@/types/auth'
+import type { ApiResponse } from '@/types/common'
 
 /**
  * 用户登录

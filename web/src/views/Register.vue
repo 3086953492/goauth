@@ -53,7 +53,7 @@ import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { User, Lock, Avatar, Picture } from '@element-plus/icons-vue'
 import { register } from '@/api/user'
-import type { RegisterRequest } from '@/types/auth'
+import type { RegisterRequest } from '@/types/user'
 
 const router = useRouter()
 const registerFormRef = ref<FormInstance>()

@@ -115,7 +115,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { User, Lock, Avatar, Picture, ArrowRight } from '@element-plus/icons-vue'
 import { getUserInfo, updateUser } from '@/api/user'
 import { useAuthStore } from '@/stores/auth'
-import type { User as UserType, UpdateUserRequest } from '@/types/auth'
+import type { User as UserType, UpdateUserRequest } from '@/types/user'
 import Navbar from '@/components/Navbar.vue'
 
 const router = useRouter()

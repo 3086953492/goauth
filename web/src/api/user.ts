@@ -1,5 +1,6 @@
 import request from './request'
-import type { User, ApiResponse, RegisterRequest, UpdateUserRequest, UserListResponse, PaginationResponse } from '@/types/auth'
+import type { User, RegisterRequest, UpdateUserRequest, UserListResponse } from '@/types/user'
+import type { ApiResponse, PaginationResponse } from '@/types/common'
 
 /**
  * 用户注册

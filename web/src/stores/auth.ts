@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { User, TokenResponse } from '@/types/auth'
+import type { User } from '@/types/user'
+import type { TokenResponse } from '@/types/auth'
 
 // 从 localStorage 恢复用户信息
 const getUserFromStorage = (): User | null => {

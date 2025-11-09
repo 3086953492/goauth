@@ -82,7 +82,7 @@ import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import Navbar from '@/components/Navbar.vue'
 import { listUsers } from '@/api/user'
-import type { UserListResponse } from '@/types/auth'
+import type { UserListResponse } from '@/types/user'
 
 const loading = ref(false)
 const userList = ref<UserListResponse[]>([])
