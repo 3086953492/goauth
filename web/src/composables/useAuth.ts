@@ -40,7 +40,7 @@ export function useAuth() {
           router.push('/home')
         } catch (error: any) {
           console.error('登录失败:', error)
-          ElMessage.error(error.message || '登录失败，请检查用户名和密码')
+          // 错误消息已在响应拦截器中统一显示，此处不再重复提示
         } finally {
           loading.value = false
         }

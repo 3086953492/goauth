@@ -49,12 +49,15 @@ request.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response as any
       
+      // 优先使用后端返回的错误消息
+      let errorMessage = data?.message || ''
+      
       switch (status) {
         case 400:
-          ElMessage.error(data?.message || '请求参数错误')
+          errorMessage = errorMessage || '请求参数错误'
           break
         case 401:
-          ElMessage.error('未授权，请登录')
+          errorMessage = errorMessage || '未授权，请登录'
           // 清除所有认证状态
           const authStore = useAuthStore()
           authStore.logout()
@@ -62,17 +65,24 @@ request.interceptors.response.use(
           router.push('/login')
           break
         case 403:
-          ElMessage.error('拒绝访问')
+          errorMessage = errorMessage || '拒绝访问'
           break
         case 404:
-          ElMessage.error('请求的资源不存在')
+          errorMessage = errorMessage || '请求的资源不存在'
           break
         case 500:
-          ElMessage.error(data?.message || '服务器内部错误')
+          errorMessage = errorMessage || '服务器内部错误'
           break
         default:
-          ElMessage.error(data?.message || '网络错误')
+          errorMessage = errorMessage || '网络错误'
       }
+      
+      ElMessage.error(errorMessage)
+      
+      // 将错误消息附加到 error 对象上，方便业务层使用
+      const errorWithMessage = new Error(errorMessage)
+      Object.assign(errorWithMessage, { response: error.response, message: errorMessage })
+      return Promise.reject(errorWithMessage)
     } else if (error.request) {
       ElMessage.error('网络连接失败，请检查网络')
     } else {
