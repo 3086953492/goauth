@@ -52,18 +52,22 @@ func (r *UserRepository) Delete(ctx context.Context, id uint) error {
 }
 
 // List 分页查询用户列表
-func (r *UserRepository) List(ctx context.Context, page, pageSize int) ([]models.User, int64, error) {
+func (r *UserRepository) List(ctx context.Context, page, pageSize int, conds map[string]any) ([]models.User, int64, error) {
 	var users []models.User
 	var total int64
 
 	// 计算总数
-	if err := r.db.WithContext(ctx).Model(&models.User{}).Count(&total).Error; err != nil {
+	query := r.db.WithContext(ctx).Model(&models.User{})
+	for key, value := range conds {
+		query = query.Where(key, value)
+	}
+	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	// 分页查询
 	offset := (page - 1) * pageSize
-	err := r.db.WithContext(ctx).
+	err := query.
 		Offset(offset).
 		Limit(pageSize).
 		Find(&users).Error

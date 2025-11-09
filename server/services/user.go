@@ -115,9 +115,45 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.Upd
 	}
 
 	// 删除相关缓存
-	if err := cache.DeleteByContainsList(ctx, []string{fmt.Sprintf("id:%v", userID), fmt.Sprintf("nickname:%v", existingUser.Nickname), fmt.Sprintf("username:%v", existingUser.Username),fmt.Sprintf("nickname:%v", user.Nickname)}); err != nil {
+	if err := cache.DeleteByContainsList(ctx, []string{fmt.Sprintf("id:%v", userID), fmt.Sprintf("nickname:%v", existingUser.Nickname), fmt.Sprintf("username:%v", existingUser.Username), fmt.Sprintf("nickname:%v", user.Nickname)}); err != nil {
 		errors.Database().Msg("删除缓存失败").Err(err).Field("user_id", userID).Log() // 记录日志，但继续执行
+	}
+	if err := cache.DeleteByPrefix(ctx, "list_users:"); err != nil {
+		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
 	}
 
 	return nil
+}
+
+func (s *UserService) ListUsers(ctx context.Context, page, pageSize int, conds map[string]any) (*dto.PaginationResponse[dto.UserListResponse], error) {
+	usersPagination, err := cache.New[dto.PaginationResponse[dto.UserListResponse]]().Key(fmt.Sprintf("list_users:%v", conds)).TTL(10*time.Minute).GetOrSet(ctx, func() (*dto.PaginationResponse[dto.UserListResponse], error) {
+		users, total, err := s.userRepository.List(ctx, page, pageSize, conds)
+		if err != nil {
+			if errors.IsNotFoundError(err) {
+				return nil, err
+			}
+			return nil, errors.Database().Msg("获取用户列表失败").Err(err).Field("conds", conds).Log()
+		}
+		usersResponse := make([]dto.UserListResponse, len(users))
+		for i, user := range users {
+			usersResponse[i] = dto.UserListResponse{
+				ID:       user.ID,
+				Nickname: user.Nickname,
+				Avatar:   user.Avatar,
+				Status:   user.Status,
+				Role:     user.Role,
+			}
+		}
+		return &dto.PaginationResponse[dto.UserListResponse]{
+			Items:      usersResponse,
+			Total:      total,
+			Page:       page,
+			PageSize:   pageSize,
+			TotalPages: int(total / int64(pageSize)),
+		}, nil
+	})
+	if err != nil {
+		return nil, errors.NotFound().Msg("未找到用户列表").Err(err).Build()
+	}
+	return usersPagination, nil
 }

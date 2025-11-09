@@ -29,3 +29,11 @@ type CreateUserRequest struct {
 	Nickname        string `json:"nickname" validate:"required,min=1,max=20"`
 	Avatar          string `json:"avatar" validate:"omitempty,url"`
 }
+
+type UserListResponse struct {
+	ID        uint      `json:"id"`
+	Nickname  string    `json:"nickname"`
+	Avatar    string    `json:"avatar"`
+	Status    int       `json:"status"`
+	Role      string    `json:"role"`
+}

@@ -83,3 +83,34 @@ func (ctrl *UserController) GetUserHandler(ctx *gin.Context) {
 	}
 	response.Success(ctx, "获取用户成功", user)
 }
+
+func (ctrl *UserController) ListUsersHandler(ctx *gin.Context) {
+	page, pageSize := ctx.Query("page"), ctx.Query("page_size")
+	pageInt, err := strconv.Atoi(page)
+	if err != nil {
+		response.Error(ctx, errors.InvalidInput().Msg("页码格式错误").Err(err).Build())
+		return
+	}
+	pageSizeInt, err := strconv.Atoi(pageSize)
+	if err != nil {
+		response.Error(ctx, errors.InvalidInput().Msg("每页条数格式错误").Err(err).Build())
+		return
+	}
+	
+	status := ctx.Query("status")
+	role := ctx.Query("role")
+	conds := map[string]any{}
+	if status != "" {
+		conds["status"] = status
+	}
+	if role != "" {
+		conds["role"] = role
+	}
+
+	users, err := ctrl.userService.ListUsers(ctx.Request.Context(), pageInt, pageSizeInt, conds)
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	response.Success(ctx, "获取用户列表成功", users)
+}
