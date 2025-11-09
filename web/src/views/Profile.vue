@@ -48,7 +48,6 @@ import PasswordForm from '@/components/profile/PasswordForm.vue'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-console.log(authStore.user)
 
 const profileFormRef = ref<FormInstance>()
 const pageLoading = ref(true)
