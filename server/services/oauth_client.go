@@ -70,6 +70,5 @@ func (s *OAuthClientService) ListOAuthClients(ctx context.Context, page, pageSiz
 	if err != nil {
 		return nil, errors.NotFound().Msg("未找到OAuth客户端列表").Err(err).Build()
 	}
-	fmt.Println("oauthClientsPagination", oauthClientsPagination)
 	return oauthClientsPagination, nil
 }
