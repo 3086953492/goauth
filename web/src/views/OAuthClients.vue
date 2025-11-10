@@ -27,7 +27,7 @@
                     <el-table-column prop="id" label="ID" width="80" />
                     <el-table-column label="Logo" width="100">
                         <template #default="{ row }">
-                            <el-avatar :size="50" :src="row.logo || defaultLogo" />
+                            <el-avatar :size="50" :src="row.logo" :icon="Cpu" />
                         </template>
                     </el-table-column>
                     <el-table-column prop="name" label="客户端名称" min-width="200" />
@@ -67,14 +67,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Cpu } from '@element-plus/icons-vue'
 import Navbar from '@/components/Navbar.vue'
 import OAuthClientForm from '@/components/oauth/OAuthClientForm.vue'
 import { useOAuthClientList } from '@/composables/useOAuthClientList'
 import { createOAuthClient } from '@/api/oauth_client'
 import { ElMessage } from 'element-plus'
-
-const defaultLogo = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 
 // 使用 composable 管理业务逻辑
 const {
