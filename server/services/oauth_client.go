@@ -135,6 +135,20 @@ func (s *OAuthClientService) UpdateOAuthClient(ctx context.Context, id uint, req
 	if err := cache.DeleteByPrefix(ctx, fmt.Sprintf("oauth_client:%v", id)); err != nil {
 		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
 	}
-	
+
+	return nil
+}
+
+func (s *OAuthClientService) DeleteOAuthClient(ctx context.Context, id uint) error {
+	if err := s.oauthClientRepository.Delete(ctx, id); err != nil {
+		return errors.Database().Msg("删除OAuth客户端失败").Err(err).Field("id", id).Log()
+	}
+	if err := cache.DeleteByPrefix(ctx, "list_oauth_clients:"); err != nil {
+		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
+	}
+	if err := cache.DeleteByContains(ctx,fmt.Sprintf("oauth_client:%v", id)); err != nil {
+		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
+	}
+	logger.Info("删除OAuth客户端成功", zap.Uint("id", id))
 	return nil
 }

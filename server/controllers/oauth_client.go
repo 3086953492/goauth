@@ -100,6 +100,21 @@ func (ctrl *OAuthClientController) UpdateOAuthClientHandler(ctx *gin.Context) {
 		response.Error(ctx, err)
 		return
 	}
-	
+
 	response.Success(ctx, "更新OAuth客户端成功", nil)
+}
+
+func (ctrl *OAuthClientController) DeleteOAuthClientHandler(ctx *gin.Context) {
+	id := ctx.Param("id")
+	idUint, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		response.Error(ctx, errors.InvalidInput().Msg("ID格式错误").Err(err).Build())
+		return
+	}
+	if err := ctrl.oauthClientService.DeleteOAuthClient(ctx.Request.Context(), uint(idUint)); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	
+	response.Success(ctx, "删除OAuth客户端成功", nil)
 }
