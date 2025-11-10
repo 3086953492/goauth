@@ -53,10 +53,10 @@ func (s *OAuthClientService) ListOAuthClients(ctx context.Context, page, pageSiz
 		oauthClientsResponse := make([]dto.OAuthClientListResponse, len(oauthClients))
 		for i, oauthClient := range oauthClients {
 			oauthClientsResponse[i] = dto.OAuthClientListResponse{
-				ID:       oauthClient.ID,
-				Name:     oauthClient.Name,
-				Logo:     oauthClient.Logo,
-				Status:   oauthClient.Status,
+				ID:     oauthClient.ID,
+				Name:   oauthClient.Name,
+				Logo:   oauthClient.Logo,
+				Status: oauthClient.Status,
 			}
 		}
 		return &dto.PaginationResponse[dto.OAuthClientListResponse]{
@@ -99,4 +99,42 @@ func (s *OAuthClientService) GetOAuthClient(ctx context.Context, conds map[strin
 		return nil, errors.NotFound().Msg("未找到OAuth客户端").Err(err).Build()
 	}
 	return oauthClient, nil
+}
+
+func (s *OAuthClientService) UpdateOAuthClient(ctx context.Context, id uint, req *dto.UpdateOAuthClientRequest) error {
+	updates := make(map[string]any)
+	if req.Name != "" {
+		updates["name"] = req.Name
+	}
+	if req.Description != nil {
+	updates["description"] = req.Description
+	}
+	if req.Logo != nil {
+	updates["logo"] = req.Logo
+	}
+	if req.RedirectURIs != nil {
+		updates["redirect_uris"] = req.RedirectURIs
+	}
+	if req.GrantTypes != nil {
+		updates["grant_types"] = req.GrantTypes
+	}
+	if req.Scopes != nil {
+		updates["scopes"] = req.Scopes
+	}
+	if req.Status != nil {
+		updates["status"] = req.Status
+	}
+
+	if err := s.oauthClientRepository.Update(ctx, id, updates); err != nil {
+		return errors.Database().Msg("更新OAuth客户端失败").Err(err).Field("id", id).Field("updates", updates).Log()
+	}
+
+	if err := cache.DeleteByPrefix(ctx, "list_oauth_clients:"); err != nil {
+		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
+	}
+	if err := cache.DeleteByPrefix(ctx, fmt.Sprintf("oauth_client:%v", id)); err != nil {
+		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
+	}
+	
+	return nil
 }

@@ -78,3 +78,28 @@ func (ctrl *OAuthClientController) GetOAuthClientHandler(ctx *gin.Context) {
 	}
 	response.Success(ctx, "获取OAuth客户端成功", oauthClient)
 }
+
+func (ctrl *OAuthClientController) UpdateOAuthClientHandler(ctx *gin.Context) {
+	id := ctx.Param("id")
+	idUint, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		response.Error(ctx, errors.InvalidInput().Msg("ID格式错误").Err(err).Build())
+		return
+	}
+
+	var req dto.UpdateOAuthClientRequest
+	if result, err := validator.BindAndValidate(ctx, &req); err != nil {
+		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", req).Build())
+		return
+	} else if !result.Valid {
+		response.Error(ctx, errors.InvalidInput().Msg(result.Message).Err(result.Err).Field("request", req).Build())
+		return
+	}
+
+	if err := ctrl.oauthClientService.UpdateOAuthClient(ctx.Request.Context(), uint(idUint), &req); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	
+	response.Success(ctx, "更新OAuth客户端成功", nil)
+}

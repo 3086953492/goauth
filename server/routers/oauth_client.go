@@ -13,4 +13,5 @@ func LoadOAuthClientRoutes(router *gin.Engine, ctrl *controllers.OAuthClientCont
 	oauthClientRouter.POST("", m.Auth(), m.Role("admin"), ctrl.CreateOAuthClientHandler)
 	oauthClientRouter.GET("", m.Auth(), m.Role("admin"), ctrl.ListOAuthClientsHandler)
 	oauthClientRouter.GET("/:id", m.Auth(), m.Role("admin"), ctrl.GetOAuthClientHandler)
+	oauthClientRouter.PATCH("/:id", m.Auth(), m.Role("admin"), ctrl.UpdateOAuthClientHandler)
 }
