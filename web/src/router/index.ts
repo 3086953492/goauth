@@ -51,6 +51,15 @@ const routes: Array<RouteRecordRaw> = [
       title: '用户列表',
       requiresAuth: true
     }
+  },
+  {
+    path: '/oauth-clients',
+    name: 'OAuthClients',
+    component: () => import('@/views/OAuthClients.vue'),
+    meta: {
+      title: 'OAuth 客户端管理',
+      requiresAuth: true
+    }
   }
 ]
 

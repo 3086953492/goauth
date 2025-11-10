@@ -15,14 +15,12 @@
         </div>
 
         <div class="navbar-actions">
-          <el-button
-            v-if="user?.role === 'admin'"
-            type="info"
-            :icon="User"
-            @click="goToUsers"
-            class="nav-button"
-          >
+          <el-button v-if="user?.role === 'admin'" type="info" :icon="User" @click="goToUsers" class="nav-button">
             用户列表
+          </el-button>
+          <el-button v-if="user?.role === 'admin'" type="warning" :icon="Key" @click="goToOAuthClients"
+            class="nav-button">
+            OAuth 客户端
           </el-button>
           <el-button type="primary" :icon="Edit" @click="goToProfile" class="nav-button">
             个人中心
@@ -40,7 +38,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-import { Edit, SwitchButton, User } from '@element-plus/icons-vue'
+import { Edit, SwitchButton, User, Key } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAuth } from '@/composables/useAuth'
 import { DEFAULT_AVATAR } from '@/constants'
@@ -58,6 +56,10 @@ const goToProfile = () => {
 
 const goToUsers = () => {
   router.push('/users')
+}
+
+const goToOAuthClients = () => {
+  router.push('/oauth-clients')
 }
 
 const handleLogout = async () => {
