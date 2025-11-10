@@ -129,9 +129,6 @@ func (s *UserService) ListUsers(ctx context.Context, page, pageSize int, conds m
 	usersPagination, err := cache.New[dto.PaginationResponse[dto.UserListResponse]]().Key(fmt.Sprintf("list_users:%v", conds)).TTL(10*time.Minute).GetOrSet(ctx, func() (*dto.PaginationResponse[dto.UserListResponse], error) {
 		users, total, err := s.userRepository.List(ctx, page, pageSize, conds)
 		if err != nil {
-			if errors.IsNotFoundError(err) {
-				return nil, err
-			}
 			return nil, errors.Database().Msg("获取用户列表失败").Err(err).Field("conds", conds).Log()
 		}
 		usersResponse := make([]dto.UserListResponse, len(users))
