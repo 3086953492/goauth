@@ -4,13 +4,13 @@
             <el-input v-model="formData.name" placeholder="请输入客户端名称（3-20字符）" maxlength="20" show-word-limit clearable />
         </el-form-item>
 
-        <el-form-item label="客户端密钥" prop="client_secret">
+        <el-form-item v-if="mode === 'create'" label="客户端密钥" prop="client_secret">
             <div class="secret-input-wrapper">
                 <el-input v-model="formData.client_secret" placeholder="客户端密钥" readonly>
                     <template #append>
                         <el-button-group>
                             <el-button :icon="CopyDocument" @click="copySecret">复制</el-button>
-                            <el-button v-if="mode === 'create'" :icon="RefreshRight" @click="handleRegenerateSecret">
+                            <el-button :icon="RefreshRight" @click="handleRegenerateSecret">
                                 重新生成
                             </el-button>
                         </el-button-group>
@@ -73,16 +73,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { CopyDocument, RefreshRight, Delete, Plus } from '@element-plus/icons-vue'
 import { useOAuthClientForm } from '@/composables/useOAuthClientForm'
 import { OAUTH_GRANT_TYPES, OAUTH_SCOPES, OAUTH_CLIENT_STATUS } from '@/constants'
-import type { OAuthClientFormMode } from '@/types/oauth_client'
+import type { OAuthClientFormMode, OAuthClientDetailResponse } from '@/types/oauth_client'
 
 interface Props {
     mode?: OAuthClientFormMode
-    initialData?: any
+    initialData?: OAuthClientDetailResponse
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -112,7 +112,7 @@ const formRules: FormRules = {
         { min: 3, max: 20, message: '客户端名称长度应为3-20字符', trigger: 'blur' }
     ],
     client_secret: [
-        { required: true, message: '客户端密钥不能为空', trigger: 'blur' }
+        { required: props.mode === 'create', message: '客户端密钥不能为空', trigger: 'blur' }
     ],
     description: [
         { max: 255, message: '应用描述不能超过255字符', trigger: 'blur' }
@@ -127,9 +127,13 @@ const formRules: FormRules = {
     redirect_uris: [
         {
             validator: (_rule, value, callback) => {
+                if (!value || value.length === 0) {
+                    callback()
+                    return
+                }
                 const validUris = value.filter((uri: string) => uri.trim() !== '')
                 if (validUris.length === 0) {
-                    callback(new Error('至少需要一个有效的回调地址'))
+                    callback()
                 } else {
                     const urlPattern = /^https?:\/\/.+/
                     const invalidUris = validUris.filter((uri: string) => !urlPattern.test(uri))
@@ -144,13 +148,13 @@ const formRules: FormRules = {
         }
     ],
     grant_types: [
-        { type: 'array', required: true, message: '请至少选择一种授权类型', trigger: 'change' }
+        { type: 'array', required: props.mode === 'create', message: '请至少选择一种授权类型', trigger: 'change' }
     ],
     scopes: [
-        { type: 'array', required: true, message: '请至少选择一个权限范围', trigger: 'change' }
+        { type: 'array', required: props.mode === 'create', message: '请至少选择一个权限范围', trigger: 'change' }
     ],
     status: [
-        { required: true, message: '请选择状态', trigger: 'change' }
+        { required: props.mode === 'create', message: '请选择状态', trigger: 'change' }
     ]
 }
 
@@ -192,10 +196,38 @@ const validate = async (): Promise<boolean> => {
 
 // 获取表单数据
 const getFormData = () => {
-    return {
-        ...formData,
-        redirect_uris: formData.redirect_uris.filter(uri => uri.trim() !== '')
+    const data: any = {
+        name: formData.name
     }
+    
+    if (props.mode === 'create') {
+        data.client_secret = formData.client_secret
+    }
+    
+    // 只包含已修改的字段
+    if (formData.description !== undefined && formData.description !== '') {
+        data.description = formData.description
+    }
+    if (formData.logo !== undefined && formData.logo !== '') {
+        data.logo = formData.logo
+    }
+    if (formData.redirect_uris && formData.redirect_uris.length > 0) {
+        const validUris = formData.redirect_uris.filter(uri => uri.trim() !== '')
+        if (validUris.length > 0) {
+            data.redirect_uris = validUris
+        }
+    }
+    if (formData.grant_types && formData.grant_types.length > 0) {
+        data.grant_types = formData.grant_types
+    }
+    if (formData.scopes && formData.scopes.length > 0) {
+        data.scopes = formData.scopes
+    }
+    if (formData.status !== undefined) {
+        data.status = formData.status
+    }
+    
+    return data
 }
 
 // 重置表单
@@ -203,12 +235,36 @@ const resetFields = () => {
     formRef.value?.resetFields()
 }
 
+// 加载初始数据
+const loadInitialData = () => {
+    if (props.initialData) {
+        formData.name = props.initialData.name || ''
+        formData.description = props.initialData.description || ''
+        formData.logo = props.initialData.logo || ''
+        formData.redirect_uris = props.initialData.redirect_uris && props.initialData.redirect_uris.length > 0 
+            ? [...props.initialData.redirect_uris] 
+            : ['']
+        formData.grant_types = props.initialData.grant_types ? [...props.initialData.grant_types] : []
+        formData.scopes = props.initialData.scopes ? [...props.initialData.scopes] : []
+        formData.status = props.initialData.status ?? 1
+    }
+}
+
 // 初始化
 onMounted(() => {
     if (props.mode === 'create') {
         initClientSecret()
+    } else if (props.mode === 'edit' && props.initialData) {
+        loadInitialData()
     }
 })
+
+// 监听 initialData 变化
+watch(() => props.initialData, (newData) => {
+    if (newData && props.mode === 'edit') {
+        loadInitialData()
+    }
+}, { deep: true })
 
 // 暴露方法给父组件
 defineExpose({

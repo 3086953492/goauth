@@ -38,6 +38,13 @@
                             </el-tag>
                         </template>
                     </el-table-column>
+                    <el-table-column label="操作" width="120" fixed="right">
+                        <template #default="{ row }">
+                            <el-button type="primary" link @click="handleEditClient(row.id)">
+                                编辑
+                            </el-button>
+                        </template>
+                    </el-table-column>
                 </el-table>
 
                 <div class="pagination-wrapper">
@@ -50,14 +57,28 @@
         </div>
 
         <!-- 新建客户端弹窗 -->
-        <el-dialog v-model="dialogVisible" title="新建 OAuth 客户端" width="700px" :close-on-click-modal="false"
-            @close="handleDialogClose">
-            <OAuthClientForm ref="formRef" mode="create" />
+        <el-dialog v-model="createDialogVisible" title="新建 OAuth 客户端" width="700px" :close-on-click-modal="false"
+            @close="handleCreateDialogClose">
+            <OAuthClientForm ref="createFormRef" mode="create" />
             <template #footer>
                 <div class="dialog-footer">
                     <el-button @click="handleCancelCreate">取消</el-button>
                     <el-button type="primary" :loading="submitLoading" @click="handleSubmitCreate">
                         确认创建
+                    </el-button>
+                </div>
+            </template>
+        </el-dialog>
+
+        <!-- 编辑客户端弹窗 -->
+        <el-dialog v-model="editDialogVisible" title="编辑 OAuth 客户端" width="700px" :close-on-click-modal="false"
+            @close="handleEditDialogClose">
+            <OAuthClientForm ref="editFormRef" mode="edit" :initial-data="currentClient" />
+            <template #footer>
+                <div class="dialog-footer">
+                    <el-button @click="handleCancelEdit">取消</el-button>
+                    <el-button type="primary" :loading="submitLoading" @click="handleSubmitEdit">
+                        确认更新
                     </el-button>
                 </div>
             </template>
@@ -71,8 +92,9 @@ import { Plus, Cpu } from '@element-plus/icons-vue'
 import Navbar from '@/components/Navbar.vue'
 import OAuthClientForm from '@/components/oauth/OAuthClientForm.vue'
 import { useOAuthClientList } from '@/composables/useOAuthClientList'
-import { createOAuthClient } from '@/api/oauth_client'
+import { createOAuthClient, getOAuthClient, updateOAuthClient } from '@/api/oauth_client'
 import { ElMessage } from 'element-plus'
+import type { OAuthClientDetailResponse } from '@/types/oauth_client'
 
 // 使用 composable 管理业务逻辑
 const {
@@ -87,34 +109,37 @@ const {
 } = useOAuthClientList()
 
 // 弹窗状态
-const dialogVisible = ref(false)
+const createDialogVisible = ref(false)
+const editDialogVisible = ref(false)
 const submitLoading = ref(false)
-const formRef = ref<InstanceType<typeof OAuthClientForm>>()
+const createFormRef = ref<InstanceType<typeof OAuthClientForm>>()
+const editFormRef = ref<InstanceType<typeof OAuthClientForm>>()
+const currentClient = ref<OAuthClientDetailResponse>()
 
 // 打开新建客户端弹窗
 const handleCreateClient = () => {
-    dialogVisible.value = true
+    createDialogVisible.value = true
 }
 
 // 提交创建
 const handleSubmitCreate = async () => {
-    if (!formRef.value) return
+    if (!createFormRef.value) return
 
     // 验证表单
-    const isValid = await formRef.value.validate()
+    const isValid = await createFormRef.value.validate()
     if (!isValid) {
         return
     }
 
     // 获取表单数据并提交
-    const formData = formRef.value.getFormData()
+    const formData = createFormRef.value.getFormData()
     submitLoading.value = true
 
     try {
         const response = await createOAuthClient(formData)
         if (response.success) {
             ElMessage.success('创建 OAuth 客户端成功')
-            dialogVisible.value = false
+            createDialogVisible.value = false
             // 刷新列表
             await fetchClientList()
         } else {
@@ -129,12 +154,68 @@ const handleSubmitCreate = async () => {
 
 // 取消创建
 const handleCancelCreate = () => {
-    dialogVisible.value = false
+    createDialogVisible.value = false
 }
 
-// 弹窗关闭时重置表单
-const handleDialogClose = () => {
-    formRef.value?.resetFields()
+// 创建弹窗关闭时重置表单
+const handleCreateDialogClose = () => {
+    createFormRef.value?.resetFields()
+}
+
+// 打开编辑客户端弹窗
+const handleEditClient = async (id: number) => {
+    try {
+        const response = await getOAuthClient(id)
+        if (response.success && response.data) {
+            currentClient.value = response.data
+            editDialogVisible.value = true
+        } else {
+            ElMessage.error(response.message || '获取 OAuth 客户端详情失败')
+        }
+    } catch (error: any) {
+        ElMessage.error(error.message || '获取 OAuth 客户端详情失败')
+    }
+}
+
+// 提交编辑
+const handleSubmitEdit = async () => {
+    if (!editFormRef.value || !currentClient.value) return
+
+    // 验证表单
+    const isValid = await editFormRef.value.validate()
+    if (!isValid) {
+        return
+    }
+
+    // 获取表单数据并提交
+    const formData = editFormRef.value.getFormData()
+    submitLoading.value = true
+
+    try {
+        const response = await updateOAuthClient(currentClient.value.id, formData)
+        if (response.success) {
+            ElMessage.success('更新 OAuth 客户端成功')
+            editDialogVisible.value = false
+            // 刷新列表
+            await fetchClientList()
+        } else {
+            ElMessage.error(response.message || '更新 OAuth 客户端失败')
+        }
+    } catch (error: any) {
+        ElMessage.error(error.message || '更新 OAuth 客户端失败')
+    } finally {
+        submitLoading.value = false
+    }
+}
+
+// 取消编辑
+const handleCancelEdit = () => {
+    editDialogVisible.value = false
+}
+
+// 编辑弹窗关闭时重置数据
+const handleEditDialogClose = () => {
+    currentClient.value = undefined
 }
 
 onMounted(() => {

@@ -28,5 +28,28 @@ export interface CreateOAuthClientRequest {
   status: number
 }
 
+export interface UpdateOAuthClientRequest {
+  name: string
+  description?: string
+  logo?: string
+  redirect_uris?: string[]
+  grant_types?: string[]
+  scopes?: string[]
+  status?: number
+}
+
+export interface OAuthClientDetailResponse {
+  id: number
+  name: string
+  description: string
+  logo: string
+  redirect_uris: string[]
+  grant_types: string[]
+  scopes: string[]
+  status: number
+  created_at: string
+  updated_at: string
+}
+
 export type OAuthClientFormMode = 'create' | 'edit' | 'view'
 
