@@ -50,3 +50,13 @@ export const updateOAuthClient = (id: number, data: UpdateOAuthClientRequest): P
   })
 }
 
+/**
+ * 删除 OAuth 客户端
+ */
+export const deleteOAuthClient = (id: number): Promise<ApiResponse<null>> => {
+  return request({
+    url: `/api/v1/oauth_clients/${id}`,
+    method: 'delete'
+  })
+}
+

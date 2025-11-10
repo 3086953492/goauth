@@ -38,10 +38,13 @@
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column label="操作" width="120">
+                    <el-table-column label="操作" width="180">
                         <template #default="{ row }">
                             <el-button type="primary" link @click="handleEditClient(row.id)">
                                 编辑
+                            </el-button>
+                            <el-button type="danger" link @click="handleDeleteClient(row.id)">
+                                删除
                             </el-button>
                         </template>
                     </el-table-column>
@@ -92,8 +95,8 @@ import { Plus, Cpu } from '@element-plus/icons-vue'
 import Navbar from '@/components/Navbar.vue'
 import OAuthClientForm from '@/components/oauth/OAuthClientForm.vue'
 import { useOAuthClientList } from '@/composables/useOAuthClientList'
-import { createOAuthClient, getOAuthClient, updateOAuthClient } from '@/api/oauth_client'
-import { ElMessage } from 'element-plus'
+import { createOAuthClient, getOAuthClient, updateOAuthClient, deleteOAuthClient } from '@/api/oauth_client'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { OAuthClientDetailResponse } from '@/types/oauth_client'
 
 // 使用 composable 管理业务逻辑
@@ -216,6 +219,37 @@ const handleCancelEdit = () => {
 // 编辑弹窗关闭时重置数据
 const handleEditDialogClose = () => {
     currentClient.value = undefined
+}
+
+// 删除客户端
+const handleDeleteClient = async (id: number) => {
+    try {
+        await ElMessageBox.confirm(
+            '确定要删除该 OAuth 客户端吗？删除后将无法恢复。',
+            '删除确认',
+            {
+                confirmButtonText: '确定删除',
+                cancelButtonText: '取消',
+                type: 'warning',
+                confirmButtonClass: 'el-button--danger'
+            }
+        )
+
+        // 用户确认删除
+        const response = await deleteOAuthClient(id)
+        if (response.success) {
+            ElMessage.success('删除 OAuth 客户端成功')
+            // 刷新列表
+            await fetchClientList()
+        } else {
+            ElMessage.error(response.message || '删除 OAuth 客户端失败')
+        }
+    } catch (error: any) {
+        // 用户取消操作或删除失败
+        if (error !== 'cancel' && error !== 'close') {
+            ElMessage.error(error.message || '删除 OAuth 客户端失败')
+        }
+    }
 }
 
 onMounted(() => {
