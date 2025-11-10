@@ -72,3 +72,31 @@ func (s *OAuthClientService) ListOAuthClients(ctx context.Context, page, pageSiz
 	}
 	return oauthClientsPagination, nil
 }
+
+func (s *OAuthClientService) GetOAuthClient(ctx context.Context, conds map[string]any) (*dto.OAuthClientDetailResponse, error) {
+	oauthClient, err := cache.New[dto.OAuthClientDetailResponse]().Key(fmt.Sprintf("oauth_client:%v", conds)).TTL(10*time.Minute).GetOrSet(ctx, func() (*dto.OAuthClientDetailResponse, error) {
+		oauthClient, err := s.oauthClientRepository.Get(ctx, conds)
+		if err != nil {
+			if errors.IsNotFoundError(err) {
+				return nil, err
+			}
+			return nil, errors.Database().Msg("获取OAuth客户端失败").Err(err).Field("conds", conds).Log()
+		}
+		return &dto.OAuthClientDetailResponse{
+			ID:           oauthClient.ID,
+			Name:         oauthClient.Name,
+			Description:  oauthClient.Description,
+			Logo:         oauthClient.Logo,
+			RedirectURIs: oauthClient.RedirectURIs,
+			GrantTypes:   oauthClient.GrantTypes,
+			Scopes:       oauthClient.Scopes,
+			Status:       oauthClient.Status,
+			CreatedAt:    oauthClient.CreatedAt,
+			UpdatedAt:    oauthClient.UpdatedAt,
+		}, nil
+	})
+	if err != nil {
+		return nil, errors.NotFound().Msg("未找到OAuth客户端").Err(err).Build()
+	}
+	return oauthClient, nil
+}

@@ -63,3 +63,18 @@ func (ctrl *OAuthClientController) ListOAuthClientsHandler(ctx *gin.Context) {
 	}
 	response.Success(ctx, "获取OAuth客户端列表成功", oauthClientsPagination)
 }
+
+func (ctrl *OAuthClientController) GetOAuthClientHandler(ctx *gin.Context) {
+	id := ctx.Param("id")
+	idUint, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		response.Error(ctx, errors.InvalidInput().Msg("ID格式错误").Err(err).Build())
+		return
+	}
+	oauthClient, err := ctrl.oauthClientService.GetOAuthClient(ctx.Request.Context(), map[string]any{"id": idUint})
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	response.Success(ctx, "获取OAuth客户端成功", oauthClient)
+}

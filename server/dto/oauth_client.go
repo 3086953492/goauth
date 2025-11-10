@@ -1,6 +1,10 @@
 package dto
 
-import "gorm.io/datatypes"
+import (
+	"time"
+
+	"gorm.io/datatypes"
+)
 
 type CreateOAuthClientRequest struct {
 	ClientSecret string         `json:"client_secret" validate:"required"`
@@ -18,4 +22,17 @@ type OAuthClientListResponse struct {
 	Name   string `json:"name"`
 	Logo   string `json:"logo"`
 	Status int    `json:"status"`
+}
+
+type OAuthClientDetailResponse struct {
+	ID           uint           `json:"id"`
+	Name         string         `json:"name"`
+	Description  string         `json:"description"`
+	Logo         string         `json:"logo"`
+	RedirectURIs datatypes.JSON `json:"redirect_uris"`
+	GrantTypes   datatypes.JSON `json:"grant_types"`
+	Scopes       datatypes.JSON `json:"scopes"`
+	Status       int            `json:"status"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
 }
