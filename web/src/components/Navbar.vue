@@ -10,7 +10,7 @@
       <!-- 右侧用户区域 -->
       <div class="navbar-user">
         <div class="user-info">
-          <el-avatar :size="40" :src="user?.avatar || defaultAvatar" class="user-avatar" />
+          <el-avatar :size="40" :src="user?.avatar" :icon="Avatar" class="user-avatar" />
           <span class="user-nickname">{{ user?.nickname || '用户' }}</span>
         </div>
 
@@ -38,17 +38,15 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-import { Edit, SwitchButton, User, Key } from '@element-plus/icons-vue'
+import { Edit, SwitchButton, User, Key, Avatar } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAuth } from '@/composables/useAuth'
-import { DEFAULT_AVATAR } from '@/constants'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const { handleLogout: logout } = useAuth()
 
 const user = computed(() => authStore.user)
-const defaultAvatar = DEFAULT_AVATAR
 
 const goToProfile = () => {
   router.push('/profile')

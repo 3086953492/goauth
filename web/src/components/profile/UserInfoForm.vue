@@ -2,7 +2,7 @@
   <div class="user-info-form">
     <!-- 头像预览 -->
     <div class="avatar-preview">
-      <el-avatar :size="100" :src="modelValue.avatar || defaultAvatar" />
+      <el-avatar :size="100" :src="modelValue.avatar" :icon="Avatar" />
     </div>
 
     <!-- 用户信息表单 -->
@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 import { User, Avatar, Picture } from '@element-plus/icons-vue'
-import { DEFAULT_AVATAR, USER_ROLES, USER_STATUS } from '@/constants'
+import { USER_ROLES, USER_STATUS } from '@/constants'
 
 interface UserInfo {
   nickname: string
@@ -67,7 +67,6 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: UserInfo): void
 }>()
 
-const defaultAvatar = DEFAULT_AVATAR
 const userRoleOptions = USER_ROLES
 const userStatusOptions = USER_STATUS
 

@@ -4,7 +4,7 @@
     <div class="home-container">
       <el-card class="user-card">
       <div class="user-info">
-        <el-avatar :size="80" :src="user?.avatar || defaultAvatar" class="avatar" />
+        <el-avatar :size="80" :src="user?.avatar" :icon="Avatar" class="avatar" />
         
         <div class="info-content">
           <h2 class="nickname">{{ user?.nickname || '未知用户' }}</h2>
@@ -32,12 +32,11 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import Navbar from '@/components/Navbar.vue'
-import { DEFAULT_AVATAR } from '@/constants'
+import { Avatar } from '@element-plus/icons-vue'
 
 const authStore = useAuthStore()
 
 const user = computed(() => authStore.user)
-const defaultAvatar = DEFAULT_AVATAR
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return '未知'

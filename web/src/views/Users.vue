@@ -27,7 +27,7 @@
                     <el-table-column prop="id" label="ID" width="80" />
                     <el-table-column label="头像" width="100">
                         <template #default="{ row }">
-                            <el-avatar :size="50" :src="row.avatar || defaultAvatar" />
+                            <el-avatar :size="50" :src="row.avatar" :icon="Avatar" />
                         </template>
                     </el-table-column>
                     <el-table-column prop="nickname" label="昵称" min-width="150" />
@@ -75,9 +75,8 @@ import { useRouter } from 'vue-router'
 import Navbar from '@/components/Navbar.vue'
 import { useUserList } from '@/composables/useUserList'
 import { useAuthStore } from '@/stores/auth'
-import { DEFAULT_AVATAR } from '@/constants'
+import { Avatar } from '@element-plus/icons-vue'
 
-const defaultAvatar = DEFAULT_AVATAR
 const router = useRouter()
 const authStore = useAuthStore()
 
