@@ -38,7 +38,7 @@
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column label="操作" width="120" fixed="right">
+                    <el-table-column label="操作" width="120">
                         <template #default="{ row }">
                             <el-button type="primary" link @click="handleEditClient(row.id)">
                                 编辑
