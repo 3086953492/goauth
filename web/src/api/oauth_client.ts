@@ -1,5 +1,5 @@
 import request from './request'
-import type { OAuthClientListResponse } from '@/types/oauth_client'
+import type { OAuthClientListResponse, CreateOAuthClientRequest } from '@/types/oauth_client'
 import type { ApiResponse, PaginationResponse } from '@/types/common'
 
 /**
@@ -15,6 +15,17 @@ export const listOAuthClients = (params?: {
     url: '/api/v1/oauth_clients',
     method: 'get',
     params
+  })
+}
+
+/**
+ * 创建 OAuth 客户端
+ */
+export const createOAuthClient = (data: CreateOAuthClientRequest): Promise<ApiResponse<null>> => {
+  return request({
+    url: '/api/v1/oauth_clients',
+    method: 'post',
+    data
   })
 }
 

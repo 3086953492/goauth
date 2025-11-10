@@ -6,14 +6,19 @@
                 <template #header>
                     <div class="card-header">
                         <h2 class="page-title">OAuth 客户端管理</h2>
-                        <div class="filter-bar">
-                            <el-input v-model="filters.name" placeholder="搜索客户端名称" clearable style="width: 200px"
-                                @input="handleFilterChange" />
-                            <el-select v-model="filters.status" placeholder="状态筛选" clearable style="width: 140px"
-                                @change="handleFilterChange">
-                                <el-option label="正常" :value="1" />
-                                <el-option label="禁用" :value="0" />
-                            </el-select>
+                        <div class="header-actions">
+                            <div class="filter-bar">
+                                <el-input v-model="filters.name" placeholder="搜索客户端名称" clearable style="width: 200px"
+                                    @input="handleFilterChange" />
+                                <el-select v-model="filters.status" placeholder="状态筛选" clearable style="width: 140px"
+                                    @change="handleFilterChange">
+                                    <el-option label="正常" :value="1" />
+                                    <el-option label="禁用" :value="0" />
+                                </el-select>
+                            </div>
+                            <el-button type="primary" :icon="Plus" @click="handleCreateClient">
+                                新建客户端
+                            </el-button>
                         </div>
                     </div>
                 </template>
@@ -43,13 +48,31 @@
                 </div>
             </el-card>
         </div>
+
+        <!-- 新建客户端弹窗 -->
+        <el-dialog v-model="dialogVisible" title="新建 OAuth 客户端" width="700px" :close-on-click-modal="false"
+            @close="handleDialogClose">
+            <OAuthClientForm ref="formRef" mode="create" />
+            <template #footer>
+                <div class="dialog-footer">
+                    <el-button @click="handleCancelCreate">取消</el-button>
+                    <el-button type="primary" :loading="submitLoading" @click="handleSubmitCreate">
+                        确认创建
+                    </el-button>
+                </div>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
+import { Plus } from '@element-plus/icons-vue'
 import Navbar from '@/components/Navbar.vue'
+import OAuthClientForm from '@/components/oauth/OAuthClientForm.vue'
 import { useOAuthClientList } from '@/composables/useOAuthClientList'
+import { createOAuthClient } from '@/api/oauth_client'
+import { ElMessage } from 'element-plus'
 
 const defaultLogo = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 
@@ -64,6 +87,57 @@ const {
     handlePageChange,
     handleSizeChange
 } = useOAuthClientList()
+
+// 弹窗状态
+const dialogVisible = ref(false)
+const submitLoading = ref(false)
+const formRef = ref<InstanceType<typeof OAuthClientForm>>()
+
+// 打开新建客户端弹窗
+const handleCreateClient = () => {
+    dialogVisible.value = true
+}
+
+// 提交创建
+const handleSubmitCreate = async () => {
+    if (!formRef.value) return
+
+    // 验证表单
+    const isValid = await formRef.value.validate()
+    if (!isValid) {
+        return
+    }
+
+    // 获取表单数据并提交
+    const formData = formRef.value.getFormData()
+    submitLoading.value = true
+
+    try {
+        const response = await createOAuthClient(formData)
+        if (response.success) {
+            ElMessage.success('创建 OAuth 客户端成功')
+            dialogVisible.value = false
+            // 刷新列表
+            await fetchClientList()
+        } else {
+            ElMessage.error(response.message || '创建 OAuth 客户端失败')
+        }
+    } catch (error: any) {
+        ElMessage.error(error.message || '创建 OAuth 客户端失败')
+    } finally {
+        submitLoading.value = false
+    }
+}
+
+// 取消创建
+const handleCancelCreate = () => {
+    dialogVisible.value = false
+}
+
+// 弹窗关闭时重置表单
+const handleDialogClose = () => {
+    formRef.value?.resetFields()
+}
 
 onMounted(() => {
     fetchClientList()
@@ -119,8 +193,20 @@ onMounted(() => {
     color: #303133;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
 .filter-bar {
     display: flex;
+    gap: 12px;
+}
+
+.dialog-footer {
+    display: flex;
+    justify-content: flex-end;
     gap: 12px;
 }
 
@@ -162,6 +248,11 @@ onMounted(() => {
     .card-header {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
     }
 
     .filter-bar {

@@ -17,3 +17,16 @@ export interface OAuthClientListResponse {
   status: number
 }
 
+export interface CreateOAuthClientRequest {
+  name: string
+  client_secret: string
+  description?: string
+  logo?: string
+  redirect_uris: string[]
+  grant_types: string[]
+  scopes: string[]
+  status: number
+}
+
+export type OAuthClientFormMode = 'create' | 'edit' | 'view'
+
