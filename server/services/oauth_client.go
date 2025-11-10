@@ -38,6 +38,9 @@ func (s *OAuthClientService) CreateOAuthClient(ctx context.Context, req *dto.Cre
 		return errors.Database().Msg("创建OAuth客户端失败").Err(err).Field("client", client).Log()
 	}
 	logger.Info("创建OAuth客户端成功", zap.Any("client", client))
+	if err := cache.DeleteByPrefix(ctx, "list_oauth_clients:"); err != nil {
+		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
+	}
 	return nil
 }
 
