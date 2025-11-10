@@ -2,7 +2,10 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	"github.com/3086953492/gokit/cache"
 	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/logger"
 	"go.uber.org/zap"
@@ -36,4 +39,34 @@ func (s *OAuthClientService) CreateOAuthClient(ctx context.Context, req *dto.Cre
 	}
 	logger.Info("创建OAuth客户端成功", zap.Any("client", client))
 	return nil
+}
+
+func (s *OAuthClientService) ListOAuthClients(ctx context.Context, page, pageSize int, conds map[string]any) (*dto.PaginationResponse[dto.OAuthClientListResponse], error) {
+	oauthClientsPagination, err := cache.New[dto.PaginationResponse[dto.OAuthClientListResponse]]().Key(fmt.Sprintf("list_oauth_clients:%v", conds)).TTL(10*time.Minute).GetOrSet(ctx, func() (*dto.PaginationResponse[dto.OAuthClientListResponse], error) {
+		oauthClients, total, err := s.oauthClientRepository.List(ctx, page, pageSize, conds)
+		if err != nil {
+			return nil, errors.Database().Msg("获取OAuth客户端列表失败").Err(err).Field("conds", conds).Log()
+		}
+		oauthClientsResponse := make([]dto.OAuthClientListResponse, len(oauthClients))
+		for i, oauthClient := range oauthClients {
+			oauthClientsResponse[i] = dto.OAuthClientListResponse{
+				ID:       oauthClient.ID,
+				Name:     oauthClient.Name,
+				Logo:     oauthClient.Logo,
+				Status:   oauthClient.Status,
+			}
+		}
+		return &dto.PaginationResponse[dto.OAuthClientListResponse]{
+			Items:      oauthClientsResponse,
+			Total:      total,
+			Page:       page,
+			PageSize:   pageSize,
+			TotalPages: int(total / int64(pageSize)),
+		}, nil
+	})
+	if err != nil {
+		return nil, errors.NotFound().Msg("未找到OAuth客户端列表").Err(err).Build()
+	}
+	fmt.Println("oauthClientsPagination", oauthClientsPagination)
+	return oauthClientsPagination, nil
 }

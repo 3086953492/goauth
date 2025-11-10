@@ -11,4 +11,5 @@ func LoadOAuthClientRoutes(router *gin.Engine, ctrl *controllers.OAuthClientCont
 	m := middleware.NewManager()
 	oauthClientRouter := router.Group("/api/v1/oauth_clients")
 	oauthClientRouter.POST("", m.Auth(), m.Role("admin"), ctrl.CreateOAuthClientHandler)
+	oauthClientRouter.GET("", m.Auth(), m.Role("admin"), ctrl.ListOAuthClientsHandler)
 }
