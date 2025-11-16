@@ -10,9 +10,10 @@ import (
 	"github.com/3086953492/gokit/config"
 	"github.com/3086953492/gokit/database"
 	"github.com/3086953492/gokit/errors"
+	"github.com/3086953492/gokit/jwt"
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
-	"github.com/3086953492/gokit/jwt"
+	"github.com/3086953492/gokit/response"
 	"gorm.io/driver/mysql"
 
 	"goauth/initialize"
@@ -65,6 +66,11 @@ func main() {
 		errors.Internal().Msg("初始化 JWT 失败").Err(err).Log()
 		return
 	}
+
+	response.Init(
+		// 根据运行环境决定是否显示错误详情
+		response.WithShowErrorDetail(cfg.Server.Mode == "debug"),
+	)
 
 	container := initialize.NewContainer()
 
