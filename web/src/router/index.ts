@@ -60,6 +60,15 @@ const routes: Array<RouteRecordRaw> = [
       title: 'OAuth 客户端管理',
       requiresAuth: true
     }
+  },
+  {
+    path: '/oauth/authorize',
+    name: 'OAuthAuthorize',
+    component: () => import('@/views/OAuthAuthorize.vue'),
+    meta: {
+      title: 'OAuth 授权',
+      requiresAuth: false  // 页面内部处理登录检查
+    }
   }
 ]
 

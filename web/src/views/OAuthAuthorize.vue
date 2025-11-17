@@ -1,0 +1,450 @@
+<template>
+  <div class="authorize-container">
+    <el-card class="authorize-card">
+      <template #header>
+        <div class="card-header">
+          <h2>授权确认</h2>
+          <p>第三方应用请求访问您的账号</p>
+        </div>
+      </template>
+
+      <!-- 无效请求提示 -->
+      <div v-if="!isValidRequest" class="error-message">
+        <el-alert title="无效的授权请求" type="error" :closable="false" show-icon>
+          <template #default>
+            <p>授权请求参数不完整，请联系应用提供方。</p>
+          </template>
+        </el-alert>
+      </div>
+
+      <!-- 正常授权信息展示 -->
+      <div v-else class="authorize-content">
+        <!-- 用户信息 -->
+        <div class="info-section">
+          <div class="section-title">当前登录用户</div>
+          <div class="user-info">
+            <el-avatar :size="50" :src="currentUser?.avatar">
+              {{ currentUser?.nickname?.[0] || currentUser?.username?.[0] }}
+            </el-avatar>
+            <div class="user-details">
+              <div class="user-name">{{ currentUser?.nickname || currentUser?.username }}</div>
+              <div class="user-username">@{{ currentUser?.username }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 客户端信息 -->
+        <div class="info-section">
+          <div class="section-title">授权给</div>
+          <div class="client-info">
+            <div class="client-id">
+              <el-icon>
+                <Key />
+              </el-icon>
+              <span>客户端 ID: {{ oauthParams.client_id }}</span>
+            </div>
+            <div class="redirect-uri">
+              <el-icon>
+                <Link />
+              </el-icon>
+              <span>回调地址: {{ oauthParams.redirect_uri }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 权限范围 -->
+        <div v-if="oauthParams.scope" class="info-section">
+          <div class="section-title">请求的权限</div>
+          <div class="scope-list">
+            <el-tag v-for="scope in scopeList" :key="scope" type="info" size="large">
+              {{ scope }}
+            </el-tag>
+          </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="action-buttons">
+          <el-button type="primary" size="large" :loading="authorizing" @click="handleAuthorize">
+            {{ authorizing ? '授权中...' : '确认授权' }}
+          </el-button>
+          <el-button size="large" @click="handleCancel">
+            取消
+          </el-button>
+        </div>
+
+        <!-- 提示信息 -->
+        <div class="warning-text">
+          <el-icon>
+            <Warning />
+          </el-icon>
+          <span>授权后，该应用将能够访问您的账号信息</span>
+        </div>
+      </div>
+    </el-card>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { Key, Link, Warning } from '@element-plus/icons-vue'
+import { useAuthStore } from '@/stores/auth'
+import { usePermission } from '@/composables/usePermission'
+import request from '@/api/request'
+
+const route = useRoute()
+const authStore = useAuthStore()
+const { checkLogin } = usePermission()
+
+// OAuth 参数
+const oauthParams = ref({
+  client_id: '',
+  redirect_uri: '',
+  response_type: '',
+  scope: '',
+  state: ''
+})
+
+// 授权中状态
+const authorizing = ref(false)
+
+// 当前用户
+const currentUser = computed(() => authStore.user)
+
+// 请求是否有效
+const isValidRequest = computed(() => {
+  return !!(oauthParams.value.client_id && oauthParams.value.redirect_uri)
+})
+
+// 权限列表
+const scopeList = computed(() => {
+  if (!oauthParams.value.scope) return []
+  return oauthParams.value.scope.split(' ').filter(s => s.trim())
+})
+
+// 初始化
+onMounted(() => {
+  // 读取 OAuth 参数（先读取参数，以便在重定向时保留）
+  oauthParams.value = {
+    client_id: (route.query.client_id as string) || '',
+    redirect_uri: (route.query.redirect_uri as string) || '',
+    response_type: (route.query.response_type as string) || 'code',
+    scope: (route.query.scope as string) || '',
+    state: (route.query.state as string) || ''
+  }
+
+  // 检查登录状态（如果未登录，会重定向到登录页并保留完整的查询参数）
+  if (!checkLogin()) {
+    return
+  }
+
+  // 参数校验
+  if (!isValidRequest.value) {
+    ElMessage.error('授权请求参数不完整')
+  }
+})
+
+// OAuth 错误映射函数
+const mapToOAuthError = (error: any): { error: string; description: string } => {
+  // 默认错误
+  let oauthError = 'server_error'
+  let errorDescription = '服务器内部错误'
+
+  if (error.response) {
+    const status = error.response.status
+    const message = error.message || error.response.data?.message || ''
+
+    // 根据 HTTP 状态码和错误消息映射到 OAuth 标准错误
+    if (status === 400) {
+      // 参数错误
+      if (message.includes('client_id') || message.includes('redirect_uri') || message.includes('参数')) {
+        oauthError = 'invalid_request'
+        errorDescription = message || '请求参数无效'
+      } else if (message.includes('response_type')) {
+        oauthError = 'unsupported_response_type'
+        errorDescription = message || '不支持的响应类型'
+      } else if (message.includes('scope') || message.includes('权限')) {
+        oauthError = 'invalid_scope'
+        errorDescription = message || '请求的权限范围无效'
+      } else {
+        oauthError = 'invalid_request'
+        errorDescription = message || '请求参数无效'
+      }
+    } else if (status === 401) {
+      oauthError = 'access_denied'
+      errorDescription = '用户未授权或授权已过期'
+    } else if (status === 403) {
+      oauthError = 'access_denied'
+      errorDescription = message || '权限不足'
+    } else if (status === 404) {
+      oauthError = 'unauthorized_client'
+      errorDescription = '客户端不存在或未授权'
+    } else if (status === 503) {
+      oauthError = 'temporarily_unavailable'
+      errorDescription = '服务暂时不可用，请稍后重试'
+    } else if (status >= 500) {
+      oauthError = 'server_error'
+      errorDescription = message || '服务器内部错误'
+    }
+  } else if (error.request) {
+    // 网络错误
+    oauthError = 'temporarily_unavailable'
+    errorDescription = '网络连接失败，请检查网络'
+  } else {
+    oauthError = 'invalid_request'
+    errorDescription = error.message || '请求配置错误'
+  }
+
+  return { error: oauthError, description: errorDescription }
+}
+
+// 重定向到回调地址（带错误信息）
+const redirectWithError = (error: string, errorDescription: string) => {
+  try {
+    const redirectUrl = new URL(oauthParams.value.redirect_uri)
+    redirectUrl.searchParams.append('error', error)
+    redirectUrl.searchParams.append('error_description', errorDescription)
+    
+    if (oauthParams.value.state) {
+      redirectUrl.searchParams.append('state', oauthParams.value.state)
+    }
+    
+    window.location.href = redirectUrl.toString()
+  } catch (e) {
+    console.error('构建重定向 URL 失败:', e)
+    ElMessage.error('授权失败：回调地址格式错误')
+    authorizing.value = false
+  }
+}
+
+// 确认授权
+const handleAuthorize = async () => {
+  if (!isValidRequest.value) {
+    ElMessage.error('授权请求参数不完整')
+    return
+  }
+
+  authorizing.value = true
+
+  try {
+    // 调用后端授权接口
+    const response = await request({
+      url: '/api/v1/oauth/authorization',
+      method: 'get',
+      params: {
+        client_id: oauthParams.value.client_id,
+        redirect_uri: oauthParams.value.redirect_uri,
+        response_type: oauthParams.value.response_type || 'code',
+        scope: oauthParams.value.scope || undefined,
+        state: oauthParams.value.state || undefined
+      }
+    })
+
+    // 后端返回 JSON 格式：{ success: true, data: { code, redirect_uri, state } }
+    if (response.data) {
+      const { code, redirect_uri, state } = response.data
+      
+      // 构建重定向 URL
+      const redirectUrl = new URL(redirect_uri)
+      redirectUrl.searchParams.append('code', code)
+      
+      if (state) {
+        redirectUrl.searchParams.append('state', state)
+      }
+      
+      // 重定向到回调地址
+      window.location.href = redirectUrl.toString()
+    } else {
+      // 响应格式异常
+      redirectWithError('server_error', '授权响应格式异常')
+    }
+  } catch (error: any) {
+    console.error('授权失败:', error)
+    
+    // 将错误映射为 OAuth 标准错误并重定向
+    const oauthError = mapToOAuthError(error)
+    redirectWithError(oauthError.error, oauthError.description)
+  }
+}
+
+// 取消授权
+const handleCancel = () => {
+  // 构造错误回调
+  if (oauthParams.value.redirect_uri) {
+    const redirectUrl = new URL(oauthParams.value.redirect_uri)
+    redirectUrl.searchParams.append('error', 'access_denied')
+    redirectUrl.searchParams.append('error_description', '用户拒绝授权')
+
+    if (oauthParams.value.state) {
+      redirectUrl.searchParams.append('state', oauthParams.value.state)
+    }
+
+    window.location.href = redirectUrl.toString()
+  } else {
+    ElMessage.info('已取消授权')
+  }
+}
+</script>
+
+<style scoped>
+.authorize-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f0f2f5;
+  background-image:
+    radial-gradient(circle at 25px 25px, rgba(0, 0, 0, 0.03) 2%, transparent 0%),
+    radial-gradient(circle at 75px 75px, rgba(0, 0, 0, 0.03) 2%, transparent 0%);
+  background-size: 100px 100px;
+  padding: 20px;
+}
+
+.authorize-card {
+  width: 100%;
+  max-width: 600px;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+}
+
+.card-header {
+  text-align: center;
+}
+
+.card-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.card-header p {
+  margin: 0;
+  font-size: 14px;
+  color: #909399;
+}
+
+.error-message {
+  padding: 20px 0;
+}
+
+.authorize-content {
+  padding: 10px 0;
+}
+
+.info-section {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.info-section:last-of-type {
+  border-bottom: none;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 16px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-details {
+  flex: 1;
+}
+
+.user-name {
+  font-size: 18px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.user-username {
+  font-size: 14px;
+  color: #909399;
+}
+
+.client-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.client-id,
+.redirect-uri {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #606266;
+  word-break: break-all;
+}
+
+.client-id .el-icon,
+.redirect-uri .el-icon {
+  font-size: 18px;
+  color: #409eff;
+  flex-shrink: 0;
+}
+
+.scope-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 30px;
+  margin-bottom: 20px;
+}
+
+.action-buttons .el-button {
+  min-width: 140px;
+  height: 44px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+}
+
+.warning-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #e6a23c;
+  padding: 12px;
+  background: #fdf6ec;
+  border-radius: 8px;
+}
+
+.warning-text .el-icon {
+  font-size: 16px;
+}
+
+:deep(.el-avatar) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+:deep(.el-tag) {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+</style>
