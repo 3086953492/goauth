@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 
@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth'
  */
 export function usePermission() {
   const router = useRouter()
+  const route = useRoute()
   const authStore = useAuthStore()
 
   // 是否是管理员
@@ -22,7 +23,10 @@ export function usePermission() {
   const checkLogin = (): boolean => {
     if (!authStore.user) {
       ElMessage.error('未登录，请先登录')
-      router.push('/login')
+      router.push({
+        path: '/login',
+        query: { redirect: route.fullPath }
+      })
       return false
     }
     return true

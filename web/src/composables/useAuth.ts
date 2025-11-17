@@ -20,7 +20,8 @@ export function useAuth() {
    */
   const handleLogin = async (
     formRef: FormInstance | undefined,
-    loginForm: { username: string; password: string }
+    loginForm: { username: string; password: string },
+    redirectPath?: string
   ) => {
     if (!formRef) return
 
@@ -36,8 +37,8 @@ export function useAuth() {
 
           ElMessage.success('登录成功')
 
-          // 跳转到主页
-          router.push('/home')
+          // 跳转到指定页面或默认主页
+          router.push(redirectPath || '/home')
         } catch (error: any) {
           console.error('登录失败:', error)
           // 错误消息已在响应拦截器中统一显示，此处不再重复提示

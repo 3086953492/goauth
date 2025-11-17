@@ -80,8 +80,11 @@ router.beforeEach((to, _from, next) => {
 
   // 需要认证的页面
   if (to.meta.requiresAuth && !isLoggedIn) {
-    // 未登录用户访问受保护页面，重定向到登录页
-    next('/login')
+    // 未登录用户访问受保护页面，重定向到登录页并携带返回地址
+    next({
+      path: '/login',
+      query: { redirect: to.fullPath }
+    })
     return
   }
 

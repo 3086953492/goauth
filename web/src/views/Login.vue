@@ -33,14 +33,18 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { reactive, ref, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useAuth } from '@/composables/useAuth'
 import { usernameRules, passwordRules } from '@/utils/validators'
 
 const router = useRouter()
+const route = useRoute()
 const loginFormRef = ref<FormInstance>()
+
+// 获取重定向地址
+const redirect = computed(() => route.query.redirect as string | undefined)
 
 const loginForm = reactive({
   username: '',
@@ -56,7 +60,7 @@ const rules = reactive<FormRules>({
 const { loading, handleLogin: login } = useAuth()
 
 const handleLogin = async () => {
-  await login(loginFormRef.value, loginForm)
+  await login(loginFormRef.value, loginForm, redirect.value)
 }
 
 const goToRegister = () => {
