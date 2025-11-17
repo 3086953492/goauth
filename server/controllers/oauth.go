@@ -6,6 +6,7 @@ import (
 	"github.com/3086953492/gokit/response"
 	"github.com/gin-gonic/gin"
 
+	"goauth/dto"
 	"goauth/services"
 )
 
@@ -18,8 +19,6 @@ func NewOAuthController(oauthAuthorizationCodeService *services.OAuthAuthorizati
 }
 
 func (ctrl *OAuthController) AuthorizationCodeHandler(ctx *gin.Context) {
-
-	params := make(map[string]string)
 
 	clientID := ctx.Query("client_id")
 	if clientID == "" {
@@ -41,21 +40,20 @@ func (ctrl *OAuthController) AuthorizationCodeHandler(ctx *gin.Context) {
 	}
 
 	state := ctx.Query("state")
-	if state != "" {
-		params["state"] = state
-	}
 
-	userID := ctx.GetUint("user_id")
+	userID := uint(ctx.GetUint64("user_id"))
 
 	expiresIn := config.GetGlobalConfig().JWT.Expire.Seconds()
 
 	authorizationCode, err := ctrl.oauthAuthorizationCodeService.GenerateAuthorizationCode(ctx.Request.Context(), userID, clientID, redirectURI, scope, expiresIn)
 	if err != nil {
-		response.RedirectTemporary(ctx, redirectURI, err, params)
+		response.Error(ctx, err)
 		return
 	}
 
-	params["code"] = authorizationCode
-
-	response.RedirectTemporary(ctx, redirectURI, nil, params)
+	response.Success(ctx, "授权成功", &dto.AuthorizationCodeResponse{
+		Code:        authorizationCode,
+		RedirectURI: redirectURI,
+		State:       state,
+	})
 }
