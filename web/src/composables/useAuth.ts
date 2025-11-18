@@ -31,9 +31,10 @@ export function useAuth() {
         try {
           const response = await loginApi(loginForm)
 
-          // 使用新的 loginSuccess 方法统一保存 token 和用户信息
+          // 后端返回 { user, access_token: { access_token, expires_in } }
+          // refresh_token 在 HttpOnly Cookie 中，前端不保存
           authStore.loginSuccess({
-            token: response.data.token,
+            access_token: response.data.access_token,
             user: response.data.user
           })
 

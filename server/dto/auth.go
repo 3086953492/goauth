@@ -6,12 +6,16 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	User  *UserResponse  `json:"user"`
-	Token *TokenResponse `json:"token"`
+	User        *UserResponse            `json:"user"`
+	AccessToken *AuthAccessTokenResponse `json:"access_token"`
 }
 
-type TokenResponse struct {
-	AccessToken  string `json:"access_token"`
+type AuthAccessTokenResponse struct {
+	AccessToken string `json:"access_token"`
+	ExpiresIn   int    `json:"expires_in"`
+}
+
+type AuthRefreshTokenResponse struct {
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int    `json:"expires_in"`
 }

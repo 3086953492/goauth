@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User } from '@/types/user'
-import type { TokenResponse } from '@/types/auth'
+import type { AccessTokenResponse } from '@/types/auth'
 
 // sessionStorage 键名常量
 const AUTH_STORAGE_KEY = 'auth_state'
@@ -76,17 +76,17 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * 登录成功后调用，保存 token 和用户信息
-   * @param payload 包含 token 和 user 的登录响应数据
+   * @param payload 包含 access_token 和 user 的登录响应数据
    */
-  const loginSuccess = (payload: { token: TokenResponse; user: User }) => {
-    const { token, user: userData } = payload
+  const loginSuccess = (payload: { access_token: AccessTokenResponse; user: User }) => {
+    const { access_token, user: userData } = payload
     
     // 计算过期时间戳（提前 skew 秒视为过期）
-    const calculatedExpiresAt = Date.now() + token.expires_in * 1000 - TOKEN_EXPIRY_SKEW
+    const calculatedExpiresAt = Date.now() + access_token.expires_in * 1000 - TOKEN_EXPIRY_SKEW
     
     // 更新状态
-    accessToken.value = token.access_token
-    tokenType.value = token.token_type || 'Bearer'
+    accessToken.value = access_token.access_token
+    tokenType.value = 'Bearer'
     expiresAt.value = calculatedExpiresAt
     user.value = userData
     
@@ -97,6 +97,42 @@ export const useAuthStore = defineStore('auth', () => {
       expiresAt: expiresAt.value,
       user: user.value
     })
+  }
+
+  /**
+   * 设置访问令牌（用于刷新 token 后更新）
+   * @param token 访问令牌字符串
+   * @param expiresIn 过期秒数
+   */
+  const setAccessToken = (token: string, expiresIn: number) => {
+    // 计算过期时间戳（提前 skew 秒视为过期）
+    const calculatedExpiresAt = Date.now() + expiresIn * 1000 - TOKEN_EXPIRY_SKEW
+    
+    // 更新状态
+    accessToken.value = token
+    expiresAt.value = calculatedExpiresAt
+    
+    // 持久化到 sessionStorage
+    saveToSession({
+      accessToken: accessToken.value,
+      tokenType: tokenType.value,
+      expiresAt: expiresAt.value,
+      user: user.value
+    })
+  }
+
+  /**
+   * 获取当前访问令牌
+   */
+  const getAccessToken = (): string | null => {
+    return accessToken.value
+  }
+
+  /**
+   * 清除认证状态（用于登出或刷新失败）
+   */
+  const clearAuth = () => {
+    logout()
   }
 
   /**
@@ -146,6 +182,9 @@ export const useAuthStore = defineStore('auth', () => {
     
     // 操作方法
     loginSuccess,
+    setAccessToken,
+    getAccessToken,
+    clearAuth,
     initFromSession,
     logout
   }

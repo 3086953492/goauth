@@ -5,14 +5,17 @@ export interface LoginRequest {
   password: string
 }
 
-export interface TokenResponse {
+export interface AccessTokenResponse {
   access_token: string
-  token_type: string
+  expires_in: number
+}
+
+export interface RefreshTokenResponse {
   refresh_token: string
   expires_in: number
 }
 
 export interface LoginResponse {
   user: User
-  token: TokenResponse
+  access_token: AccessTokenResponse
 }

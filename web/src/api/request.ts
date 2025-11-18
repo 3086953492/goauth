@@ -8,6 +8,26 @@ import { API_BASE_URL } from '@/constants'
 // 防抖标志，避免多个401请求重复重定向
 let isRedirecting = false
 
+// 刷新 token 的锁，避免并发刷新
+let isRefreshing = false
+// 待重试的请求队列
+let refreshSubscribers: Array<(token: string) => void> = []
+
+/**
+ * 添加请求到刷新队列
+ */
+const subscribeTokenRefresh = (callback: (token: string) => void) => {
+  refreshSubscribers.push(callback)
+}
+
+/**
+ * 刷新成功后，通知所有等待的请求
+ */
+const onRefreshed = (token: string) => {
+  refreshSubscribers.forEach((callback) => callback(token))
+  refreshSubscribers = []
+}
+
 const request: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -30,25 +50,16 @@ request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const authStore = useAuthStore()
     
-    // 检查 token 是否已过期
-    if (authStore.isExpired && authStore.accessToken) {
-      // token 已过期，清理状态
-      authStore.logout()
-      ElMessage.warning('登录已过期，请重新登录')
-      
-      // 拒绝本次请求
-      return Promise.reject(new Error('Token expired'))
-    }
-    
     // 判断是否为 OAuth 授权接口
     if (isOAuthAuthorizationRequest(config.url)) {
       // OAuth 授权接口：使用 Cookie 鉴权，不带 Bearer 头
       config.withCredentials = true
       // 不设置 Authorization 头
-    } else {
-      // 普通业务接口：使用 Bearer token
-      if (authStore.isAuthenticated && config.headers) {
-        config.headers.Authorization = `${authStore.tokenType} ${authStore.accessToken}`
+    } else if (config.url !== '/api/v1/auth/login' && config.url !== '/api/v1/auth/refresh_token') {
+      // 普通业务接口：使用 Bearer token（排除登录和刷新接口）
+      const token = authStore.getAccessToken()
+      if (token && config.headers) {
+        config.headers.Authorization = `${authStore.tokenType} ${token}`
       }
     }
     
@@ -74,8 +85,10 @@ request.interceptors.response.use(
     ElMessage.error(res.message || '请求失败')
     return Promise.reject(new Error(res.message || '请求失败'))
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     console.error('Response error:', error)
+    
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
     
     // 处理 HTTP 错误
     if (error.response) {
@@ -91,29 +104,94 @@ request.interceptors.response.use(
         case 401:
           errorMessage = errorMessage || '未授权，请登录'
           
-          // 防止多次重定向
-          if (!isRedirecting) {
-            isRedirecting = true
-            
-            // 清理认证状态
-            const authStore = useAuthStore()
-            authStore.logout()
-            
-            // 使用 replace 强制重定向到登录页
-            router.replace('/login').finally(() => {
-              // 重置防抖标志
-              setTimeout(() => {
-                isRedirecting = false
-              }, 1000)
-            })
+          // 如果是登录或刷新接口本身返回 401，直接跳转登录
+          if (originalRequest.url === '/api/v1/auth/login' || originalRequest.url === '/api/v1/auth/refresh_token') {
+            // 刷新 token 失败，清理状态并跳转登录
+            if (originalRequest.url === '/api/v1/auth/refresh_token') {
+              const authStore = useAuthStore()
+              authStore.clearAuth()
+              
+              if (!isRedirecting) {
+                isRedirecting = true
+                router.replace('/login').finally(() => {
+                  setTimeout(() => {
+                    isRedirecting = false
+                  }, 1000)
+                })
+              }
+            }
+            break
           }
           
-          // TODO: 未来实现 refresh token 自动刷新逻辑
-          // 1. 检查是否为 access token 过期（通过后端返回的特定错误码判断）
-          // 2. 如果是，调用 refresh 接口（withCredentials: true，依赖 HttpOnly Cookie）
-          // 3. 刷新成功后，更新 store 中的 accessToken 和 expiresAt
-          // 4. 重试原请求
-          // 5. 刷新失败则执行当前的 logout + 跳转登录逻辑
+          // 如果请求未标记为重试过，尝试刷新 token
+          if (!originalRequest._retry) {
+            // 如果正在刷新 token，将请求加入队列
+            if (isRefreshing) {
+              return new Promise((resolve) => {
+                subscribeTokenRefresh((token: string) => {
+                  if (originalRequest.headers) {
+                    originalRequest.headers.Authorization = `Bearer ${token}`
+                  }
+                  resolve(request(originalRequest))
+                })
+              })
+            }
+            
+            // 标记为重试，避免死循环
+            originalRequest._retry = true
+            isRefreshing = true
+            
+            try {
+              // 调用刷新 token 接口
+              const authStore = useAuthStore()
+              const refreshResponse = await axios.post(
+                `${API_BASE_URL}/api/v1/auth/refresh_token`,
+                {},
+                { withCredentials: true }
+              )
+              
+              // 刷新成功，更新 token
+              if (refreshResponse.data.success && refreshResponse.data.data) {
+                const newAccessToken = refreshResponse.data.data.access_token
+                const expiresIn = refreshResponse.data.data.expires_in
+                
+                // 更新 store 中的 token
+                authStore.setAccessToken(newAccessToken, expiresIn)
+                
+                // 通知所有等待的请求
+                onRefreshed(newAccessToken)
+                
+                // 更新原请求的 Authorization 头
+                if (originalRequest.headers) {
+                  originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+                }
+                
+                // 重试原请求
+                return request(originalRequest)
+              } else {
+                throw new Error('刷新令牌失败')
+              }
+            } catch (refreshError) {
+              // 刷新失败，清理状态并跳转登录
+              console.error('刷新令牌失败:', refreshError)
+              const authStore = useAuthStore()
+              authStore.clearAuth()
+              
+              if (!isRedirecting) {
+                isRedirecting = true
+                ElMessage.warning('登录已过期，请重新登录')
+                router.replace('/login').finally(() => {
+                  setTimeout(() => {
+                    isRedirecting = false
+                  }, 1000)
+                })
+              }
+              
+              return Promise.reject(refreshError)
+            } finally {
+              isRefreshing = false
+            }
+          }
           
           break
         case 403:

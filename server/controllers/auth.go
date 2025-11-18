@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"github.com/3086953492/gokit/config"
 	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/response"
 	"github.com/3086953492/gokit/validator"
@@ -27,10 +28,30 @@ func (ctrl *AuthController) LoginHandler(ctx *gin.Context) {
 		response.Error(ctx, errors.InvalidInput().Msg(result.Message).Err(result.Err).Field("request", req).Build())
 		return
 	}
-	loginResponse, err := ctrl.authService.Login(ctx.Request.Context(), &req)
+	loginResponse, refreshTokenResponse, err := ctrl.authService.Login(ctx.Request.Context(), &req)
 	if err != nil {
 		response.Error(ctx, err)
 		return
 	}
+	ctx.SetCookie("refresh_token", refreshTokenResponse.RefreshToken, refreshTokenResponse.ExpiresIn, "/", "", config.GetGlobalConfig().Server.Mode != "debug", true)
 	response.Success(ctx, "登录成功", loginResponse)
+}
+
+func (ctrl *AuthController) RefreshTokenHandler(ctx *gin.Context) {
+	refreshToken, err := ctx.Cookie("refresh_token")
+	if err != nil || refreshToken == "" {
+		response.Error(ctx, errors.Unauthorized().Msg("刷新令牌为空").Build())
+		return
+	}
+	accessTokenResponse, err := ctrl.authService.RefreshToken(ctx.Request.Context(), refreshToken)
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	response.Success(ctx, "刷新令牌成功", accessTokenResponse)
+}
+
+func (ctrl *AuthController) LogoutHandler(ctx *gin.Context) {
+	ctx.SetCookie("refresh_token", "", 0, "/", "", config.GetGlobalConfig().Server.Mode != "debug", true)
+	response.Success(ctx, "登出成功", nil)
 }
