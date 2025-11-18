@@ -3,12 +3,13 @@ import type { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosRespon
 import { ElMessage } from 'element-plus'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
+import { API_BASE_URL } from '@/constants'
 
 // 防抖标志，避免多个401请求重复重定向
 let isRedirecting = false
 
 const request: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:9000',
+  baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
