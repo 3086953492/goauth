@@ -14,15 +14,16 @@ export function usePermission() {
   // 是否是管理员
   const isAdmin = computed(() => authStore.user?.role === 'admin')
 
-  // 是否已登录
-  const isLoggedIn = computed(() => !!authStore.user)
+  // 是否已登录（使用 isAuthenticated 包含过期判断）
+  const isLoggedIn = computed(() => authStore.isAuthenticated)
 
   /**
    * 检查用户是否已登录
    */
   const checkLogin = (): boolean => {
-    if (!authStore.user) {
-      ElMessage.error('未登录，请先登录')
+    if (!authStore.isAuthenticated) {
+      ElMessage.error('未登录或登录已过期，请先登录')
+      authStore.logout() // 清理可能过期的状态
       router.push({
         path: '/login',
         query: { redirect: route.fullPath }

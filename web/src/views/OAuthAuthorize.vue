@@ -91,7 +91,7 @@ import { ElMessage } from 'element-plus'
 import { Key, Link, Warning } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { usePermission } from '@/composables/usePermission'
-import { API_BASE_URL } from '@/constants'
+import { confirmAuthorize } from '@/api/oauth'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -146,38 +146,43 @@ onMounted(() => {
 })
 
 // 确认授权
-const handleAuthorize = () => {
+const handleAuthorize = async () => {
   if (!isValidRequest.value) {
     ElMessage.error('授权请求参数不完整')
     return
   }
 
-  // 从 localStorage 获取 token
-  const token = localStorage.getItem('token')
-  if (!token) {
+  // 检查登录状态
+  if (!authStore.isAuthenticated) {
     ElMessage.error('未登录或登录已过期')
+    checkLogin()
     return
   }
 
-  // 设置 Cookie (后端中间件会从 Cookie 中读取 token)
-  document.cookie = `access_token=${token}; path=/; SameSite=Lax`
+  authorizing.value = true
 
-  // 构建后端授权 URL
-  const authUrl = new URL(`${API_BASE_URL}/api/v1/oauth/authorization`, window.location.origin)
-  authUrl.searchParams.append('client_id', oauthParams.value.client_id)
-  authUrl.searchParams.append('redirect_uri', oauthParams.value.redirect_uri)
-  authUrl.searchParams.append('response_type', oauthParams.value.response_type || 'code')
-  
-  if (oauthParams.value.scope) {
-    authUrl.searchParams.append('scope', oauthParams.value.scope)
-  }
-  
-  if (oauthParams.value.state) {
-    authUrl.searchParams.append('state', oauthParams.value.state)
-  }
+  try {
+    // 调用授权 API（使用 Cookie 鉴权）
+    const response = await confirmAuthorize({
+      client_id: oauthParams.value.client_id,
+      redirect_uri: oauthParams.value.redirect_uri,
+      response_type: oauthParams.value.response_type || 'code',
+      scope: oauthParams.value.scope || undefined,
+      state: oauthParams.value.state || undefined
+    })
 
-  // 直接跳转到后端授权接口，后端会处理授权并重定向到第三方应用
-  window.location.href = authUrl.toString()
+    // 授权成功，跳转到回调地址
+    if (response.data.redirect_uri) {
+      window.location.href = response.data.redirect_uri
+    } else {
+      ElMessage.error('授权失败：未返回回调地址')
+    }
+  } catch (error: any) {
+    console.error('授权失败:', error)
+    // 错误已在拦截器中处理
+  } finally {
+    authorizing.value = false
+  }
 }
 
 // 取消授权

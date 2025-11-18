@@ -140,11 +140,11 @@ export function useUserProfile() {
 
           ElMessage.success(response.message || '更新成功！')
 
-          // 如果编辑的是当前用户，更新 authStore
+          // 如果编辑的是当前用户，更新 authStore 中的用户信息
           if (isEditingSelf.value) {
             const updatedUserResponse = await getUserInfo(targetUserId.value)
             if (updatedUserResponse.data) {
-              authStore.setUser(updatedUserResponse.data)
+              authStore.user = updatedUserResponse.data
             }
           }
 

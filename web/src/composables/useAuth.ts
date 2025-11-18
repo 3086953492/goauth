@@ -31,9 +31,11 @@ export function useAuth() {
         try {
           const response = await loginApi(loginForm)
 
-          // 保存 token 和用户信息到 store
-          authStore.setToken(response.data.token)
-          authStore.setUser(response.data.user)
+          // 使用新的 loginSuccess 方法统一保存 token 和用户信息
+          authStore.loginSuccess({
+            token: response.data.token,
+            user: response.data.user
+          })
 
           ElMessage.success('登录成功')
 

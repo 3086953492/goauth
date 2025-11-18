@@ -6,6 +6,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import router from './router'
 import App from './App.vue'
 import './style.css'
+import { useAuthStore } from './stores/auth'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -16,6 +17,11 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 }
 
 app.use(pinia)
+
+// 在路由挂载前初始化认证状态（从 sessionStorage 恢复）
+const authStore = useAuthStore()
+authStore.initFromSession()
+
 app.use(router)
 app.use(ElementPlus)
 

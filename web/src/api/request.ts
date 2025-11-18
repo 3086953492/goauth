@@ -16,14 +16,42 @@ const request: AxiosInstance = axios.create({
   }
 })
 
+/**
+ * 判断是否为 OAuth 授权相关接口（使用 Cookie 鉴权，不带 Bearer 头）
+ */
+const isOAuthAuthorizationRequest = (url?: string): boolean => {
+  if (!url) return false
+  // OAuth 授权确认接口通过 HttpOnly Cookie 鉴权
+  return url.includes('/oauth/authorize') && !url.includes('/oauth/authorize?')
+}
+
 // 请求拦截器
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // 可以在这里添加 token
-    const token = localStorage.getItem('token')
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`
+    const authStore = useAuthStore()
+    
+    // 检查 token 是否已过期
+    if (authStore.isExpired && authStore.accessToken) {
+      // token 已过期，清理状态
+      authStore.logout()
+      ElMessage.warning('登录已过期，请重新登录')
+      
+      // 拒绝本次请求
+      return Promise.reject(new Error('Token expired'))
     }
+    
+    // 判断是否为 OAuth 授权接口
+    if (isOAuthAuthorizationRequest(config.url)) {
+      // OAuth 授权接口：使用 Cookie 鉴权，不带 Bearer 头
+      config.withCredentials = true
+      // 不设置 Authorization 头
+    } else {
+      // 普通业务接口：使用 Bearer token
+      if (authStore.isAuthenticated && config.headers) {
+        config.headers.Authorization = `${authStore.tokenType} ${authStore.accessToken}`
+      }
+    }
+    
     return config
   },
   (error: AxiosError) => {
@@ -67,21 +95,11 @@ request.interceptors.response.use(
           if (!isRedirecting) {
             isRedirecting = true
             
-            // 1. 直接清理localStorage（主要机制）
-            localStorage.removeItem('token')
-            localStorage.removeItem('refreshToken')
-            localStorage.removeItem('expiresIn')
-            localStorage.removeItem('user')
+            // 清理认证状态
+            const authStore = useAuthStore()
+            authStore.logout()
             
-            // 2. 尝试清理store状态
-            try {
-              const authStore = useAuthStore()
-              authStore.logout()
-            } catch (e) {
-              console.warn('清理认证状态失败:', e)
-            }
-            
-            // 3. 使用replace强制重定向到登录页
+            // 使用 replace 强制重定向到登录页
             router.replace('/login').finally(() => {
               // 重置防抖标志
               setTimeout(() => {
@@ -89,6 +107,14 @@ request.interceptors.response.use(
               }, 1000)
             })
           }
+          
+          // TODO: 未来实现 refresh token 自动刷新逻辑
+          // 1. 检查是否为 access token 过期（通过后端返回的特定错误码判断）
+          // 2. 如果是，调用 refresh 接口（withCredentials: true，依赖 HttpOnly Cookie）
+          // 3. 刷新成功后，更新 store 中的 accessToken 和 expiresAt
+          // 4. 重试原请求
+          // 5. 刷新失败则执行当前的 logout + 跳转登录逻辑
+          
           break
         case 403:
           errorMessage = errorMessage || '拒绝访问'
@@ -120,4 +146,3 @@ request.interceptors.response.use(
 )
 
 export default request
-

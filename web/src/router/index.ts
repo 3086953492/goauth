@@ -85,11 +85,14 @@ router.beforeEach((to, _from, next) => {
   }
 
   const authStore = useAuthStore()
-  const isLoggedIn = authStore.isLoggedIn
+  
+  // 使用新的 isAuthenticated 计算属性（包含过期判断）
+  const isAuthenticated = authStore.isAuthenticated
 
   // 需要认证的页面
-  if (to.meta.requiresAuth && !isLoggedIn) {
-    // 未登录用户访问受保护页面，重定向到登录页并携带返回地址
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    // token 不存在或已过期，清理状态并重定向到登录页
+    authStore.logout()
     next({
       path: '/login',
       query: { redirect: to.fullPath }
@@ -98,7 +101,7 @@ router.beforeEach((to, _from, next) => {
   }
 
   // 已登录用户访问登录或注册页面，重定向到主页
-  if ((to.path === '/login' || to.path === '/register') && isLoggedIn) {
+  if ((to.path === '/login' || to.path === '/register') && isAuthenticated) {
     next('/home')
     return
   }
