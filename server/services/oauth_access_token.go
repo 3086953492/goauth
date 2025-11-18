@@ -28,7 +28,7 @@ func NewOAuthAccessTokenService(oauthAccessTokenRepository *repositories.OAuthAc
 	return &OAuthAccessTokenService{oauthAccessTokenRepository: oauthAccessTokenRepository, oauthAuthorizationCodeService: oauthAuthorizationCodeService, userService: userService, oauthClientService: oauthClientService}
 }
 
-func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form *dto.ExchangeAccessTokenForm, clientID, clientSecret string) (*dto.AccessTokenResponse, error) {
+func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form *dto.ExchangeAccessTokenForm, clientID, clientSecret string) (*dto.OAuthAccessTokenResponse, error) {
 
 	_, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"client_id": clientID, "client_secret": clientSecret})
 	if err != nil {
@@ -84,7 +84,7 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 	if err := s.oauthAccessTokenRepository.Create(ctx, accessToken); err != nil {
 		return nil, errors.Database().Msg("创建OAuth访问令牌失败").Err(err).Field("accessToken", accessToken).Log()
 	}
-	return &dto.AccessTokenResponse{
+	return &dto.OAuthAccessTokenResponse{
 		AccessToken:  accessTokenString,
 		TokenType:    "Bearer",
 		ExpiresIn:    int(config.GetGlobalConfig().JWT.Expire.Seconds()),
