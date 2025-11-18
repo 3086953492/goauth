@@ -91,7 +91,7 @@ import { ElMessage } from 'element-plus'
 import { Key, Link, Warning } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { usePermission } from '@/composables/usePermission'
-import request from '@/api/request'
+import { API_BASE_URL } from '@/constants'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -145,127 +145,39 @@ onMounted(() => {
   }
 })
 
-// OAuth 错误映射函数
-const mapToOAuthError = (error: any): { error: string; description: string } => {
-  // 默认错误
-  let oauthError = 'server_error'
-  let errorDescription = '服务器内部错误'
-
-  if (error.response) {
-    const status = error.response.status
-    const message = error.message || error.response.data?.message || ''
-
-    // 根据 HTTP 状态码和错误消息映射到 OAuth 标准错误
-    if (status === 400) {
-      // 参数错误
-      if (message.includes('client_id') || message.includes('redirect_uri') || message.includes('参数')) {
-        oauthError = 'invalid_request'
-        errorDescription = message || '请求参数无效'
-      } else if (message.includes('response_type')) {
-        oauthError = 'unsupported_response_type'
-        errorDescription = message || '不支持的响应类型'
-      } else if (message.includes('scope') || message.includes('权限')) {
-        oauthError = 'invalid_scope'
-        errorDescription = message || '请求的权限范围无效'
-      } else {
-        oauthError = 'invalid_request'
-        errorDescription = message || '请求参数无效'
-      }
-    } else if (status === 401) {
-      oauthError = 'access_denied'
-      errorDescription = '用户未授权或授权已过期'
-    } else if (status === 403) {
-      oauthError = 'access_denied'
-      errorDescription = message || '权限不足'
-    } else if (status === 404) {
-      oauthError = 'unauthorized_client'
-      errorDescription = '客户端不存在或未授权'
-    } else if (status === 503) {
-      oauthError = 'temporarily_unavailable'
-      errorDescription = '服务暂时不可用，请稍后重试'
-    } else if (status >= 500) {
-      oauthError = 'server_error'
-      errorDescription = message || '服务器内部错误'
-    }
-  } else if (error.request) {
-    // 网络错误
-    oauthError = 'temporarily_unavailable'
-    errorDescription = '网络连接失败，请检查网络'
-  } else {
-    oauthError = 'invalid_request'
-    errorDescription = error.message || '请求配置错误'
-  }
-
-  return { error: oauthError, description: errorDescription }
-}
-
-// 重定向到回调地址（带错误信息）
-const redirectWithError = (error: string, errorDescription: string) => {
-  try {
-    const redirectUrl = new URL(oauthParams.value.redirect_uri)
-    redirectUrl.searchParams.append('error', error)
-    redirectUrl.searchParams.append('error_description', errorDescription)
-    
-    if (oauthParams.value.state) {
-      redirectUrl.searchParams.append('state', oauthParams.value.state)
-    }
-    
-    window.location.href = redirectUrl.toString()
-  } catch (e) {
-    console.error('构建重定向 URL 失败:', e)
-    ElMessage.error('授权失败：回调地址格式错误')
-    authorizing.value = false
-  }
-}
-
 // 确认授权
-const handleAuthorize = async () => {
+const handleAuthorize = () => {
   if (!isValidRequest.value) {
     ElMessage.error('授权请求参数不完整')
     return
   }
 
-  authorizing.value = true
-
-  try {
-    // 调用后端授权接口
-    const response = await request({
-      url: '/api/v1/oauth/authorization',
-      method: 'get',
-      params: {
-        client_id: oauthParams.value.client_id,
-        redirect_uri: oauthParams.value.redirect_uri,
-        response_type: oauthParams.value.response_type || 'code',
-        scope: oauthParams.value.scope || undefined,
-        state: oauthParams.value.state || undefined
-      }
-    })
-
-    // 后端返回 JSON 格式：{ success: true, data: { code, redirect_uri, state } }
-    if (response.data) {
-      const { code, redirect_uri, state } = response.data
-      
-      // 构建重定向 URL
-      const redirectUrl = new URL(redirect_uri)
-      redirectUrl.searchParams.append('code', code)
-      
-      if (state) {
-        redirectUrl.searchParams.append('state', state)
-      }
-      
-      // 重定向到回调地址
-      window.location.href = redirectUrl.toString()
-    } else {
-      // 响应格式异常
-      redirectWithError('server_error', '授权响应格式异常')
-    }
-  } catch (error: any) {
-    console.error('授权失败:', error)
-    
-    // 将错误映射为 OAuth 标准错误并重定向
-    const oauthError = mapToOAuthError(error)
-    redirectWithError(oauthError.error, oauthError.description)
+  // 从 localStorage 获取 token
+  const token = localStorage.getItem('token')
+  if (!token) {
+    ElMessage.error('未登录或登录已过期')
+    return
   }
+
+  // 设置 Cookie (后端中间件会从 Cookie 中读取 token)
+  document.cookie = `access_token=${token}; path=/; SameSite=Lax`
+
+  // 构建后端授权 URL
+  const authUrl = new URL(`${API_BASE_URL}/api/v1/oauth/authorization`, window.location.origin)
+  authUrl.searchParams.append('client_id', oauthParams.value.client_id)
+  authUrl.searchParams.append('redirect_uri', oauthParams.value.redirect_uri)
+  authUrl.searchParams.append('response_type', oauthParams.value.response_type || 'code')
+  
+  if (oauthParams.value.scope) {
+    authUrl.searchParams.append('scope', oauthParams.value.scope)
+  }
+  
+  if (oauthParams.value.state) {
+    authUrl.searchParams.append('state', oauthParams.value.state)
+  }
+
+  // 直接跳转到后端授权接口，后端会处理授权并重定向到第三方应用
+  window.location.href = authUrl.toString()
 }
 
 // 取消授权

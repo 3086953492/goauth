@@ -49,15 +49,11 @@ func (ctrl *OAuthController) AuthorizationCodeHandler(ctx *gin.Context) {
 
 	authorizationCode, err := ctrl.oauthAuthorizationCodeService.GenerateAuthorizationCode(ctx.Request.Context(), userID, clientID, redirectURI, scope, expiresIn)
 	if err != nil {
-		response.Error(ctx, err)
+		response.RedirectTemporary(ctx, redirectURI, err, map[string]string{"state": state})
 		return
 	}
 
-	response.Success(ctx, "授权成功", &dto.AuthorizationCodeResponse{
-		Code:        authorizationCode,
-		RedirectURI: redirectURI,
-		State:       state,
-	})
+	response.RedirectTemporary(ctx, redirectURI, nil, map[string]string{"state": state, "code": authorizationCode})
 }
 
 func (ctrl *OAuthController) ExchangeAccessTokenHandler(ctx *gin.Context) {
