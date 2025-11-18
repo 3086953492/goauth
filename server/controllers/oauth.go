@@ -12,10 +12,12 @@ import (
 
 type OAuthController struct {
 	oauthAuthorizationCodeService *services.OAuthAuthorizationCodeService
+
+	oauthAccessTokenService *services.OAuthAccessTokenService
 }
 
-func NewOAuthController(oauthAuthorizationCodeService *services.OAuthAuthorizationCodeService) *OAuthController {
-	return &OAuthController{oauthAuthorizationCodeService: oauthAuthorizationCodeService}
+func NewOAuthController(oauthAuthorizationCodeService *services.OAuthAuthorizationCodeService, oauthAccessTokenService *services.OAuthAccessTokenService) *OAuthController {
+	return &OAuthController{oauthAuthorizationCodeService: oauthAuthorizationCodeService, oauthAccessTokenService: oauthAccessTokenService}
 }
 
 func (ctrl *OAuthController) AuthorizationCodeHandler(ctx *gin.Context) {
@@ -56,4 +58,26 @@ func (ctrl *OAuthController) AuthorizationCodeHandler(ctx *gin.Context) {
 		RedirectURI: redirectURI,
 		State:       state,
 	})
+}
+
+func (ctrl *OAuthController) ExchangeAccessTokenHandler(ctx *gin.Context) {
+	var form dto.ExchangeAccessTokenForm
+	if err := ctx.ShouldBind(&form); err != nil {
+		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", form).Build())
+		return
+	}
+
+	clientID, clientSecret, ok := ctx.Request.BasicAuth()
+	if !ok || clientID == "" || clientSecret == "" {
+		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Build())
+		return
+	}
+
+	accessToken, err := ctrl.oauthAccessTokenService.ExchangeAccessToken(ctx.Request.Context(), &form, clientID, clientSecret)
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+
+	response.Success(ctx, "访问令牌交换成功", accessToken)
 }

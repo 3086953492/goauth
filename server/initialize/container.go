@@ -23,6 +23,9 @@ type Container struct {
 	OAuthAuthorizationCodeRepository *repositories.OAuthAuthorizationCodeRepository
 	OAuthAuthorizationCodeService    *services.OAuthAuthorizationCodeService
 
+	OAuthAccessTokenRepository *repositories.OAuthAccessTokenRepository
+	OAuthAccessTokenService    *services.OAuthAccessTokenService
+
 	OAuthController *controllers.OAuthController
 }
 
@@ -44,7 +47,10 @@ func NewContainer() *Container {
 	c.OAuthAuthorizationCodeRepository = repositories.NewOAuthAuthorizationCodeRepository(db)
 	c.OAuthAuthorizationCodeService = services.NewOAuthAuthorizationCodeService(c.OAuthAuthorizationCodeRepository, c.OAuthClientService)
 
-	c.OAuthController = controllers.NewOAuthController(c.OAuthAuthorizationCodeService)
-	
+	c.OAuthAccessTokenRepository = repositories.NewOAuthAccessTokenRepository(db)
+	c.OAuthAccessTokenService = services.NewOAuthAccessTokenService(c.OAuthAccessTokenRepository, c.OAuthAuthorizationCodeService, c.UserService, c.OAuthClientService)
+
+	c.OAuthController = controllers.NewOAuthController(c.OAuthAuthorizationCodeService, c.OAuthAccessTokenService)
+
 	return c
 }

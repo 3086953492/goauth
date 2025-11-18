@@ -100,3 +100,21 @@ func isScopeValid(requestedScope string, allowedScopesJSON []byte) bool {
 
 	return true
 }
+
+func (s *OAuthAuthorizationCodeService) GetOAuthAuthorizationCode(ctx context.Context, conds map[string]any) (*models.OAuthAuthorizationCode, error) {
+	oauthAuthorizationCode, err := s.oauthAuthorizationCodeRepository.Get(ctx, conds)
+	if err != nil {
+		if errors.IsNotFoundError(err) {
+			return nil, err
+		}
+		return nil, errors.Database().Msg("系统繁忙，请稍后再试").Err(err).Log()
+	}
+	return oauthAuthorizationCode, nil
+}
+
+func (s *OAuthAuthorizationCodeService) MarkAsUsed(ctx context.Context, id uint) error {
+	if err := s.oauthAuthorizationCodeRepository.MarkAsUsed(ctx, id); err != nil {
+		return errors.Database().Msg("标记授权码为已使用失败").Err(err).Log()
+	}
+	return nil
+}
