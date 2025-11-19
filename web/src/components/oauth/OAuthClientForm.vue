@@ -5,7 +5,7 @@
         </el-form-item>
 
         <el-form-item v-if="mode === 'create'" label="客户端密钥" prop="client_secret">
-            <div class="secret-input-wrapper">
+            <div class="oauth-client-form__secret-wrapper">
                 <el-input v-model="formData.client_secret" placeholder="客户端密钥" readonly>
                     <template #append>
                         <el-button-group>
@@ -17,7 +17,7 @@
                     </template>
                 </el-input>
             </div>
-            <div class="form-tip">请妥善保管客户端密钥，创建后将无法再次查看完整密钥</div>
+            <div class="oauth-client-form__tip">请妥善保管客户端密钥，创建后将无法再次查看完整密钥</div>
         </el-form-item>
 
         <el-form-item label="应用描述" prop="description">
@@ -30,8 +30,8 @@
         </el-form-item>
 
         <el-form-item label="回调地址" prop="redirect_uris" required>
-            <div class="redirect-uris-wrapper">
-                <div v-for="(_uri, index) in formData.redirect_uris" :key="index" class="redirect-uri-item">
+            <div class="oauth-client-form__uris-wrapper">
+                <div v-for="(_uri, index) in formData.redirect_uris" :key="index" class="oauth-client-form__uri-item">
                     <el-input v-model="formData.redirect_uris[index]" placeholder="https://example.com/callback"
                         clearable />
                     <el-button v-if="formData.redirect_uris.length > 1" :icon="Delete" type="danger" plain
@@ -43,7 +43,7 @@
                     添加回调地址
                 </el-button>
             </div>
-            <div class="form-tip">OAuth 授权成功后的回调地址，至少需要一个有效地址</div>
+            <div class="oauth-client-form__tip">OAuth 授权成功后的回调地址，至少需要一个有效地址</div>
         </el-form-item>
 
         <el-form-item label="授权类型" prop="grant_types">
@@ -275,43 +275,43 @@ defineExpose({
 </script>
 
 <style scoped>
-.secret-input-wrapper {
+.oauth-client-form__secret-wrapper {
     width: 100%;
 }
 
-:deep(.el-input-group__append) {
+.oauth-client-form__secret-wrapper :deep(.el-input-group__append) {
     padding: 0;
 }
 
-:deep(.el-input-group__append .el-button-group) {
+.oauth-client-form__secret-wrapper :deep(.el-input-group__append .el-button-group) {
     display: flex;
 }
 
-:deep(.el-input-group__append .el-button) {
+.oauth-client-form__secret-wrapper :deep(.el-input-group__append .el-button) {
     margin: 0;
     border: none;
     border-radius: 0;
 }
 
-.form-tip {
-    font-size: 12px;
-    color: #909399;
-    margin-top: 4px;
+.oauth-client-form__tip {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--spacing-xs);
     line-height: 1.5;
 }
 
-.redirect-uris-wrapper {
+.oauth-client-form__uris-wrapper {
     width: 100%;
 }
 
-.redirect-uri-item {
+.oauth-client-form__uri-item {
     display: flex;
-    gap: 12px;
-    margin-bottom: 12px;
+    gap: var(--spacing-sm-lg);
+    margin-bottom: var(--spacing-sm-lg);
     align-items: center;
 }
 
-.redirect-uri-item .el-input {
+.oauth-client-form__uri-item .el-input {
     flex: 1;
 }
 </style>
