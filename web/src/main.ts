@@ -8,7 +8,7 @@ import App from './App.vue'
 import './styles/reset.css'
 import './styles/global.css'
 import './styles/variables.css'
-import { useAuthStore } from './stores/auth'
+import { useAuthStore } from './stores/useAuthStore'
 
 const app = createApp(App)
 const pinia = createPinia()

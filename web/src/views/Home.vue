@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/useAuthStore'
 import Navbar from '@/components/Navbar.vue'
 import { Avatar } from '@element-plus/icons-vue'
 

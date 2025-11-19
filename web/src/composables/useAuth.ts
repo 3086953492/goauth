@@ -4,7 +4,7 @@ import { ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
 import { login as loginApi } from '@/api/auth'
 import { register as registerApi } from '@/api/user'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/useAuthStore'
 import type { RegisterRequest } from '@/types/user'
 
 /**

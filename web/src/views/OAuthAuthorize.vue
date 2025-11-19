@@ -89,7 +89,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Key, Link, Warning } from '@element-plus/icons-vue'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { usePermission } from '@/composables/usePermission'
 import { confirmAuthorize } from '@/api/oauth'
 

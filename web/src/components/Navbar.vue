@@ -39,7 +39,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { Edit, SwitchButton, User, Key, Avatar } from '@element-plus/icons-vue'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()

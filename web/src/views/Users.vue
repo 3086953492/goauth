@@ -74,7 +74,7 @@ import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Navbar from '@/components/Navbar.vue'
 import { useUserList } from '@/composables/useUserList'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { Avatar } from '@element-plus/icons-vue'
 
 const router = useRouter()

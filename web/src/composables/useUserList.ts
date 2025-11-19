@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { listUsers, deleteUser } from '@/api/user'
 import type { UserListResponse } from '@/types/user'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 /**
  * 用户列表管理相关的组合式函数

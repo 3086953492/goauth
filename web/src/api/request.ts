@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { API_BASE_URL } from '@/constants'
 
 // 防抖标志，避免多个401请求重复重定向
