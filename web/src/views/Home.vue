@@ -1,25 +1,25 @@
 <template>
-  <div class="home-wrapper">
+  <div class="home-page">
     <Navbar />
-    <div class="home-container">
-      <el-card class="user-card">
-      <div class="user-info">
-        <el-avatar :size="80" :src="user?.avatar" :icon="Avatar" class="avatar" />
+    <div class="home-page__container">
+      <el-card class="home-page__user-card">
+      <div class="home-page__user-info">
+        <el-avatar :size="80" :src="user?.avatar" :icon="Avatar" class="home-page__avatar" />
         
-        <div class="info-content">
-          <h2 class="nickname">{{ user?.nickname || '未知用户' }}</h2>
-          <p class="username">@{{ user?.username }}</p>
+        <div class="home-page__info-content">
+          <h2 class="home-page__nickname">{{ user?.nickname || '未知用户' }}</h2>
+          <p class="home-page__username">@{{ user?.username }}</p>
           
-          <div class="user-details">
+          <div class="home-page__details">
             <el-tag type="info" size="large">{{ user?.role || 'user' }}</el-tag>
-            <el-tag :type="user?.status === 1 ? 'success' : 'danger'" size="large" class="status-tag">
+            <el-tag :type="user?.status === 1 ? 'success' : 'danger'" size="large" class="home-page__status-tag">
               {{ user?.status === 1 ? '正常' : '禁用' }}
             </el-tag>
           </div>
           
-          <div class="user-meta">
-            <p><span class="label">用户ID:</span> {{ user?.id }}</p>
-            <p><span class="label">注册时间:</span> {{ formatDate(user?.created_at) }}</p>
+          <div class="home-page__meta">
+            <p><span class="home-page__meta-label">用户ID:</span> {{ user?.id }}</p>
+            <p><span class="home-page__meta-label">注册时间:</span> {{ formatDate(user?.created_at) }}</p>
           </div>
         </div>
       </div>
@@ -52,98 +52,164 @@ const formatDate = (dateString?: string) => {
 </script>
 
 <style scoped>
-.home-wrapper {
+.home-page {
   min-height: 100vh;
   background: 
     linear-gradient(135deg, rgba(245, 247, 250, 0.8) 0%, rgba(228, 231, 235, 0.9) 100%),
-    repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 0, 0, 0.02) 35px, rgba(0, 0, 0, 0.02) 70px),
-    repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(0, 0, 0, 0.01) 35px, rgba(0, 0, 0, 0.01) 70px),
-    #f8f9fa;
+    repeating-linear-gradient(45deg, transparent, transparent var(--pattern-size-small), rgba(0, 0, 0, 0.02) var(--pattern-size-small), rgba(0, 0, 0, 0.02) var(--pattern-size-large)),
+    repeating-linear-gradient(-45deg, transparent, transparent var(--pattern-size-small), rgba(0, 0, 0, 0.01) var(--pattern-size-small), rgba(0, 0, 0, 0.01) var(--pattern-size-large)),
+    var(--color-background-light);
 }
 
-.home-container {
+.home-page__container {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 84px 20px 20px;
+  padding: var(--page-padding-top) var(--spacing-lg) var(--spacing-lg);
 }
 
-.user-card {
+.home-page__user-card {
   width: 100%;
-  max-width: 600px;
-  border-radius: 24px;
-  box-shadow: 
-    0 2px 8px rgba(0, 0, 0, 0.04),
-    0 8px 24px rgba(0, 0, 0, 0.06),
-    0 16px 48px rgba(0, 0, 0, 0.08);
-  background: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  max-width: var(--container-max-width-small);
+  border-radius: var(--border-radius-card-large);
+  box-shadow: var(--shadow-card-layered);
+  background: var(--color-card-background);
+  border: var(--border-width-thin) solid var(--color-border-white-translucent);
   overflow: hidden;
 }
 
-:deep(.el-card__body) {
-  padding: 32px;
+.home-page__user-card :deep(.el-card__body) {
+  padding: var(--spacing-xl);
 }
 
-.user-info {
+.home-page__user-info {
   display: flex;
-  gap: 24px;
+  gap: var(--spacing-lg);
   align-items: flex-start;
 }
 
-.avatar {
+.home-page__avatar {
   flex-shrink: 0;
-  border: 4px solid #f5f7fa;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: var(--border-width-thick) solid var(--color-background-lighter);
+  box-shadow: var(--shadow-avatar);
 }
 
-.info-content {
+.home-page__info-content {
   flex: 1;
 }
 
-.nickname {
-  margin: 0 0 8px 0;
-  font-size: 28px;
+.home-page__nickname {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-display);
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text-primary);
 }
 
-.username {
-  margin: 0 0 16px 0;
-  font-size: 16px;
-  color: #909399;
+.home-page__username {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-base);
+  color: var(--color-text-tertiary);
 }
 
-.user-details {
+.home-page__details {
   display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
 }
 
-.status-tag {
+.home-page__status-tag {
   font-weight: 500;
 }
 
-.user-meta {
-  background: #f8f9fa;
-  padding: 18px 20px;
-  border-radius: 14px;
-  font-size: 14px;
+.home-page__meta {
+  background: var(--color-background-light);
+  padding: var(--spacing-md-lg) var(--spacing-lg);
+  border-radius: var(--border-radius-xxlarge);
+  font-size: var(--font-size-sm);
   line-height: 1.8;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  border: var(--border-width-thin) solid var(--color-border-lightest);
+  box-shadow: var(--shadow-meta);
 }
 
-.user-meta p {
+.home-page__meta p {
   margin: 0;
-  color: #606266;
+  color: var(--color-text-secondary);
 }
 
-.label {
+.home-page__meta-label {
   font-weight: 600;
-  color: #303133;
-  margin-right: 8px;
+  color: var(--color-text-primary);
+  margin-right: var(--spacing-sm);
+}
+
+/* 响应式设计 */
+/* 平板端：对应 --breakpoint-tablet (768px) */
+@media (max-width: 768px) {
+  .home-page__container {
+    padding: var(--page-padding-top-tablet) var(--spacing-md) var(--spacing-md);
+  }
+
+  .home-page__user-card {
+    border-radius: var(--border-radius-xlarge);
+  }
+
+  .home-page__user-card :deep(.el-card__body) {
+    padding: var(--spacing-lg);
+  }
+
+  .home-page__user-info {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--spacing-md);
+  }
+
+  .home-page__info-content {
+    width: 100%;
+  }
+
+  .home-page__nickname {
+    font-size: var(--font-size-title);
+  }
+
+  .home-page__username {
+    font-size: var(--font-size-sm);
+  }
+
+  .home-page__details {
+    justify-content: center;
+  }
+
+  .home-page__meta {
+    padding: var(--spacing-md) var(--spacing-md);
+    text-align: left;
+  }
+}
+
+/* 移动端：对应 --breakpoint-mobile (480px) */
+@media (max-width: 480px) {
+  .home-page__container {
+    padding: var(--page-padding-top-mobile) var(--spacing-sm) var(--spacing-sm);
+  }
+
+  .home-page__user-card {
+    border-radius: var(--border-radius-large);
+  }
+
+  .home-page__user-card :deep(.el-card__body) {
+    padding: var(--spacing-md);
+  }
+
+  .home-page__nickname {
+    font-size: var(--font-size-xl);
+  }
+
+  .home-page__details {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    align-items: center;
+  }
 }
 </style>
 

@@ -17,11 +17,20 @@
   --color-border: #dcdfe6;
   --color-border-light: #e4e7ed;
   --color-border-lighter: #ebeef5;
+  --color-border-lightest: #e9ecef;
+  --color-border-white-translucent: rgba(255, 255, 255, 0.8);
+  
+  /* 边框宽度 */
+  --border-width-thin: 1px;
+  --border-width-medium: 2px;
+  --border-width-thick: 4px;
   
   /* 背景色 */
   --color-background: #f5f5f5;
   --color-page-background: #edf2f7;
   --color-card-background: #ffffff;
+  --color-background-light: #f8f9fa;
+  --color-background-lighter: #f5f7fa;
   
   /* 功能色 - 成功/警告/错误/信息 */
   --color-success: #10b981;
@@ -43,7 +52,9 @@
   --border-radius-medium: 6px;
   --border-radius-large: 8px;
   --border-radius-xlarge: 12px;
+  --border-radius-xxlarge: 14px;
   --border-radius-card: 12px;
+  --border-radius-card-large: 24px;
   --border-radius-button: 6px;
   --border-radius-input: 6px;
   
@@ -53,6 +64,9 @@
   --shadow-layer: 0 4px 16px rgba(0, 0, 0, 0.12);
   --shadow-large: 0 8px 24px rgba(0, 0, 0, 0.15);
   --shadow-xlarge: 0 20px 60px rgba(0, 0, 0, 0.15);
+  --shadow-avatar: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-card-layered: 0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06), 0 16px 48px rgba(0, 0, 0, 0.08);
+  --shadow-meta: 0 1px 3px rgba(0, 0, 0, 0.02);
   
   /* ==================== 字号变量 ==================== */
   --font-size-xs: 12px;
@@ -62,11 +76,13 @@
   --font-size-xl: 20px;
   --font-size-title: 24px;
   --font-size-heading: 32px;
+  --font-size-display: 28px;
   
   /* ==================== 间距变量 ==================== */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
+  --spacing-md-lg: 18px;  /* 介于 md 和 lg 之间 */
   --spacing-lg: 24px;
   --spacing-xl: 32px;
   --spacing-xxl: 40px;
@@ -84,5 +100,26 @@
   --input-height-small: 32px;
   --input-height-medium: 40px;
   --input-height-large: 44px;
+  
+  /* 容器尺寸 */
+  --container-max-width-small: 600px;
+  --container-max-width-medium: 800px;
+  --container-max-width-large: 1200px;
+  
+  /* 布局间距 */
+  --navbar-height: 64px;
+  --page-padding-top: 84px;  /* navbar高度 + 额外间距 */
+  --page-padding-top-tablet: 64px;  /* 平板端顶部间距 */
+  --page-padding-top-mobile: 56px;  /* 移动端顶部间距 */
+  
+  /* 响应式断点（用于 JS 或注释参考，CSS 中仍需直接写在 @media 中） */
+  --breakpoint-mobile: 480px;
+  --breakpoint-tablet: 768px;
+  --breakpoint-desktop: 1024px;
+  --breakpoint-wide: 1280px;
+  
+  /* 装饰性图案尺寸 */
+  --pattern-size-small: 35px;
+  --pattern-size-large: 70px;
 }
 
