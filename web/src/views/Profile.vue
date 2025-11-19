@@ -1,27 +1,27 @@
 <template>
-  <div class="profile-wrapper">
+  <div class="profile-page">
     <Navbar />
-    <div class="profile-container">
-      <el-card class="profile-card" v-loading="pageLoading">
+    <div class="profile-page__container">
+      <el-card class="profile-page__card" v-loading="pageLoading">
         <template #header>
-          <div class="card-header">
+          <div class="profile-page__header">
             <h2>{{ isEditingSelf ? '个人信息' : '编辑用户信息' }}</h2>
             <p>{{ isEditingSelf ? '管理您的账户信息' : `编辑用户 @${targetUser?.username}` }}</p>
           </div>
         </template>
 
-        <div class="form-content">
+        <div class="profile-page__content">
           <el-form ref="profileFormRef" :model="formData" :rules="formRules" label-width="90px" size="large">
             <UserInfoForm v-model="userInfo" :username="targetUser.username"
               :can-edit-permission="isAdmin && !isEditingSelf" />
 
             <PasswordForm v-model="passwordData" />
 
-            <el-form-item label-width="0" class="button-form-item">
-              <el-button type="primary" :loading="submitLoading" @click="handleSubmit" class="submit-button">
+            <el-form-item label-width="0" class="profile-page__actions">
+              <el-button type="primary" :loading="submitLoading" @click="handleSubmit" class="profile-page__button--submit">
                 {{ submitLoading ? '保存中...' : '保存修改' }}
               </el-button>
-              <el-button @click="handleCancel" class="cancel-button">
+              <el-button @click="handleCancel" class="profile-page__button--cancel">
                 返回
               </el-button>
             </el-form-item>
@@ -83,80 +83,106 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.profile-wrapper {
+.profile-page {
   min-height: 100vh;
-  background: #f0f2f5;
+  background: var(--color-page-background-alt);
   background-image:
-    radial-gradient(circle at 25px 25px, rgba(0, 0, 0, 0.03) 2%, transparent 0%),
-    radial-gradient(circle at 75px 75px, rgba(0, 0, 0, 0.03) 2%, transparent 0%);
-  background-size: 100px 100px;
+    radial-gradient(circle at var(--pattern-size-dot-small) var(--pattern-size-dot-small), rgba(0, 0, 0, 0.03) 2%, transparent 0%),
+    radial-gradient(circle at var(--pattern-size-dot-large) var(--pattern-size-dot-large), rgba(0, 0, 0, 0.03) 2%, transparent 0%);
+  background-size: var(--pattern-size-grid) var(--pattern-size-grid);
 }
 
-.profile-container {
+.profile-page__container {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 84px 20px 20px;
+  padding: var(--page-padding-top) var(--spacing-lg) var(--spacing-lg);
 }
 
-.profile-card {
+.profile-page__card {
   width: 100%;
-  max-width: 700px;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-  background: #ffffff;
+  max-width: var(--dialog-width-medium);
+  border-radius: var(--border-radius-xlarge);
+  box-shadow: var(--shadow-large);
+  background: var(--color-card-background);
 }
 
-.card-header {
+.profile-page__header {
   text-align: center;
 }
 
-.card-header h2 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
+.profile-page__header h2 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-heading);
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text-primary);
 }
 
-.card-header p {
+.profile-page__header p {
   margin: 0;
-  font-size: 14px;
-  color: #909399;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
 }
 
-.form-content {
-  padding: 8px 0;
+.profile-page__content {
+  padding: var(--spacing-sm) 0;
 }
 
-.button-form-item {
+.profile-page__actions {
   text-align: center;
-  margin-top: 32px;
+  margin-top: var(--spacing-xl);
 }
 
-.button-form-item :deep(.el-form-item__content) {
+.profile-page__actions :deep(.el-form-item__content) {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  gap: var(--spacing-md);
 }
 
-.submit-button,
-.cancel-button {
-  height: 44px;
-  font-size: 16px;
+.profile-page__button--submit,
+.profile-page__button--cancel {
+  height: var(--button-height-large);
+  font-size: var(--font-size-base);
   font-weight: 500;
-  min-width: 140px;
+  min-width: var(--button-min-width);
 }
 
-:deep(.el-form-item__label) {
+.profile-page__card :deep(.el-form-item__label) {
   font-weight: 500;
 }
 
-:deep(.el-input__inner) {
-  border-radius: 6px;
+.profile-page__card :deep(.el-input__inner) {
+  border-radius: var(--border-radius-input);
 }
 
-:deep(.el-button) {
-  border-radius: 6px;
+.profile-page__card :deep(.el-button) {
+  border-radius: var(--border-radius-button);
+}
+
+/* 响应式设计 */
+/* 移动端：对应 --breakpoint-mobile (480px) */
+@media (max-width: 480px) {
+  .profile-page__container {
+    padding: var(--page-padding-top-mobile) var(--spacing-md) var(--spacing-md);
+  }
+
+  .profile-page__card {
+    border-radius: var(--border-radius-large);
+  }
+
+  .profile-page__header h2 {
+    font-size: var(--font-size-title);
+  }
+
+  .profile-page__actions :deep(.el-form-item__content) {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .profile-page__button--submit,
+  .profile-page__button--cancel {
+    width: 100%;
+  }
 }
 </style>
