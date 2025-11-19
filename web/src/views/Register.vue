@@ -1,8 +1,8 @@
 <template>
-  <div class="register-container">
-    <el-card class="register-card">
+  <div class="register-page">
+    <el-card class="register-page__card">
       <template #header>
-        <div class="card-header">
+        <div class="register-page__header">
           <h2>用户注册</h2>
           <p>创建您的账户</p>
         </div>
@@ -31,13 +31,13 @@
           <el-input v-model="registerForm.avatar" placeholder="请输入头像URL（可选）" clearable :prefix-icon="Picture" />
         </el-form-item>
 
-        <el-form-item label-width="0" class="button-form-item">
-          <el-button type="primary" :loading="loading" @click="handleRegister" class="register-button">
+        <el-form-item label-width="0" class="register-page__button-form-item">
+          <el-button type="primary" :loading="loading" @click="handleRegister" class="register-page__button">
             {{ loading ? '注册中...' : '注册' }}
           </el-button>
         </el-form-item>
 
-        <div class="login-link">
+        <div class="register-page__login-link">
           已有账户？
           <el-link type="primary" @click="goToLogin">立即登录</el-link>
         </div>
@@ -90,77 +90,97 @@ const goToLogin = () => {
 </script>
 
 <style scoped>
-.register-container {
+.register-page {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f0f2f5;
+  background: var(--color-page-background-alt);
   background-image: 
-    radial-gradient(circle at 25px 25px, rgba(0, 0, 0, 0.03) 2%, transparent 0%),
-    radial-gradient(circle at 75px 75px, rgba(0, 0, 0, 0.03) 2%, transparent 0%);
-  background-size: 100px 100px;
-  padding: 20px;
+    radial-gradient(circle at var(--pattern-size-dot-small) var(--pattern-size-dot-small), rgba(0, 0, 0, 0.03) 2%, transparent 0%),
+    radial-gradient(circle at var(--pattern-size-dot-large) var(--pattern-size-dot-large), rgba(0, 0, 0, 0.03) 2%, transparent 0%);
+  background-size: var(--pattern-size-grid) var(--pattern-size-grid);
+  padding: var(--spacing-lg);
 }
 
-.register-card {
+.register-page__card {
   width: 100%;
-  max-width: 500px;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-  background: #ffffff;
+  max-width: var(--dialog-width-small);
+  border-radius: var(--border-radius-xlarge);
+  box-shadow: var(--shadow-auth-card);
+  background: var(--color-card-background);
 }
 
-.card-header {
+.register-page__header {
   text-align: center;
 }
 
-.card-header h2 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
+.register-page__header h2 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-heading);
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text-primary);
 }
 
-.card-header p {
+.register-page__header p {
   margin: 0;
-  font-size: 14px;
-  color: #909399;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
 }
 
-.button-form-item {
+.register-page__button-form-item {
   text-align: center;
 }
 
-.button-form-item :deep(.el-form-item__content) {
+.register-page__button-form-item :deep(.el-form-item__content) {
   display: flex;
   justify-content: center;
 }
 
-.register-button {
-  width: 200px;
-  margin-top: 12px;
-  height: 44px;
-  font-size: 16px;
+.register-page__button {
+  width: var(--button-width-auth);
+  margin-top: var(--spacing-sm-lg);
+  height: var(--button-height-large);
+  font-size: var(--font-size-base);
   font-weight: 500;
 }
 
-.login-link {
+.register-page__login-link {
   text-align: center;
-  margin-top: 16px;
-  font-size: 14px;
-  color: #606266;
+  margin-top: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
 }
 
-:deep(.el-form-item__label) {
+.register-page__card :deep(.el-form-item__label) {
   font-weight: 500;
 }
 
-:deep(.el-input__inner) {
-  border-radius: 6px;
+.register-page__card :deep(.el-input__inner) {
+  border-radius: var(--border-radius-input);
 }
 
-:deep(.el-button) {
-  border-radius: 6px;
+.register-page__card :deep(.el-button) {
+  border-radius: var(--border-radius-button);
+}
+
+/* 响应式设计 */
+/* 小屏幕：对应 --breakpoint-mobile (480px) */
+@media (max-width: 480px) {
+  .register-page {
+    padding: var(--spacing-md);
+  }
+
+  .register-page__card {
+    border-radius: var(--border-radius-large);
+  }
+
+  .register-page__header h2 {
+    font-size: var(--font-size-title);
+  }
+
+  .register-page__button {
+    width: 100%;
+  }
 }
 </style>
