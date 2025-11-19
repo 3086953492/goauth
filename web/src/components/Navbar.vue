@@ -1,31 +1,31 @@
 <template>
   <nav class="navbar">
-    <div class="navbar-container">
+    <div class="navbar__container">
       <!-- 左侧 Logo/标题 -->
-      <div class="navbar-brand">
-        <h1 class="brand-title">GoAuth</h1>
-        <span class="brand-subtitle">用户管理系统</span>
+      <div class="navbar__brand">
+        <h1 class="navbar__title">GoAuth</h1>
+        <span class="navbar__subtitle">用户管理系统</span>
       </div>
 
       <!-- 右侧用户区域 -->
-      <div class="navbar-user">
-        <div class="user-info">
-          <el-avatar :size="40" :src="user?.avatar" :icon="Avatar" class="user-avatar" />
-          <span class="user-nickname">{{ user?.nickname || '用户' }}</span>
+      <div class="navbar__user">
+        <div class="navbar__user-info">
+          <el-avatar :size="avatarSize" :src="user?.avatar" :icon="Avatar" class="navbar__avatar" />
+          <span class="navbar__nickname">{{ user?.nickname || '用户' }}</span>
         </div>
 
-        <div class="navbar-actions">
-          <el-button v-if="user?.role === 'admin'" type="info" :icon="User" @click="goToUsers" class="nav-button">
+        <div class="navbar__actions">
+          <el-button v-if="user?.role === 'admin'" type="info" :icon="User" @click="goToUsers" class="navbar__button">
             用户列表
           </el-button>
           <el-button v-if="user?.role === 'admin'" type="warning" :icon="Key" @click="goToOAuthClients"
-            class="nav-button">
+            class="navbar__button">
             OAuth 客户端
           </el-button>
-          <el-button type="primary" :icon="Edit" @click="goToProfile" class="nav-button">
+          <el-button type="primary" :icon="Edit" @click="goToProfile" class="navbar__button">
             个人中心
           </el-button>
-          <el-button type="danger" :icon="SwitchButton" @click="handleLogout" class="nav-button">
+          <el-button type="danger" :icon="SwitchButton" @click="handleLogout" class="navbar__button">
             退出登录
           </el-button>
         </div>
@@ -45,6 +45,9 @@ import { useAuth } from '@/composables/useAuth'
 const router = useRouter()
 const authStore = useAuthStore()
 const { handleLogout: logout } = useAuth()
+
+// 头像尺寸
+const avatarSize = 40
 
 const user = computed(() => authStore.user)
 
@@ -81,33 +84,33 @@ const handleLogout = async () => {
   top: 0;
   left: 0;
   right: 0;
-  height: 64px;
-  background: rgba(255, 255, 255, 0.95);
+  height: var(--navbar-height);
+  background: var(--color-navbar-background);
   backdrop-filter: blur(10px);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-navbar);
   z-index: 1000;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: var(--border-width-thin) solid var(--color-navbar-border);
 }
 
-.navbar-container {
-  max-width: 1400px;
+.navbar__container {
+  max-width: var(--container-max-width-xlarge);
   height: 100%;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--spacing-lg);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.navbar-brand {
+.navbar__brand {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: var(--spacing-sm-lg);
 }
 
-.brand-title {
+.navbar__title {
   margin: 0;
-  font-size: 24px;
+  font-size: var(--font-size-title);
   font-weight: 700;
   background: linear-gradient(135deg, #409eff 0%, #67c23a 100%);
   -webkit-background-clip: text;
@@ -116,93 +119,95 @@ const handleLogout = async () => {
   letter-spacing: -0.5px;
 }
 
-.brand-subtitle {
-  font-size: 13px;
-  color: #909399;
+.navbar__subtitle {
+  font-size: var(--font-size-xxs);
+  color: var(--color-text-tertiary);
   font-weight: 500;
 }
 
-.navbar-user {
+.navbar__user {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: var(--spacing-lg);
 }
 
-.user-info {
+.navbar__user-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--spacing-sm-lg);
 }
 
-.user-avatar {
-  border: 2px solid #f5f7fa;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.navbar__avatar {
+  border: var(--border-width-medium) solid var(--color-background-lighter);
+  box-shadow: var(--shadow-card);
 }
 
-.user-nickname {
-  font-size: 15px;
+.navbar__nickname {
+  font-size: var(--font-size-base);
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text-primary);
 }
 
-.navbar-actions {
+.navbar__actions {
   display: flex;
-  gap: 12px;
+  gap: var(--spacing-sm-lg);
 }
 
-.nav-button {
-  border-radius: 8px;
+.navbar__button {
+  border-radius: var(--border-radius-large);
   font-weight: 500;
   transition: all 0.3s ease;
 }
 
-.nav-button:hover {
+.navbar__button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-button-hover);
 }
 
 /* 响应式设计 */
+/* 平板端：对应 --breakpoint-tablet (768px) */
 @media (max-width: 768px) {
-  .navbar-container {
-    padding: 0 16px;
+  .navbar__container {
+    padding: 0 var(--spacing-md);
   }
 
-  .brand-subtitle {
+  .navbar__subtitle {
     display: none;
   }
 
-  .user-nickname {
+  .navbar__nickname {
     display: none;
   }
 
-  .navbar-actions {
-    gap: 8px;
+  .navbar__actions {
+    gap: var(--spacing-sm);
   }
 
-  .nav-button {
-    padding: 8px 12px;
-    font-size: 14px;
+  .navbar__button {
+    padding: var(--spacing-sm) var(--spacing-sm-lg);
+    font-size: var(--font-size-sm);
   }
 
-  .nav-button :deep(.el-icon) {
+  .navbar__button :deep(.el-icon) {
     margin-right: 0;
   }
 
-  .nav-button :deep(span) {
+  .navbar__button :deep(span) {
     display: none;
   }
 }
 
+/* 移动端：对应 --breakpoint-mobile (480px) */
 @media (max-width: 480px) {
   .navbar {
-    height: 56px;
+    height: var(--navbar-height-mobile);
   }
 
-  .brand-title {
-    font-size: 20px;
+  .navbar__title {
+    font-size: var(--font-size-lg);
   }
 
-  .user-avatar {
+  .navbar__avatar {
     width: 32px;
     height: 32px;
   }

@@ -35,6 +35,8 @@
   --color-background-header: #fafafa;  /* 卡片头部背景色 */
   --color-background-table-header: #f5f7fa;  /* 表格头部背景色 */
   --color-background-table-striped: #fafafa;  /* 表格斑马纹背景色 */
+  --color-navbar-background: rgba(255, 255, 255, 0.95);  /* 导航栏背景色 */
+  --color-navbar-border: rgba(0, 0, 0, 0.06);  /* 导航栏边框色 */
   
   /* 功能色 - 成功/警告/错误/信息 */
   --color-success: #10b981;
@@ -75,6 +77,8 @@
   --shadow-auth-card: 0 10px 40px rgba(0, 0, 0, 0.08);  /* 登录/注册卡片阴影 */
   --shadow-avatar: 0 4px 16px rgba(0, 0, 0, 0.08);
   --shadow-card-layered: 0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06), 0 16px 48px rgba(0, 0, 0, 0.08);
+  --shadow-navbar: 0 2px 12px rgba(0, 0, 0, 0.08);  /* 导航栏阴影 */
+  --shadow-button-hover: 0 4px 12px rgba(0, 0, 0, 0.15);  /* 按钮悬停阴影 */
   --shadow-meta: 0 1px 3px rgba(0, 0, 0, 0.02);
   
   /* ==================== 字号变量 ==================== */
@@ -133,6 +137,7 @@
   
   /* 布局间距 */
   --navbar-height: 64px;
+  --navbar-height-mobile: 56px;  /* 移动端导航栏高度 */
   --page-padding-top: 84px;  /* navbar高度 + 额外间距 */
   --page-padding-top-tablet: 64px;  /* 平板端顶部间距 */
   --page-padding-top-mobile: 56px;  /* 移动端顶部间距 */
