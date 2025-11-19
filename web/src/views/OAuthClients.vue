@@ -1,17 +1,17 @@
 <template>
-    <div class="oauth-clients-wrapper">
+    <div class="oauth-clients-page">
         <Navbar />
-        <div class="oauth-clients-container">
-            <el-card class="oauth-clients-card">
+        <div class="oauth-clients-page__container">
+            <el-card class="oauth-clients-page__card">
                 <template #header>
-                    <div class="card-header">
-                        <h2 class="page-title">OAuth 客户端管理</h2>
-                        <div class="header-actions">
-                            <div class="filter-bar">
-                                <el-input v-model="filters.name" placeholder="搜索客户端名称" clearable style="width: 200px"
-                                    @input="handleFilterChange" />
-                                <el-select v-model="filters.status" placeholder="状态筛选" clearable style="width: 140px"
-                                    @change="handleFilterChange">
+                    <div class="oauth-clients-page__header">
+                        <h2 class="oauth-clients-page__title">OAuth 客户端管理</h2>
+                        <div class="oauth-clients-page__actions">
+                            <div class="oauth-clients-page__filters">
+                                <el-input v-model="filters.name" placeholder="搜索客户端名称" clearable
+                                    class="oauth-clients-page__filter-input" @input="handleFilterChange" />
+                                <el-select v-model="filters.status" placeholder="状态筛选" clearable
+                                    class="oauth-clients-page__filter-select" @change="handleFilterChange">
                                     <el-option label="正常" :value="1" />
                                     <el-option label="禁用" :value="0" />
                                 </el-select>
@@ -27,7 +27,7 @@
                     <el-table-column prop="id" label="ID" width="80" />
                     <el-table-column label="Logo" width="100">
                         <template #default="{ row }">
-                            <el-avatar :size="50" :src="row.logo" :icon="Cpu" />
+                            <el-avatar :size="avatarSize" :src="row.logo" :icon="Cpu" />
                         </template>
                     </el-table-column>
                     <el-table-column prop="name" label="客户端名称" min-width="200" />
@@ -50,7 +50,7 @@
                     </el-table-column>
                 </el-table>
 
-                <div class="pagination-wrapper">
+                <div class="oauth-clients-page__pagination">
                     <el-pagination v-model:current-page="pagination.page" v-model:page-size="pagination.pageSize"
                         :page-sizes="[10, 20, 50, 100]" :total="pagination.total"
                         layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
@@ -60,11 +60,11 @@
         </div>
 
         <!-- 新建客户端弹窗 -->
-        <el-dialog v-model="createDialogVisible" title="新建 OAuth 客户端" width="700px" :close-on-click-modal="false"
+        <el-dialog v-model="createDialogVisible" title="新建 OAuth 客户端" :width="dialogWidth" :close-on-click-modal="false"
             @close="handleCreateDialogClose">
             <OAuthClientForm ref="createFormRef" mode="create" />
             <template #footer>
-                <div class="dialog-footer">
+                <div class="oauth-clients-page__dialog-footer">
                     <el-button @click="handleCancelCreate">取消</el-button>
                     <el-button type="primary" :loading="submitLoading" @click="handleSubmitCreate">
                         确认创建
@@ -74,11 +74,11 @@
         </el-dialog>
 
         <!-- 编辑客户端弹窗 -->
-        <el-dialog v-model="editDialogVisible" title="编辑 OAuth 客户端" width="700px" :close-on-click-modal="false"
+        <el-dialog v-model="editDialogVisible" title="编辑 OAuth 客户端" :width="dialogWidth" :close-on-click-modal="false"
             @close="handleEditDialogClose">
             <OAuthClientForm ref="editFormRef" mode="edit" :initial-data="currentClient" />
             <template #footer>
-                <div class="dialog-footer">
+                <div class="oauth-clients-page__dialog-footer">
                     <el-button @click="handleCancelEdit">取消</el-button>
                     <el-button type="primary" :loading="submitLoading" @click="handleSubmitEdit">
                         确认更新
@@ -98,6 +98,12 @@ import { useOAuthClientList } from '@/composables/useOAuthClientList'
 import { createOAuthClient, getOAuthClient, updateOAuthClient, deleteOAuthClient } from '@/api/oauth_client'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { OAuthClientDetailResponse } from '@/types/oauth_client'
+
+// 头像尺寸（对应 --icon-size-medium）
+const avatarSize = 50
+
+// 对话框宽度（对应 --dialog-width-medium）
+const dialogWidth = '700px'
 
 // 使用 composable 管理业务逻辑
 const {
@@ -258,135 +264,141 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.oauth-clients-wrapper {
+.oauth-clients-page {
     min-height: 100vh;
     background:
         linear-gradient(135deg, rgba(245, 247, 250, 0.8) 0%, rgba(228, 231, 235, 0.9) 100%),
-        repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 0, 0, 0.02) 35px, rgba(0, 0, 0, 0.02) 70px),
-        repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(0, 0, 0, 0.01) 35px, rgba(0, 0, 0, 0.01) 70px),
-        #f8f9fa;
+        repeating-linear-gradient(45deg, transparent, transparent var(--pattern-size-small), rgba(0, 0, 0, 0.02) var(--pattern-size-small), rgba(0, 0, 0, 0.02) var(--pattern-size-large)),
+        repeating-linear-gradient(-45deg, transparent, transparent var(--pattern-size-small), rgba(0, 0, 0, 0.01) var(--pattern-size-small), rgba(0, 0, 0, 0.01) var(--pattern-size-large)),
+        var(--color-background-light);
 }
 
-.oauth-clients-container {
+.oauth-clients-page__container {
     min-height: 100vh;
-    padding: 84px 20px 20px;
-    max-width: 1400px;
+    padding: var(--page-padding-top) var(--spacing-lg) var(--spacing-lg);
+    max-width: var(--container-max-width-xlarge);
     margin: 0 auto;
 }
 
-.oauth-clients-card {
-    border-radius: 24px;
-    box-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.04),
-        0 8px 24px rgba(0, 0, 0, 0.06),
-        0 16px 48px rgba(0, 0, 0, 0.08);
-    background: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.8);
+.oauth-clients-page__card {
+    border-radius: var(--border-radius-card-large);
+    box-shadow: var(--shadow-card-layered);
+    background: var(--color-card-background);
+    border: var(--border-width-thin) solid var(--color-border-white-translucent);
     overflow: hidden;
 }
 
-:deep(.el-card__header) {
-    padding: 24px 32px;
-    border-bottom: 1px solid #ebeef5;
-    background: #fafafa;
+.oauth-clients-page__card :deep(.el-card__header) {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-bottom: var(--border-width-thin) solid var(--color-border-lighter);
+    background: var(--color-background-header);
 }
 
-.card-header {
+.oauth-clients-page__header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: var(--spacing-md);
 }
 
-.page-title {
+.oauth-clients-page__title {
     margin: 0;
-    font-size: 24px;
+    font-size: var(--font-size-title);
     font-weight: 600;
-    color: #303133;
+    color: var(--color-text-primary);
 }
 
-.header-actions {
+.oauth-clients-page__actions {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: var(--spacing-md);
 }
 
-.filter-bar {
+.oauth-clients-page__filters {
     display: flex;
-    gap: 12px;
+    gap: var(--spacing-sm-lg);
 }
 
-.dialog-footer {
+.oauth-clients-page__filter-input {
+    width: var(--input-width-medium);
+}
+
+.oauth-clients-page__filter-select {
+    width: var(--input-width-small);
+}
+
+.oauth-clients-page__dialog-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    gap: var(--spacing-sm-lg);
 }
 
-:deep(.el-card__body) {
-    padding: 32px;
+.oauth-clients-page__card :deep(.el-card__body) {
+    padding: var(--spacing-xl);
 }
 
-:deep(.el-table) {
-    border-radius: 12px;
+.oauth-clients-page__card :deep(.el-table) {
+    border-radius: var(--border-radius-card);
     overflow: hidden;
 }
 
-:deep(.el-table__header-wrapper th) {
-    background-color: #f5f7fa;
-    color: #303133;
+.oauth-clients-page__card :deep(.el-table__header-wrapper th) {
+    background-color: var(--color-background-table-header);
+    color: var(--color-text-primary);
     font-weight: 600;
 }
 
-:deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
-    background-color: #fafafa;
+.oauth-clients-page__card :deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
+    background-color: var(--color-background-table-striped);
 }
 
-.pagination-wrapper {
+.oauth-clients-page__pagination {
     display: flex;
     justify-content: flex-end;
-    margin-top: 24px;
+    margin-top: var(--spacing-lg);
 }
 
-:deep(.el-pagination) {
+.oauth-clients-page__pagination :deep(.el-pagination) {
     justify-content: flex-end;
 }
 
 /* 响应式设计 */
+/* 平板端：对应 --breakpoint-tablet (768px) */
 @media (max-width: 768px) {
-    .oauth-clients-container {
-        padding: 84px 16px 16px;
+    .oauth-clients-page__container {
+        padding: var(--page-padding-top) var(--spacing-md) var(--spacing-md);
     }
 
-    .card-header {
+    .oauth-clients-page__header {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    .header-actions {
+    .oauth-clients-page__actions {
         width: 100%;
         flex-direction: column;
     }
 
-    .filter-bar {
+    .oauth-clients-page__filters {
         width: 100%;
         flex-direction: column;
     }
 
-    .filter-bar .el-input,
-    .filter-bar .el-select {
-        width: 100% !important;
+    .oauth-clients-page__filter-input,
+    .oauth-clients-page__filter-select {
+        width: 100%;
     }
 
-    :deep(.el-card__body) {
-        padding: 20px;
+    .oauth-clients-page__card :deep(.el-card__body) {
+        padding: var(--spacing-lg);
     }
 
-    .pagination-wrapper {
+    .oauth-clients-page__pagination {
         overflow-x: auto;
     }
 
-    :deep(.el-pagination) {
+    .oauth-clients-page__pagination :deep(.el-pagination) {
         flex-wrap: wrap;
     }
 }

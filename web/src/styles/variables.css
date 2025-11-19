@@ -32,6 +32,9 @@
   --color-card-background: #ffffff;
   --color-background-light: #f8f9fa;
   --color-background-lighter: #f5f7fa;
+  --color-background-header: #fafafa;  /* 卡片头部背景色 */
+  --color-background-table-header: #f5f7fa;  /* 表格头部背景色 */
+  --color-background-table-striped: #fafafa;  /* 表格斑马纹背景色 */
   
   /* 功能色 - 成功/警告/错误/信息 */
   --color-success: #10b981;
@@ -112,6 +115,13 @@
   --input-height-small: 32px;
   --input-height-medium: 40px;
   --input-height-large: 44px;
+  --input-width-small: 140px;  /* 小型筛选输入框 */
+  --input-width-medium: 200px;  /* 中型筛选输入框 */
+  
+  /* 对话框宽度 */
+  --dialog-width-small: 500px;
+  --dialog-width-medium: 700px;
+  --dialog-width-large: 900px;
   
   /* 容器尺寸 */
   --container-max-width-small: 600px;
@@ -119,6 +129,7 @@
   --container-max-width-auth: 450px;  /* 登录/注册卡片宽度 */
   --container-max-width-medium: 800px;
   --container-max-width-large: 1200px;
+  --container-max-width-xlarge: 1400px;  /* 表格页面容器宽度 */
   
   /* 布局间距 */
   --navbar-height: 64px;
