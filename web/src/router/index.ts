@@ -69,6 +69,15 @@ const routes: Array<RouteRecordRaw> = [
       title: 'OAuth 授权',
       requiresAuth: false  // 页面内部处理登录检查
     }
+  },
+  {
+    path: '/error',
+    name: 'Error',
+    component: () => import('@/views/ErrorPage.vue'),
+    meta: {
+      title: '错误',
+      requiresAuth: false
+    }
   }
 ]
 
