@@ -1,21 +1,4 @@
-/* 全局样式重置 */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-:root {
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
-  line-height: 1.6;
-  font-weight: 400;
-  
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
+/* 全局布局样式 */
 body {
   margin: 0;
   padding: 0;
@@ -49,7 +32,7 @@ body {
   background: #555;
 }
 
-/* Element Plus 自定义样式 */
+/* Element Plus 全局样式覆盖 */
 .el-button {
   border-radius: 6px;
 }
@@ -61,3 +44,4 @@ body {
 .el-card {
   border-radius: 12px;
 }
+
