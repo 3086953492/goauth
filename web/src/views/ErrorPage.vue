@@ -1,22 +1,22 @@
 <template>
-  <div class="error-container">
-    <el-card class="error-card">
-      <div class="error-content">
+  <div class="error-page">
+    <el-card class="error-page__card">
+      <div class="error-page__content">
         <!-- 错误图标 -->
-        <div class="error-icon">
+        <div class="error-page__icon">
           <el-icon :size="80" color="#f56c6c">
             <CircleClose />
           </el-icon>
         </div>
 
         <!-- 错误标题 -->
-        <h1 class="error-title">{{ displayError }}</h1>
+        <h1 class="error-page__title">{{ displayError }}</h1>
 
         <!-- 错误描述 -->
-        <p class="error-description">{{ displayDescription }}</p>
+        <p class="error-page__description">{{ displayDescription }}</p>
 
         <!-- 操作按钮 -->
-        <div class="error-actions">
+        <div class="error-page__actions">
           <el-button type="default" size="large" @click="goBack">
             返回上一页
           </el-button>
@@ -87,34 +87,34 @@ const goHome = () => {
 </script>
 
 <style scoped>
-.error-container {
+.error-page {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #edf2f7;
+  background: var(--color-page-background);
   background-image:
     radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.8) 0, transparent 55%),
     radial-gradient(circle at 100% 100%, rgba(15, 23, 42, 0.08) 0, transparent 55%);
-  padding: 20px;
+  padding: var(--spacing-lg);
 }
 
-.error-card {
+.error-page__card {
   width: 100%;
   max-width: 600px;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-  background: #ffffff;
+  border-radius: var(--border-radius-xlarge);
+  box-shadow: var(--shadow-xlarge);
+  background: var(--color-card-background);
   overflow: hidden;
 }
 
-.error-content {
-  padding: 40px 20px;
+.error-page__content {
+  padding: var(--spacing-xxl) var(--spacing-lg);
   text-align: center;
 }
 
-.error-icon {
-  margin-bottom: 24px;
+.error-page__icon {
+  margin-bottom: var(--spacing-lg);
   animation: shake 0.5s ease-in-out;
 }
 
@@ -124,19 +124,19 @@ const goHome = () => {
   75% { transform: translateX(10px); }
 }
 
-.error-title {
-  margin: 0 0 16px 0;
-  font-size: 32px;
+.error-page__title {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-heading);
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text-primary);
   line-height: 1.4;
   word-break: break-word;
 }
 
-.error-description {
-  margin: 0 0 32px 0;
-  font-size: 16px;
-  color: #606266;
+.error-page__description {
+  margin: 0 0 var(--spacing-xl) 0;
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
@@ -145,51 +145,51 @@ const goHome = () => {
   margin-right: auto;
 }
 
-.error-actions {
+.error-page__actions {
   display: flex;
-  gap: 16px;
+  gap: var(--spacing-md);
   justify-content: center;
   flex-wrap: wrap;
 }
 
-.error-actions .el-button {
+.error-page__actions .el-button {
   min-width: 140px;
-  height: 44px;
-  font-size: 16px;
+  height: var(--button-height-large);
+  font-size: var(--font-size-base);
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: var(--border-radius-large);
 }
 
 /* 响应式设计 */
 @media (max-width: 600px) {
-  .error-container {
-    padding: 16px;
+  .error-page {
+    padding: var(--spacing-md);
   }
 
-  .error-content {
-    padding: 32px 16px;
+  .error-page__content {
+    padding: var(--spacing-xl) var(--spacing-md);
   }
 
-  .error-title {
-    font-size: 24px;
+  .error-page__title {
+    font-size: var(--font-size-title);
   }
 
-  .error-description {
-    font-size: 14px;
+  .error-page__description {
+    font-size: var(--font-size-sm);
   }
 
-  .error-actions {
+  .error-page__actions {
     flex-direction: column;
-    gap: 12px;
+    gap: var(--spacing-sm);
   }
 
-  .error-actions .el-button {
+  .error-page__actions .el-button {
     width: 100%;
   }
 }
 
 /* 使用中性浅灰 + 轻微蓝灰点缀的现代背景 */
-.error-container::before {
+.error-page::before {
   content: '';
   position: absolute;
   top: 0;
