@@ -4,7 +4,7 @@ body {
   padding: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: var(--color-background);
 }
 
 #app {
@@ -14,34 +14,34 @@ body {
 
 /* 滚动条样式 */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-height);
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+  background: var(--color-scrollbar-track);
+  border-radius: var(--border-radius-small);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
+  background: var(--color-scrollbar-thumb);
+  border-radius: var(--border-radius-small);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--color-scrollbar-thumb-hover);
 }
 
 /* Element Plus 全局样式覆盖 */
 .el-button {
-  border-radius: 6px;
+  border-radius: var(--border-radius-button);
 }
 
 .el-input__wrapper {
-  border-radius: 6px;
+  border-radius: var(--border-radius-input);
 }
 
 .el-card {
-  border-radius: 12px;
+  border-radius: var(--border-radius-card);
 }
 

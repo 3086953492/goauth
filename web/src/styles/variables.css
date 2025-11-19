@@ -1,18 +1,88 @@
-/* CSS 变量定义 - 为未来统一设计管理预留 */
+/* CSS 变量定义 - 统一设计系统 */
 :root {
-  /* 颜色变量 */
+  /* ==================== 颜色变量 ==================== */
+  
+  /* 主色系 - 现代蓝色调 */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #3b82f6;
+  --color-primary-lighter: #60a5fa;
+  
+  /* 中性色 - 文字与边框 */
+  --color-text-primary: #303133;
+  --color-text-secondary: #606266;
+  --color-text-tertiary: #909399;
+  --color-text-placeholder: #c0c4cc;
+  
+  --color-border: #dcdfe6;
+  --color-border-light: #e4e7ed;
+  --color-border-lighter: #ebeef5;
+  
+  /* 背景色 */
   --color-background: #f5f5f5;
+  --color-page-background: #edf2f7;
+  --color-card-background: #ffffff;
+  
+  /* 功能色 - 成功/警告/错误/信息 */
+  --color-success: #10b981;
+  --color-success-light: #34d399;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fbbf24;
+  --color-danger: #ef4444;
+  --color-danger-light: #f87171;
+  --color-info: #3b82f6;
+  --color-info-light: #60a5fa;
+  
+  /* 滚动条颜色 */
   --color-scrollbar-track: #f1f1f1;
   --color-scrollbar-thumb: #888;
   --color-scrollbar-thumb-hover: #555;
   
-  /* 圆角变量 */
+  /* ==================== 圆角变量 ==================== */
   --border-radius-small: 4px;
   --border-radius-medium: 6px;
-  --border-radius-large: 12px;
+  --border-radius-large: 8px;
+  --border-radius-xlarge: 12px;
+  --border-radius-card: 12px;
+  --border-radius-button: 6px;
+  --border-radius-input: 6px;
   
-  /* 尺寸变量 */
+  /* ==================== 阴影变量 ==================== */
+  --shadow-small: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-layer: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-large: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --shadow-xlarge: 0 20px 60px rgba(0, 0, 0, 0.15);
+  
+  /* ==================== 字号变量 ==================== */
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-title: 24px;
+  --font-size-heading: 32px;
+  
+  /* ==================== 间距变量 ==================== */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 40px;
+  
+  /* ==================== 尺寸变量 ==================== */
   --scrollbar-width: 8px;
   --scrollbar-height: 8px;
+  
+  /* 按钮尺寸 */
+  --button-height-small: 32px;
+  --button-height-medium: 40px;
+  --button-height-large: 44px;
+  
+  /* 输入框尺寸 */
+  --input-height-small: 32px;
+  --input-height-medium: 40px;
+  --input-height-large: 44px;
 }
 

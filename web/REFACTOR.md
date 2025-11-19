@@ -45,11 +45,20 @@
   - 各组件中类名整体还算语义化，例如：
     - `ErrorPage.vue` 中的 `.error-container` / `.error-card` 等。
     - `Users.vue` 中的 `.users-wrapper` / `.users-container` 等。
-  - 但目前项目层面没有统一“命名规则文档”和“设计变量”落地。
+  - 但目前项目层面没有统一"命名规则文档"和"设计变量"落地。
 - 建议整改：
   1. 在 `styles/global` 或单独文档中写清：
      - 类命名采用 BEM 或统一的 block/element 风格。
   2. 把常用的颜色、阴影、圆角统一抽象为 CSS 变量，放在 `variables` 文件中，以便未来统一换肤或调整风格。
+- **命名约定**（已在 `DEVELOPMENT_GUIDELINES.md` 第十节明确）：
+  - 统一采用「近似 BEM」命名：`block__element--modifier`。
+  - 页面级根容器使用 `xxx-page` 格式（如 `error-page`、`users-page`）。
+  - 内层元素使用 `__` 连接（如 `error-page__card`、`users-page__toolbar`）。
+  - 状态/外观修饰符使用 `--` 连接（如 `btn--primary`、`card--disabled`）。
+- **完成标准**：
+  - ✅ 至少一个页面（如 `ErrorPage.vue`）的类名已改造为约定风格。
+  - ✅ 关键颜色、圆角、阴影、间距已抽取到 `src/styles/variables.css` 并在全局/页面样式中使用。
+  - ✅ `DEVELOPMENT_GUIDELINES.md` 中已补充命名规范与 CSS 变量使用示例。
 
 ---
 

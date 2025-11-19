@@ -199,14 +199,55 @@ src/
   - 组件私有样式放在组件内 `<style scoped>` 中。
 
 - **命名与规范**
-  - 推荐使用 BEM 或统一约定的命名规则：
-    - `block__element--modifier`
-  - 避免无语义的类名（如 `.red`, `.big`），使用语义化命名（如 `.btn-primary`）。
+  - **统一采用「近似 BEM」的命名风格**：
+    - 格式：`block__element--modifier`
+    - **Block（块）**：独立的功能单元，页面级根容器建议使用 `xxx-page` 或 `page-xxx` 作为 block 名。
+      - 示例：`error-page`、`users-page`、`login-page`
+    - **Element（元素）**：block 内部的组成部分，使用 `__` 连接。
+      - 示例：`error-page__card`、`error-page__content`、`users-page__toolbar`
+    - **Modifier（修饰符）**：表示状态或外观变化，使用 `--` 连接。
+      - 示例：`btn--primary`、`error-page__action--secondary`、`card--disabled`
+  - **命名原则**：
+    - 避免无语义的类名（如 `.red`、`.big`、`.container`），使用语义化命名。
+    - 类名应清晰表达其职责与层级关系。
+    - 组件内私有样式使用 `<style scoped>`，类名可适当简化但仍需保持语义。
+  - **示例对比**：
+    - ❌ 不推荐：`.container` / `.wrapper` / `.box`
+    - ✅ 推荐：`.users-page` / `.users-page__header` / `.users-page__table`
 
 - **配色与主题**
   - 使用现代、简洁的设计风格，颜色通过变量统一管理。
   - 严禁使用高饱和、刺眼的颜色作为主色，尤其避免让界面显得浮夸。
   - 主题切换（如暗色模式）通过 CSS 变量或类名切换实现。
+
+- **CSS 变量使用规范**
+  - **强制要求**：所有颜色、圆角、阴影、间距等设计属性必须优先使用 `src/styles/variables.css` 中定义的 CSS 变量。
+  - **禁止行为**：在组件样式中直接硬编码 hex 颜色值（如 `#303133`）、固定像素值的圆角/阴影等。
+  - **变量分类**：
+    - 颜色变量：`--color-primary`、`--color-text-primary`、`--color-background` 等。
+    - 圆角变量：`--border-radius-small`、`--border-radius-button`、`--border-radius-card` 等。
+    - 阴影变量：`--shadow-card`、`--shadow-layer` 等。
+    - 间距变量：`--spacing-sm`、`--spacing-md`、`--spacing-lg` 等。
+    - 字号变量：`--font-size-base`、`--font-size-title` 等。
+  - **使用示例**：
+    ```css
+    /* ❌ 不推荐：硬编码颜色与圆角 */
+    .my-card {
+      background: #ffffff;
+      color: #303133;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ✅ 推荐：使用 CSS 变量 */
+    .my-card {
+      background: var(--color-card-background);
+      color: var(--color-text-primary);
+      border-radius: var(--border-radius-card);
+      box-shadow: var(--shadow-card);
+    }
+    ```
+  - **扩展变量**：当需要新的设计属性时，应先在 `variables.css` 中定义变量，再在组件中使用。
 
 ---
 
