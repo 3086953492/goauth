@@ -1,18 +1,18 @@
 <template>
   <div class="password-form">
-    <div class="form-section">
-      <div class="section-header" @click="showPasswordSection = !showPasswordSection">
-        <h3 class="section-title">
-          <el-icon class="collapse-icon" :class="{ 'is-active': showPasswordSection }">
+    <div class="password-form__section">
+      <div class="password-form__header" @click="showPasswordSection = !showPasswordSection">
+        <h3 class="password-form__title">
+          <el-icon class="password-form__icon" :class="{ 'password-form__icon--active': showPasswordSection }">
             <ArrowRight />
           </el-icon>
           修改密码
         </h3>
-        <span class="section-hint">(可选，不修改请留空)</span>
+        <span class="password-form__hint">(可选，不修改请留空)</span>
       </div>
 
       <el-collapse-transition>
-        <div v-show="showPasswordSection" class="password-fields">
+        <div v-show="showPasswordSection" class="password-form__fields">
           <el-form-item label="新密码" prop="password">
             <el-input :model-value="modelValue.password" @input="updateField('password', $event)" type="password"
               placeholder="留空表示不修改密码" show-password clearable :prefix-icon="Lock" />
@@ -58,53 +58,53 @@ const updateField = (field: keyof PasswordData, value: string) => {
 
 <style scoped>
 .password-form {
-  margin-bottom: 24px;
+  margin-bottom: var(--spacing-lg);
 }
 
-.form-section {
-  padding-bottom: 24px;
-  border-bottom: 1px solid #ebeef5;
+.password-form__section {
+  padding-bottom: var(--spacing-lg);
+  border-bottom: var(--border-width-thin) solid var(--color-border-lighter);
 }
 
-.section-header {
+.password-form__header {
   cursor: pointer;
   user-select: none;
-  margin-bottom: 12px;
+  margin-bottom: var(--spacing-sm-lg);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--spacing-sm);
 }
 
-.section-header:hover .section-title {
-  color: #409eff;
+.password-form__header:hover .password-form__title {
+  color: var(--color-primary);
 }
 
-.section-title {
+.password-form__title {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--font-size-lg);
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text-primary);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--spacing-sm);
 }
 
-.section-hint {
-  font-size: 13px;
-  color: #909399;
+.password-form__hint {
+  font-size: var(--font-size-xxs);
+  color: var(--color-text-tertiary);
   font-weight: 400;
 }
 
-.collapse-icon {
+.password-form__icon {
   transition: transform 0.3s ease;
-  font-size: 16px;
+  font-size: var(--font-size-base);
 }
 
-.collapse-icon.is-active {
+.password-form__icon--active {
   transform: rotate(90deg);
 }
 
-.password-fields {
-  padding-top: 8px;
+.password-form__fields {
+  padding-top: var(--spacing-sm);
 }
 </style>

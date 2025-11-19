@@ -2,11 +2,11 @@
 :root {
   /* ==================== 颜色变量 ==================== */
   
-  /* 主色系 - 现代蓝色调 */
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-light: #3b82f6;
-  --color-primary-lighter: #60a5fa;
+  /* 主色系 - Element Plus 默认蓝色 */
+  --color-primary: #409eff;
+  --color-primary-hover: #66b1ff;
+  --color-primary-light: #79bbff;
+  --color-primary-lighter: #a0cfff;
   
   /* 中性色 - 文字与边框 */
   --color-text-primary: #303133;
