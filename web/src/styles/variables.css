@@ -38,11 +38,14 @@
   --color-success-light: #34d399;
   --color-warning: #f59e0b;
   --color-warning-light: #fbbf24;
+  --color-warning-background: #fdf6ec;  /* 警告背景色 */
+  --color-warning-text: #e6a23c;  /* 警告文字色 */
   --color-danger: #ef4444;
   --color-danger-light: #f87171;
   --color-danger-icon: #f56c6c;  /* Element Plus 错误图标色 */
   --color-info: #3b82f6;
   --color-info-light: #60a5fa;
+  --color-info-icon: #409eff;  /* Element Plus 信息图标色 */
   
   /* 滚动条颜色 */
   --color-scrollbar-track: #f1f1f1;
@@ -73,6 +76,7 @@
   
   /* ==================== 字号变量 ==================== */
   --font-size-xs: 12px;
+  --font-size-xxs: 13px;
   --font-size-sm: 14px;
   --font-size-base: 16px;
   --font-size-lg: 18px;
@@ -84,9 +88,12 @@
   /* ==================== 间距变量 ==================== */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
+  --spacing-sm-md: 10px;  /* 介于 sm 和 md 之间 */
+  --spacing-sm-lg: 12px;  /* 介于 sm 和 lg 之间 */
   --spacing-md: 16px;
   --spacing-md-lg: 18px;  /* 介于 md 和 lg 之间 */
   --spacing-lg: 24px;
+  --spacing-lg-xl: 30px;  /* 介于 lg 和 xl 之间 */
   --spacing-xl: 32px;
   --spacing-xxl: 40px;
   
@@ -136,8 +143,9 @@
   --animation-shake-distance: 10px;
   
   /* 图标尺寸 */
-  --icon-size-small: 40px;
-  --icon-size-medium: 60px;
+  --icon-size-xsmall: 16px;
+  --icon-size-small: 18px;
+  --icon-size-medium: 50px;
   --icon-size-large: 80px;
 }
 

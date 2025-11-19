@@ -1,15 +1,15 @@
 <template>
-  <div class="authorize-container">
-    <el-card class="authorize-card">
+  <div class="oauth-authorize-page">
+    <el-card class="oauth-authorize-page__card">
       <template #header>
-        <div class="card-header">
+        <div class="oauth-authorize-page__header">
           <h2>授权确认</h2>
           <p>第三方应用请求访问您的账号</p>
         </div>
       </template>
 
       <!-- 无效请求提示 -->
-      <div v-if="!isValidRequest" class="error-message">
+      <div v-if="!isValidRequest" class="oauth-authorize-page__error">
         <el-alert title="无效的授权请求" type="error" :closable="false" show-icon>
           <template #default>
             <p>授权请求参数不完整，请联系应用提供方。</p>
@@ -18,32 +18,32 @@
       </div>
 
       <!-- 正常授权信息展示 -->
-      <div v-else class="authorize-content">
+      <div v-else class="oauth-authorize-page__content">
         <!-- 用户信息 -->
-        <div class="info-section">
-          <div class="section-title">当前登录用户</div>
-          <div class="user-info">
-            <el-avatar :size="50" :src="currentUser?.avatar">
+        <div class="oauth-authorize-page__section">
+          <div class="oauth-authorize-page__section-title">当前登录用户</div>
+          <div class="oauth-authorize-page__user-info">
+            <el-avatar :size="avatarSize" :src="currentUser?.avatar">
               {{ currentUser?.nickname?.[0] || currentUser?.username?.[0] }}
             </el-avatar>
-            <div class="user-details">
-              <div class="user-name">{{ currentUser?.nickname || currentUser?.username }}</div>
-              <div class="user-username">@{{ currentUser?.username }}</div>
+            <div class="oauth-authorize-page__user-details">
+              <div class="oauth-authorize-page__user-name">{{ currentUser?.nickname || currentUser?.username }}</div>
+              <div class="oauth-authorize-page__user-username">@{{ currentUser?.username }}</div>
             </div>
           </div>
         </div>
 
         <!-- 客户端信息 -->
-        <div class="info-section">
-          <div class="section-title">授权给</div>
-          <div class="client-info">
-            <div class="client-id">
+        <div class="oauth-authorize-page__section">
+          <div class="oauth-authorize-page__section-title">授权给</div>
+          <div class="oauth-authorize-page__client-info">
+            <div class="oauth-authorize-page__client-item">
               <el-icon>
                 <Key />
               </el-icon>
               <span>客户端 ID: {{ oauthParams.client_id }}</span>
             </div>
-            <div class="redirect-uri">
+            <div class="oauth-authorize-page__client-item">
               <el-icon>
                 <Link />
               </el-icon>
@@ -53,9 +53,9 @@
         </div>
 
         <!-- 权限范围 -->
-        <div v-if="oauthParams.scope" class="info-section">
-          <div class="section-title">请求的权限</div>
-          <div class="scope-list">
+        <div v-if="oauthParams.scope" class="oauth-authorize-page__section">
+          <div class="oauth-authorize-page__section-title">请求的权限</div>
+          <div class="oauth-authorize-page__scope-list">
             <el-tag v-for="scope in scopeList" :key="scope" type="info" size="large">
               {{ scope }}
             </el-tag>
@@ -63,7 +63,7 @@
         </div>
 
         <!-- 操作按钮 -->
-        <div class="action-buttons">
+        <div class="oauth-authorize-page__actions">
           <el-button type="primary" size="large" :loading="authorizing" @click="handleAuthorize">
             {{ authorizing ? '授权中...' : '确认授权' }}
           </el-button>
@@ -73,7 +73,7 @@
         </div>
 
         <!-- 提示信息 -->
-        <div class="warning-text">
+        <div class="oauth-authorize-page__warning">
           <el-icon>
             <Warning />
           </el-icon>
@@ -96,6 +96,9 @@ import { confirmAuthorize } from '@/api/oauth'
 const route = useRoute()
 const authStore = useAuthStore()
 const { checkLogin } = usePermission()
+
+// 头像尺寸（对应 --icon-size-medium）
+const avatarSize = 50
 
 // OAuth 参数
 const oauthParams = ref({
@@ -205,163 +208,191 @@ const handleCancel = () => {
 </script>
 
 <style scoped>
-.authorize-container {
+.oauth-authorize-page {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f0f2f5;
+  background: var(--color-page-background-alt);
   background-image:
-    radial-gradient(circle at 25px 25px, rgba(0, 0, 0, 0.03) 2%, transparent 0%),
-    radial-gradient(circle at 75px 75px, rgba(0, 0, 0, 0.03) 2%, transparent 0%);
-  background-size: 100px 100px;
-  padding: 20px;
+    radial-gradient(circle at var(--pattern-size-dot-small) var(--pattern-size-dot-small), rgba(0, 0, 0, 0.03) 2%, transparent 0%),
+    radial-gradient(circle at var(--pattern-size-dot-large) var(--pattern-size-dot-large), rgba(0, 0, 0, 0.03) 2%, transparent 0%);
+  background-size: var(--pattern-size-grid) var(--pattern-size-grid);
+  padding: var(--spacing-lg);
 }
 
-.authorize-card {
+.oauth-authorize-page__card {
   width: 100%;
-  max-width: 600px;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-  background: #ffffff;
+  max-width: var(--container-max-width-small);
+  border-radius: var(--border-radius-xlarge);
+  box-shadow: var(--shadow-auth-card);
+  background: var(--color-card-background);
 }
 
-.card-header {
+.oauth-authorize-page__header {
   text-align: center;
 }
 
-.card-header h2 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
+.oauth-authorize-page__header h2 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-display);
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text-primary);
 }
 
-.card-header p {
+.oauth-authorize-page__header p {
   margin: 0;
-  font-size: 14px;
-  color: #909399;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
 }
 
-.error-message {
-  padding: 20px 0;
+.oauth-authorize-page__error {
+  padding: var(--spacing-lg) 0;
 }
 
-.authorize-content {
-  padding: 10px 0;
+.oauth-authorize-page__content {
+  padding: var(--spacing-sm-md) 0;
 }
 
-.info-section {
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #ebeef5;
+.oauth-authorize-page__section {
+  margin-bottom: var(--spacing-lg-xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: var(--border-width-thin) solid var(--color-border-lighter);
 }
 
-.info-section:last-of-type {
+.oauth-authorize-page__section:last-of-type {
   border-bottom: none;
 }
 
-.section-title {
-  font-size: 16px;
+.oauth-authorize-page__section-title {
+  font-size: var(--font-size-base);
   font-weight: 600;
-  color: #303133;
-  margin-bottom: 16px;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
 }
 
-.user-info {
+.oauth-authorize-page__user-info {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--spacing-md);
 }
 
-.user-details {
+.oauth-authorize-page__user-details {
   flex: 1;
 }
 
-.user-name {
-  font-size: 18px;
+.oauth-authorize-page__user-name {
+  font-size: var(--font-size-lg);
   font-weight: 500;
-  color: #303133;
-  margin-bottom: 4px;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
 }
 
-.user-username {
-  font-size: 14px;
-  color: #909399;
+.oauth-authorize-page__user-username {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
 }
 
-.client-info {
+.oauth-authorize-page__client-info {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--spacing-sm-lg);
 }
 
-.client-id,
-.redirect-uri {
+.oauth-authorize-page__client-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #606266;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm-lg);
+  background: var(--color-background-lighter);
+  border-radius: var(--border-radius-large);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
   word-break: break-all;
 }
 
-.client-id .el-icon,
-.redirect-uri .el-icon {
-  font-size: 18px;
-  color: #409eff;
+.oauth-authorize-page__client-item .el-icon {
+  font-size: var(--icon-size-small);
+  color: var(--color-info-icon);
   flex-shrink: 0;
 }
 
-.scope-list {
+.oauth-authorize-page__scope-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--spacing-sm-md);
 }
 
-.action-buttons {
+.oauth-authorize-page__actions {
   display: flex;
   justify-content: center;
-  gap: 16px;
-  margin-top: 30px;
-  margin-bottom: 20px;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg-xl);
+  margin-bottom: var(--spacing-lg);
 }
 
-.action-buttons .el-button {
-  min-width: 140px;
-  height: 44px;
-  font-size: 16px;
+.oauth-authorize-page__actions .el-button {
+  min-width: var(--button-min-width);
+  height: var(--button-height-large);
+  font-size: var(--font-size-base);
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: var(--border-radius-large);
 }
 
-.warning-text {
+.oauth-authorize-page__warning {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #e6a23c;
-  padding: 12px;
-  background: #fdf6ec;
-  border-radius: 8px;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-xxs);
+  color: var(--color-warning-text);
+  padding: var(--spacing-sm-lg);
+  background: var(--color-warning-background);
+  border-radius: var(--border-radius-large);
 }
 
-.warning-text .el-icon {
-  font-size: 16px;
+.oauth-authorize-page__warning .el-icon {
+  font-size: var(--icon-size-xsmall);
 }
 
 :deep(.el-avatar) {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  font-size: 20px;
+  font-size: var(--font-size-xl);
   font-weight: 600;
 }
 
 :deep(.el-tag) {
-  padding: 8px 16px;
-  font-size: 14px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+/* 响应式设计 */
+/* 小屏幕：对应 --breakpoint-mobile (480px) */
+@media (max-width: 480px) {
+  .oauth-authorize-page {
+    padding: var(--spacing-md);
+  }
+
+  .oauth-authorize-page__card {
+    border-radius: var(--border-radius-large);
+  }
+
+  .oauth-authorize-page__header h2 {
+    font-size: var(--font-size-title);
+  }
+
+  .oauth-authorize-page__user-info {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .oauth-authorize-page__actions {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .oauth-authorize-page__actions .el-button {
+    width: 100%;
+  }
 }
 </style>
