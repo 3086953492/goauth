@@ -1,13 +1,13 @@
 <template>
   <div class="user-info-form">
     <!-- 头像预览 -->
-    <div class="avatar-preview">
-      <el-avatar :size="100" :src="modelValue.avatar" :icon="Avatar" />
+    <div class="user-info-form__avatar-preview">
+      <el-avatar :size="avatarSize" :src="modelValue.avatar" :icon="Avatar" />
     </div>
 
     <!-- 用户信息表单 -->
-    <div class="form-section">
-      <h3 class="section-title">基本信息</h3>
+    <div class="user-info-form__section">
+      <h3 class="user-info-form__title">基本信息</h3>
 
       <el-form-item label="用户名" prop="username">
         <el-input :model-value="username || '加载中...'" disabled :prefix-icon="User" />
@@ -67,6 +67,9 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: UserInfo): void
 }>()
 
+// 头像尺寸
+const avatarSize = 100
+
 const userRoleOptions = USER_ROLES
 const userStatusOptions = USER_STATUS
 
@@ -80,37 +83,37 @@ const updateField = (field: keyof UserInfo, value: any) => {
 
 <style scoped>
 .user-info-form {
-  margin-bottom: 24px;
+  margin-bottom: var(--spacing-lg);
 }
 
-.avatar-preview {
+.user-info-form__avatar-preview {
   display: flex;
   justify-content: center;
-  margin-bottom: 32px;
+  margin-bottom: var(--spacing-xl);
 }
 
-.avatar-preview :deep(.el-avatar) {
-  border: 4px solid #f5f7fa;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+.user-info-form__avatar-preview :deep(.el-avatar) {
+  border: var(--border-width-thick) solid var(--color-background-lighter);
+  box-shadow: var(--shadow-avatar);
 }
 
-.form-section {
-  margin-bottom: 32px;
+.user-info-form__section {
+  margin-bottom: var(--spacing-xl);
 }
 
-.section-title {
-  margin: 0 0 20px 0;
-  font-size: 18px;
+.user-info-form__title {
+  margin: 0 0 var(--spacing-lg) 0;
+  font-size: var(--font-size-lg);
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text-primary);
 }
 
-:deep(.el-radio-group) {
+.user-info-form :deep(.el-radio-group) {
   display: flex;
-  gap: 16px;
+  gap: var(--spacing-md);
 }
 
-:deep(.el-radio) {
+.user-info-form :deep(.el-radio) {
   margin-right: 0;
 }
 </style>
