@@ -131,19 +131,29 @@
      - `src/composables/useOAuthClientForm.ts`：移除 success 判断
      - `src/views/OAuthClients.vue`：移除多处 success 判断
 
-#### 5.2 错误路由与全局错误页联动
+#### 5.2 错误路由与全局错误页联动 ✅
 
 - 现状：
   - 已有 `ErrorPage.vue`，主要用于展示 OAuth 授权相关的错误（读取 `error`、`error_description` query）。
   - 路由中有 `/error` 路由配置。
   - 但当前 Axios 拦截器中对 4xx/5xx 错误只做 `ElMessage.error` 提示，没有与 `/error` 页联动。
-- 建议整改：
-  1. 明确使用场景：
-     - 普通接口错误：弹出 `ElMessage` 即可。
-     - 严重错误（如鉴权失败多次、服务器错误等）：可考虑跳转 `/error` 页面，并携带 query。
-  2. 在 Axios 错误处理中，根据状态码（例如 500 或特定业务码）：
-     - 使用 `router.push({ name: 'Error', query: { error: 'server_error', error_description: '...' } })`。
-  3. 在 `ErrorPage.vue` 中保留现有 OAuth 错误处理，同时兼容通用错误展示。
+- 已完成整改：
+  1. **扩展 ErrorPage.vue**：
+     - 增加 HTTP 状态码错误映射（403、404、500、502、503）
+     - 增加通用错误类型（forbidden、not_found、internal_error、network_error、timeout）
+     - 为不同错误类型提供友好的默认描述
+     - 保持对 OAuth 错误的完全兼容
+  2. **改造 Axios 拦截器**：
+     - 403 权限错误：跳转到错误页，携带错误码和描述
+     - 500/502/503 服务器错误：跳转到错误页，携带错误码和描述
+     - 404 接口错误：仅弹出 ElMessage 提示（不跳转，因为通常是接口不存在）
+     - 401 认证错误：保持原有逻辑（刷新 token 或跳转登录）
+     - 其他错误：弹出 ElMessage 提示
+     - 增加防抖机制，避免多次跳转错误页
+  3. **使用场景明确**：
+     - 普通接口错误（400、404 等）：ElMessage 提示
+     - 严重错误（403、5xx）：跳转错误页面
+     - OAuth 错误：保持原有处理方式
 
 ---
 

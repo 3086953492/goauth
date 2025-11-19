@@ -8,6 +8,9 @@ import { API_BASE_URL } from '@/constants'
 // 防抖标志，避免多个401请求重复重定向
 let isRedirecting = false
 
+// 防抖标志，避免多次跳转错误页
+let isNavigatingToError = false
+
 // 刷新 token 的锁，避免并发刷新
 let isRefreshing = false
 // 待重试的请求队列
@@ -197,18 +200,59 @@ request.interceptors.response.use(
           break
         case 403:
           errorMessage = errorMessage || '拒绝访问'
+          // 403 权限错误，跳转到错误页
+          if (!isNavigatingToError) {
+            isNavigatingToError = true
+            router.push({
+              name: 'Error',
+              query: {
+                error: '403',
+                error_description: errorMessage
+              }
+            }).finally(() => {
+              setTimeout(() => {
+                isNavigatingToError = false
+              }, 1000)
+            })
+          }
           break
         case 404:
           errorMessage = errorMessage || '请求的资源不存在'
+          // 404 错误仅提示，不跳转（通常是接口不存在，不是页面不存在）
+          ElMessage.error(errorMessage)
           break
         case 500:
+        case 502:
+        case 503:
           errorMessage = errorMessage || '服务器内部错误'
+          // 5xx 服务器错误，跳转到错误页
+          if (!isNavigatingToError) {
+            isNavigatingToError = true
+            router.push({
+              name: 'Error',
+              query: {
+                error: String(status),
+                error_description: errorMessage
+              }
+            }).finally(() => {
+              setTimeout(() => {
+                isNavigatingToError = false
+              }, 1000)
+            })
+          }
           break
         default:
           errorMessage = errorMessage || '网络错误'
+          ElMessage.error(errorMessage)
       }
       
-      ElMessage.error(errorMessage)
+      // 对于不跳转错误页的情况，显示消息提示
+      if (status !== 403 && status !== 500 && status !== 502 && status !== 503) {
+        // 404 等已经在上面处理过了，这里处理其他状态码
+        if (status !== 404 && status !== 401) {
+          ElMessage.error(errorMessage)
+        }
+      }
       
       // 将错误消息附加到 error 对象上，方便业务层使用
       const errorWithMessage = new Error(errorMessage)

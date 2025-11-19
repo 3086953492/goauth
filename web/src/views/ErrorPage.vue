@@ -42,6 +42,7 @@ const iconSize = 80
 
 // 错误码到友好提示的映射
 const errorMessages: Record<string, string> = {
+  // OAuth 相关错误
   'invalid_request': '无效的请求',
   'unauthorized_client': '未授权的客户端',
   'access_denied': '访问被拒绝',
@@ -51,7 +52,21 @@ const errorMessages: Record<string, string> = {
   'temporarily_unavailable': '服务暂时不可用',
   'invalid_client': '无效的客户端',
   'invalid_grant': '无效的授权',
-  'unsupported_grant_type': '不支持的授权类型'
+  'unsupported_grant_type': '不支持的授权类型',
+  
+  // HTTP 状态码相关错误
+  '403': '访问被拒绝',
+  '404': '页面不存在',
+  '500': '服务器内部错误',
+  '502': '网关错误',
+  '503': '服务不可用',
+  
+  // 通用错误类型
+  'forbidden': '您没有权限访问此资源',
+  'not_found': '请求的资源不存在',
+  'internal_error': '服务器内部错误，请稍后重试',
+  'network_error': '网络连接失败',
+  'timeout': '请求超时'
 }
 
 // 从 query 中读取错误信息
@@ -75,7 +90,28 @@ const displayError = computed(() => {
 
 // 显示的错误描述
 const displayDescription = computed(() => {
-  return errorDescription.value || '请求发生未知错误，请稍后重试。'
+  if (errorDescription.value) {
+    return errorDescription.value
+  }
+  
+  // 根据错误类型提供默认描述
+  if (error.value === '403' || error.value === 'forbidden') {
+    return '您没有访问此页面的权限，请联系管理员或返回上一页。'
+  }
+  if (error.value === '404' || error.value === 'not_found') {
+    return '抱歉，您访问的页面不存在，可能已被删除或移动。'
+  }
+  if (error.value === '500' || error.value === 'internal_error') {
+    return '服务器遇到了一些问题，我们正在努力修复，请稍后再试。'
+  }
+  if (error.value === 'network_error') {
+    return '网络连接失败，请检查您的网络设置后重试。'
+  }
+  if (error.value === 'timeout') {
+    return '请求超时，服务器响应时间过长，请稍后重试。'
+  }
+  
+  return '请求发生未知错误，请稍后重试。'
 })
 
 // 返回上一页
