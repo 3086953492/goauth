@@ -35,6 +35,7 @@
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useAuth } from '@/composables/useAuth'
 import { usernameRules, passwordRules } from '@/utils/validators'
@@ -60,7 +61,28 @@ const rules = reactive<FormRules>({
 const { loading, handleLogin: login } = useAuth()
 
 const handleLogin = async () => {
-  await login(loginFormRef.value, loginForm, redirect.value)
+  if (!loginFormRef.value) return
+
+  // 执行表单校验
+  const valid = await loginFormRef.value.validate().catch(() => false)
+  
+  if (!valid) {
+    ElMessage.warning('请填写完整的登录信息')
+    return
+  }
+
+  // 调用登录逻辑
+  const result = await login(loginForm)
+
+  if (result.success) {
+    // 登录成功：显示提示并跳转
+    ElMessage.success(result.message || '登录成功')
+    router.push(redirect.value || '/home')
+  } else {
+    // 登录失败：错误已在拦截器中处理，这里可选择性提示
+    // 如果需要额外提示可以取消注释下面这行
+    // ElMessage.error(result.errorMessage || '登录失败')
+  }
 }
 
 const goToRegister = () => {

@@ -37,7 +37,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit, SwitchButton, User, Key, Avatar } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useAuth } from '@/composables/useAuth'
@@ -71,7 +71,14 @@ const handleLogout = async () => {
       type: 'warning'
     })
 
-    logout()
+    // 执行登出业务逻辑
+    const result = logout()
+    
+    if (result.success) {
+      // 登出成功：显示提示并跳转到登录页
+      ElMessage.success(result.message || '已退出登录')
+      router.push('/login')
+    }
   } catch {
     // 用户取消操作
   }

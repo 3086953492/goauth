@@ -49,6 +49,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { User, Lock, Avatar, Picture } from '@element-plus/icons-vue'
 import { useAuth } from '@/composables/useAuth'
@@ -80,7 +81,30 @@ const { loading, handleRegister: register } = useAuth()
 
 // 注册处理
 const handleRegister = async () => {
-  await register(registerFormRef.value, registerForm)
+  if (!registerFormRef.value) return
+
+  // 执行表单校验
+  const valid = await registerFormRef.value.validate().catch(() => false)
+  
+  if (!valid) {
+    ElMessage.warning('请填写完整的表单信息')
+    return
+  }
+
+  // 调用注册逻辑
+  const result = await register(registerForm)
+
+  if (result.success) {
+    // 注册成功：显示提示并延迟跳转到登录页
+    ElMessage.success(result.message || '注册成功！')
+    setTimeout(() => {
+      router.push('/login')
+    }, 1500)
+  } else {
+    // 注册失败：错误已在拦截器中处理，这里可选择性提示
+    // 如果需要额外提示可以取消注释下面这行
+    // ElMessage.error(result.errorMessage || '注册失败')
+  }
 }
 
 // 跳转到登录页
