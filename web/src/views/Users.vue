@@ -1,20 +1,20 @@
 <template>
-    <div class="users-wrapper">
+    <div class="users-page">
         <Navbar />
-        <div class="users-container">
-            <el-card class="users-card">
+        <div class="users-page__container">
+            <el-card class="users-page__card">
                 <template #header>
-                    <div class="card-header">
-                        <h2 class="page-title">用户列表</h2>
-                        <div class="filter-bar">
-                            <el-input v-model="filters.nickname" placeholder="搜索昵称" clearable style="width: 200px"
+                    <div class="users-page__header">
+                        <h2 class="users-page__title">用户列表</h2>
+                        <div class="users-page__filters">
+                            <el-input v-model="filters.nickname" placeholder="搜索昵称" clearable class="users-page__filter-input"
                                 @input="handleFilterChange" />
-                            <el-select v-model="filters.status" placeholder="状态筛选" clearable style="width: 140px"
+                            <el-select v-model="filters.status" placeholder="状态筛选" clearable class="users-page__filter-select"
                                 @change="handleFilterChange">
                                 <el-option label="正常" :value="1" />
                                 <el-option label="禁用" :value="0" />
                             </el-select>
-                            <el-select v-model="filters.role" placeholder="角色筛选" clearable style="width: 140px"
+                            <el-select v-model="filters.role" placeholder="角色筛选" clearable class="users-page__filter-select"
                                 @change="handleFilterChange">
                                 <el-option label="管理员" value="admin" />
                                 <el-option label="普通用户" value="user" />
@@ -27,7 +27,7 @@
                     <el-table-column prop="id" label="ID" width="80" />
                     <el-table-column label="头像" width="100">
                         <template #default="{ row }">
-                            <el-avatar :size="50" :src="row.avatar" :icon="Avatar" />
+                            <el-avatar :size="avatarSize" :src="row.avatar" :icon="Avatar" />
                         </template>
                     </el-table-column>
                     <el-table-column prop="nickname" label="昵称" min-width="150" />
@@ -58,7 +58,7 @@
                     </el-table-column>
                 </el-table>
 
-                <div class="pagination-wrapper">
+                <div class="users-page__pagination">
                     <el-pagination v-model:current-page="pagination.page" v-model:page-size="pagination.pageSize"
                         :page-sizes="[10, 20, 50, 100]" :total="pagination.total"
                         layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
@@ -79,6 +79,9 @@ import { Avatar } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+
+// 头像尺寸（对应 --icon-size-medium）
+const avatarSize = 50
 
 // 使用 composable 管理业务逻辑
 const {
@@ -104,117 +107,124 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.users-wrapper {
+.users-page {
     min-height: 100vh;
     background:
         linear-gradient(135deg, rgba(245, 247, 250, 0.8) 0%, rgba(228, 231, 235, 0.9) 100%),
-        repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 0, 0, 0.02) 35px, rgba(0, 0, 0, 0.02) 70px),
-        repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(0, 0, 0, 0.01) 35px, rgba(0, 0, 0, 0.01) 70px),
-        #f8f9fa;
+        repeating-linear-gradient(45deg, transparent, transparent var(--pattern-size-small), rgba(0, 0, 0, 0.02) var(--pattern-size-small), rgba(0, 0, 0, 0.02) var(--pattern-size-large)),
+        repeating-linear-gradient(-45deg, transparent, transparent var(--pattern-size-small), rgba(0, 0, 0, 0.01) var(--pattern-size-small), rgba(0, 0, 0, 0.01) var(--pattern-size-large)),
+        var(--color-background-light);
 }
 
-.users-container {
+.users-page__container {
     min-height: 100vh;
-    padding: 84px 20px 20px;
-    max-width: 1400px;
+    padding: var(--page-padding-top) var(--spacing-lg) var(--spacing-lg);
+    max-width: var(--container-max-width-xlarge);
     margin: 0 auto;
 }
 
-.users-card {
-    border-radius: 24px;
-    box-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.04),
-        0 8px 24px rgba(0, 0, 0, 0.06),
-        0 16px 48px rgba(0, 0, 0, 0.08);
-    background: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.8);
+.users-page__card {
+    border-radius: var(--border-radius-card-large);
+    box-shadow: var(--shadow-card-layered);
+    background: var(--color-card-background);
+    border: var(--border-width-thin) solid var(--color-border-white-translucent);
     overflow: hidden;
 }
 
-:deep(.el-card__header) {
-    padding: 24px 32px;
-    border-bottom: 1px solid #ebeef5;
-    background: #fafafa;
+.users-page__card :deep(.el-card__header) {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-bottom: var(--border-width-thin) solid var(--color-border-lighter);
+    background: var(--color-background-header);
 }
 
-.card-header {
+.users-page__header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: var(--spacing-md);
 }
 
-.page-title {
+.users-page__title {
     margin: 0;
-    font-size: 24px;
+    font-size: var(--font-size-title);
     font-weight: 600;
-    color: #303133;
+    color: var(--color-text-primary);
 }
 
-.filter-bar {
+.users-page__filters {
     display: flex;
-    gap: 12px;
+    gap: var(--spacing-sm-lg);
 }
 
-:deep(.el-card__body) {
-    padding: 32px;
+.users-page__filter-input {
+    width: var(--input-width-medium);
 }
 
-:deep(.el-table) {
-    border-radius: 12px;
+.users-page__filter-select {
+    width: var(--input-width-small);
+}
+
+.users-page__card :deep(.el-card__body) {
+    padding: var(--spacing-xl);
+}
+
+.users-page__card :deep(.el-table) {
+    border-radius: var(--border-radius-card);
     overflow: hidden;
 }
 
-:deep(.el-table__header-wrapper th) {
-    background-color: #f5f7fa;
-    color: #303133;
+.users-page__card :deep(.el-table__header-wrapper th) {
+    background-color: var(--color-background-table-header);
+    color: var(--color-text-primary);
     font-weight: 600;
 }
 
-:deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
-    background-color: #fafafa;
+.users-page__card :deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
+    background-color: var(--color-background-table-striped);
 }
 
-.pagination-wrapper {
+.users-page__pagination {
     display: flex;
     justify-content: flex-end;
-    margin-top: 24px;
+    margin-top: var(--spacing-lg);
 }
 
-:deep(.el-pagination) {
+.users-page__pagination :deep(.el-pagination) {
     justify-content: flex-end;
 }
 
 /* 响应式设计 */
+/* 平板端：对应 --breakpoint-tablet (768px) */
 @media (max-width: 768px) {
-    .users-container {
-        padding: 84px 16px 16px;
+    .users-page__container {
+        padding: var(--page-padding-top) var(--spacing-md) var(--spacing-md);
     }
 
-    .card-header {
+    .users-page__header {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    .filter-bar {
+    .users-page__filters {
         width: 100%;
         flex-direction: column;
     }
 
-    .filter-bar .el-select {
-        width: 100% !important;
+    .users-page__filter-input,
+    .users-page__filter-select {
+        width: 100%;
     }
 
-    :deep(.el-card__body) {
-        padding: 20px;
+    .users-page__card :deep(.el-card__body) {
+        padding: var(--spacing-lg);
     }
 
-    .pagination-wrapper {
+    .users-page__pagination {
         overflow-x: auto;
     }
 
-    :deep(.el-pagination) {
+    .users-page__pagination :deep(.el-pagination) {
         flex-wrap: wrap;
     }
 }
