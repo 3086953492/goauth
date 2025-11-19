@@ -28,6 +28,7 @@
   /* 背景色 */
   --color-background: #f5f5f5;
   --color-page-background: #edf2f7;
+  --color-page-background-alt: #f0f2f5;  /* 登录页等使用的浅灰背景 */
   --color-card-background: #ffffff;
   --color-background-light: #f8f9fa;
   --color-background-lighter: #f5f7fa;
@@ -65,6 +66,7 @@
   --shadow-layer: 0 4px 16px rgba(0, 0, 0, 0.12);
   --shadow-large: 0 8px 24px rgba(0, 0, 0, 0.15);
   --shadow-xlarge: 0 20px 60px rgba(0, 0, 0, 0.15);
+  --shadow-auth-card: 0 10px 40px rgba(0, 0, 0, 0.08);  /* 登录/注册卡片阴影 */
   --shadow-avatar: 0 4px 16px rgba(0, 0, 0, 0.08);
   --shadow-card-layered: 0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06), 0 16px 48px rgba(0, 0, 0, 0.08);
   --shadow-meta: 0 1px 3px rgba(0, 0, 0, 0.02);
@@ -97,6 +99,7 @@
   --button-height-medium: 40px;
   --button-height-large: 44px;
   --button-min-width: 140px;
+  --button-width-auth: 200px;  /* 登录/注册按钮宽度 */
   
   /* 输入框尺寸 */
   --input-height-small: 32px;
@@ -106,6 +109,7 @@
   /* 容器尺寸 */
   --container-max-width-small: 600px;
   --container-max-width-xsmall: 500px;
+  --container-max-width-auth: 450px;  /* 登录/注册卡片宽度 */
   --container-max-width-medium: 800px;
   --container-max-width-large: 1200px;
   
@@ -123,7 +127,10 @@
   
   /* 装饰性图案尺寸 */
   --pattern-size-small: 35px;
+  --pattern-size-dot-small: 25px;  /* 小圆点图案位置 */
+  --pattern-size-dot-large: 75px;  /* 大圆点图案位置 */
   --pattern-size-large: 70px;
+  --pattern-size-grid: 100px;  /* 网格图案尺寸 */
   
   /* 动画与变换 */
   --animation-shake-distance: 10px;

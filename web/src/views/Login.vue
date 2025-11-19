@@ -1,8 +1,8 @@
 <template>
-  <div class="login-container">
-    <el-card class="login-card">
+  <div class="login-page">
+    <el-card class="login-page__card">
       <template #header>
-        <div class="card-header">
+        <div class="login-page__header">
           <h2>用户登录</h2>
           <p>欢迎回来</p>
         </div>
@@ -17,13 +17,13 @@
           <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" show-password clearable />
         </el-form-item>
 
-        <el-form-item label-width="0" class="button-form-item">
-          <el-button type="primary" :loading="loading" @click="handleLogin" class="login-button">
+        <el-form-item label-width="0" class="login-page__button-form-item">
+          <el-button type="primary" :loading="loading" @click="handleLogin" class="login-page__button">
             {{ loading ? '登录中...' : '登录' }}
           </el-button>
         </el-form-item>
 
-        <div class="register-link">
+        <div class="login-page__register-link">
           还没有账户？
           <el-link type="primary" @click="goToRegister">立即注册</el-link>
         </div>
@@ -69,66 +69,66 @@ const goToRegister = () => {
 </script>
 
 <style scoped>
-.login-container {
+.login-page {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f0f2f5;
+  background: var(--color-page-background-alt);
   background-image: 
-    radial-gradient(circle at 25px 25px, rgba(0, 0, 0, 0.03) 2%, transparent 0%),
-    radial-gradient(circle at 75px 75px, rgba(0, 0, 0, 0.03) 2%, transparent 0%);
-  background-size: 100px 100px;
-  padding: 20px;
+    radial-gradient(circle at var(--pattern-size-dot-small) var(--pattern-size-dot-small), rgba(0, 0, 0, 0.03) 2%, transparent 0%),
+    radial-gradient(circle at var(--pattern-size-dot-large) var(--pattern-size-dot-large), rgba(0, 0, 0, 0.03) 2%, transparent 0%);
+  background-size: var(--pattern-size-grid) var(--pattern-size-grid);
+  padding: var(--spacing-lg);
 }
 
-.login-card {
+.login-page__card {
   width: 100%;
-  max-width: 450px;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-  background: #ffffff;
+  max-width: var(--container-max-width-auth);
+  border-radius: var(--border-radius-xlarge);
+  box-shadow: var(--shadow-auth-card);
+  background: var(--color-card-background);
 }
 
-.card-header {
+.login-page__header {
   text-align: center;
 }
 
-.card-header h2 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
+.login-page__header h2 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-display);
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text-primary);
 }
 
-.card-header p {
+.login-page__header p {
   margin: 0;
-  font-size: 14px;
-  color: #909399;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
 }
 
-.button-form-item {
+.login-page__button-form-item {
   text-align: center;
 }
 
-.button-form-item :deep(.el-form-item__content) {
+.login-page__button-form-item :deep(.el-form-item__content) {
   display: flex;
   justify-content: center;
 }
 
-.login-button {
-  width: 200px;
-  margin-top: 12px;
-  height: 44px;
-  font-size: 16px;
+.login-page__button {
+  width: var(--button-width-auth);
+  margin-top: var(--spacing-sm);
+  height: var(--button-height-large);
+  font-size: var(--font-size-base);
   font-weight: 500;
 }
 
-.register-link {
+.login-page__register-link {
   text-align: center;
-  margin-top: 16px;
-  font-size: 14px;
-  color: #606266;
+  margin-top: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
 }
 
 :deep(.el-form-item__label) {
@@ -136,10 +136,30 @@ const goToRegister = () => {
 }
 
 :deep(.el-input__inner) {
-  border-radius: 6px;
+  border-radius: var(--border-radius-input);
 }
 
 :deep(.el-button) {
-  border-radius: 6px;
+  border-radius: var(--border-radius-button);
+}
+
+/* 响应式设计 */
+/* 小屏幕：对应 --breakpoint-mobile (480px) */
+@media (max-width: 480px) {
+  .login-page {
+    padding: var(--spacing-md);
+  }
+
+  .login-page__card {
+    border-radius: var(--border-radius-large);
+  }
+
+  .login-page__header h2 {
+    font-size: var(--font-size-title);
+  }
+
+  .login-page__button {
+    width: 100%;
+  }
 }
 </style>
