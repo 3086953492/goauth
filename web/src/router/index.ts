@@ -1,84 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
+import authRoutes from './modules/auth'
+import userRoutes from './modules/user'
+import oauthRoutes from './modules/oauth'
+import systemRoutes from './modules/system'
 
-const routes: Array<RouteRecordRaw> = [
-  {
-    path: '/',
-    redirect: '/login'
-  },
-  {
-    path: '/register',
-    name: 'Register',
-    component: () => import('@/views/Register.vue'),
-    meta: {
-      title: '用户注册',
-      requiresAuth: false
-    }
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: () => import('@/views/Login.vue'),
-    meta: {
-      title: '用户登录',
-      requiresAuth: false
-    }
-  },
-  {
-    path: '/home',
-    name: 'Home',
-    component: () => import('@/views/Home.vue'),
-    meta: {
-      title: '主页',
-      requiresAuth: true
-    }
-  },
-  {
-    path: '/profile/:id?',
-    name: 'Profile',
-    component: () => import('@/views/Profile.vue'),
-    meta: {
-      title: '个人信息',
-      requiresAuth: true
-    }
-  },
-  {
-    path: '/users',
-    name: 'Users',
-    component: () => import('@/views/Users.vue'),
-    meta: {
-      title: '用户列表',
-      requiresAuth: true
-    }
-  },
-  {
-    path: '/oauth-clients',
-    name: 'OAuthClients',
-    component: () => import('@/views/OAuthClients.vue'),
-    meta: {
-      title: 'OAuth 客户端管理',
-      requiresAuth: true
-    }
-  },
-  {
-    path: '/oauth/authorize',
-    name: 'OAuthAuthorize',
-    component: () => import('@/views/OAuthAuthorize.vue'),
-    meta: {
-      title: 'OAuth 授权',
-      requiresAuth: false  // 页面内部处理登录检查
-    }
-  },
-  {
-    path: '/error',
-    name: 'Error',
-    component: () => import('@/views/ErrorPage.vue'),
-    meta: {
-      title: '错误',
-      requiresAuth: false
-    }
-  }
+const routes: RouteRecordRaw[] = [
+  ...authRoutes,
+  ...userRoutes,
+  ...oauthRoutes,
+  ...systemRoutes
 ]
 
 const router = createRouter({
