@@ -4,7 +4,7 @@
       <div class="error-page__content">
         <!-- 错误图标 -->
         <div class="error-page__icon">
-          <el-icon :size="80" color="#f56c6c">
+          <el-icon :size="iconSize">
             <CircleClose />
           </el-icon>
         </div>
@@ -36,6 +36,9 @@ import { CircleClose } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
+
+// 图标尺寸（对应 --icon-size-large）
+const iconSize = 80
 
 // 错误码到友好提示的映射
 const errorMessages: Record<string, string> = {
@@ -101,7 +104,7 @@ const goHome = () => {
 
 .error-page__card {
   width: 100%;
-  max-width: 600px;
+  max-width: var(--container-max-width-small);
   border-radius: var(--border-radius-xlarge);
   box-shadow: var(--shadow-xlarge);
   background: var(--color-card-background);
@@ -116,12 +119,13 @@ const goHome = () => {
 .error-page__icon {
   margin-bottom: var(--spacing-lg);
   animation: shake 0.5s ease-in-out;
+  color: var(--color-danger-icon);
 }
 
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  75% { transform: translateX(10px); }
+  25% { transform: translateX(calc(-1 * var(--animation-shake-distance))); }
+  75% { transform: translateX(var(--animation-shake-distance)); }
 }
 
 .error-page__title {
@@ -140,7 +144,7 @@ const goHome = () => {
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
-  max-width: 500px;
+  max-width: var(--container-max-width-xsmall);
   margin-left: auto;
   margin-right: auto;
 }
@@ -153,7 +157,7 @@ const goHome = () => {
 }
 
 .error-page__actions .el-button {
-  min-width: 140px;
+  min-width: var(--button-min-width);
   height: var(--button-height-large);
   font-size: var(--font-size-base);
   font-weight: 500;
@@ -161,6 +165,7 @@ const goHome = () => {
 }
 
 /* 响应式设计 */
+/* 小屏幕：对应 --container-max-width-small (600px) */
 @media (max-width: 600px) {
   .error-page {
     padding: var(--spacing-md);

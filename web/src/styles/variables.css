@@ -39,6 +39,7 @@
   --color-warning-light: #fbbf24;
   --color-danger: #ef4444;
   --color-danger-light: #f87171;
+  --color-danger-icon: #f56c6c;  /* Element Plus 错误图标色 */
   --color-info: #3b82f6;
   --color-info-light: #60a5fa;
   
@@ -95,6 +96,7 @@
   --button-height-small: 32px;
   --button-height-medium: 40px;
   --button-height-large: 44px;
+  --button-min-width: 140px;
   
   /* 输入框尺寸 */
   --input-height-small: 32px;
@@ -103,6 +105,7 @@
   
   /* 容器尺寸 */
   --container-max-width-small: 600px;
+  --container-max-width-xsmall: 500px;
   --container-max-width-medium: 800px;
   --container-max-width-large: 1200px;
   
@@ -121,5 +124,13 @@
   /* 装饰性图案尺寸 */
   --pattern-size-small: 35px;
   --pattern-size-large: 70px;
+  
+  /* 动画与变换 */
+  --animation-shake-distance: 10px;
+  
+  /* 图标尺寸 */
+  --icon-size-small: 40px;
+  --icon-size-medium: 60px;
+  --icon-size-large: 80px;
 }
 
