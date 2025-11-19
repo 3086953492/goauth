@@ -84,14 +84,9 @@ export function useOAuthClientForm() {
         redirect_uris: filteredRedirectUris
       }
 
-      const response = await createOAuthClient(requestData)
-      if (response.success) {
-        ElMessage.success('创建 OAuth 客户端成功')
-        return true
-      } else {
-        ElMessage.error(response.message || '创建 OAuth 客户端失败')
-        return false
-      }
+      await createOAuthClient(requestData)
+      ElMessage.success('创建 OAuth 客户端成功')
+      return true
     } catch (error: any) {
       ElMessage.error(error.message || '创建 OAuth 客户端失败')
       return false

@@ -45,14 +45,10 @@ export function useUserList() {
       }
 
       const response = await listUsers(params)
-      if (response.success && response.data) {
-        userList.value = response.data.items
-        pagination.value.total = response.data.total
-        pagination.value.page = response.data.page
-        pagination.value.pageSize = response.data.pageSize
-      } else {
-        ElMessage.error(response.message || '获取用户列表失败')
-      }
+      userList.value = response.data.items
+      pagination.value.total = response.data.total
+      pagination.value.page = response.data.page
+      pagination.value.pageSize = response.data.pageSize
     } catch (error: any) {
       ElMessage.error(error.message || '获取用户列表失败')
     } finally {
@@ -110,14 +106,10 @@ export function useUserList() {
       )
 
       // 执行删除
-      const response = await deleteUser(userId)
-      if (response.success) {
-        ElMessage.success('删除用户成功')
-        // 重新获取用户列表
-        await fetchUserList()
-      } else {
-        ElMessage.error(response.message || '删除用户失败')
-      }
+      await deleteUser(userId)
+      ElMessage.success('删除用户成功')
+      // 重新获取用户列表
+      await fetchUserList()
     } catch (error: any) {
       // 用户取消操作
       if (error === 'cancel') {

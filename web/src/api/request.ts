@@ -76,14 +76,15 @@ request.interceptors.response.use(
   (response: AxiosResponse) => {
     const res = response.data
     
-    // 处理成功响应
-    if (res.success === true || response.status === 200) {
+    // 严格以业务 success 字段为准
+    if (res && res.success === true) {
       return res
     }
     
-    // 处理业务错误
-    ElMessage.error(res.message || '请求失败')
-    return Promise.reject(new Error(res.message || '请求失败'))
+    // 处理业务错误（即便 HTTP 200，只要 success !== true 就视为错误）
+    const message = res?.message || '请求失败'
+    ElMessage.error(message)
+    return Promise.reject(new Error(message))
   },
   async (error: AxiosError) => {
     console.error('Response error:', error)

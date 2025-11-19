@@ -40,14 +40,10 @@ export function useOAuthClientList() {
       }
 
       const response = await listOAuthClients(params)
-      if (response.success && response.data) {
-        clientList.value = response.data.items
-        pagination.value.total = response.data.total
-        pagination.value.page = response.data.page
-        pagination.value.pageSize = response.data.pageSize
-      } else {
-        ElMessage.error(response.message || '获取 OAuth 客户端列表失败')
-      }
+      clientList.value = response.data.items
+      pagination.value.total = response.data.total
+      pagination.value.page = response.data.page
+      pagination.value.pageSize = response.data.pageSize
     } catch (error: any) {
       ElMessage.error(error.message || '获取 OAuth 客户端列表失败')
     } finally {

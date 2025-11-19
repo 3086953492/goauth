@@ -145,17 +145,14 @@ const handleSubmitCreate = async () => {
     submitLoading.value = true
 
     try {
-        const response = await createOAuthClient(formData)
-        if (response.success) {
-            ElMessage.success('创建 OAuth 客户端成功')
-            createDialogVisible.value = false
-            // 刷新列表
-            await fetchClientList()
-        } else {
-            ElMessage.error(response.message || '创建 OAuth 客户端失败')
-        }
+        await createOAuthClient(formData)
+        ElMessage.success('创建 OAuth 客户端成功')
+        createDialogVisible.value = false
+        // 刷新列表
+        await fetchClientList()
     } catch (error: any) {
-        ElMessage.error(error.message || '创建 OAuth 客户端失败')
+        // 错误已在拦截器中统一提示，这里不再重复提示
+        console.error('创建 OAuth 客户端失败:', error)
     } finally {
         submitLoading.value = false
     }
@@ -175,14 +172,11 @@ const handleCreateDialogClose = () => {
 const handleEditClient = async (id: number) => {
     try {
         const response = await getOAuthClient(id)
-        if (response.success && response.data) {
-            currentClient.value = response.data
-            editDialogVisible.value = true
-        } else {
-            ElMessage.error(response.message || '获取 OAuth 客户端详情失败')
-        }
+        currentClient.value = response.data
+        editDialogVisible.value = true
     } catch (error: any) {
-        ElMessage.error(error.message || '获取 OAuth 客户端详情失败')
+        // 错误已在拦截器中统一提示
+        console.error('获取 OAuth 客户端详情失败:', error)
     }
 }
 
@@ -201,17 +195,14 @@ const handleSubmitEdit = async () => {
     submitLoading.value = true
 
     try {
-        const response = await updateOAuthClient(currentClient.value.id, formData)
-        if (response.success) {
-            ElMessage.success('更新 OAuth 客户端成功')
-            editDialogVisible.value = false
-            // 刷新列表
-            await fetchClientList()
-        } else {
-            ElMessage.error(response.message || '更新 OAuth 客户端失败')
-        }
+        await updateOAuthClient(currentClient.value.id, formData)
+        ElMessage.success('更新 OAuth 客户端成功')
+        editDialogVisible.value = false
+        // 刷新列表
+        await fetchClientList()
     } catch (error: any) {
-        ElMessage.error(error.message || '更新 OAuth 客户端失败')
+        // 错误已在拦截器中统一提示，这里不再重复提示
+        console.error('更新 OAuth 客户端失败:', error)
     } finally {
         submitLoading.value = false
     }
@@ -242,14 +233,10 @@ const handleDeleteClient = async (id: number) => {
         )
 
         // 用户确认删除
-        const response = await deleteOAuthClient(id)
-        if (response.success) {
-            ElMessage.success('删除 OAuth 客户端成功')
-            // 刷新列表
-            await fetchClientList()
-        } else {
-            ElMessage.error(response.message || '删除 OAuth 客户端失败')
-        }
+        await deleteOAuthClient(id)
+        ElMessage.success('删除 OAuth 客户端成功')
+        // 刷新列表
+        await fetchClientList()
     } catch (error: any) {
         // 用户取消操作或删除失败
         if (error !== 'cancel' && error !== 'close') {

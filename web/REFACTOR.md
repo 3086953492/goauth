@@ -107,20 +107,29 @@
 
 ### 步骤 5：Axios 请求封装与错误处理规范化
 
-#### 5.1 成功 / 失败判断逻辑优化（`src/api/request.ts`）
+#### 5.1 成功 / 失败判断逻辑优化（`src/api/request.ts`）✅ 已完成
 
 - 现状（关键逻辑）：
   - 响应拦截器中：
     - `if (res.success === true || response.status === 200) { return res }`
     - 否则才会执行业务错误分支，`ElMessage.error` 并 `Promise.reject`。
   - 问题：
-    - 当 `HTTP 200` 但 `res.success !== true` 时，仍被当作成功返回，不符合“统一业务错误处理”的期望。
+    - 当 `HTTP 200` 但 `res.success !== true` 时，仍被当作成功返回，不符合"统一业务错误处理"的期望。
 - 建议整改：
-  1. 重新定义“成功”的判断条件，例如：
+  1. 重新定义"成功"的判断条件，例如：
      - **严格以业务字段 `success === true` 为成功**；
      - 或者统一约定：所有正常业务返回都保证 `success === true`，否则一律视为错误。
   2. 将 `if` 条件改为只在业务成功时返回，其他情况走错误提示分支。
   3. 保留统一的错误消息提示，并保证业务层不需要重复判断 `success`。
+- **已完成的改动**：
+  1. 修改了 `src/api/request.ts` 响应拦截器，严格以 `res.success === true` 为成功标准。
+  2. 移除了所有业务代码中对 `response.success` 的冗余判断，改为依赖 try/catch 处理失败。
+  3. 涉及文件：
+     - `src/api/request.ts`：核心拦截器逻辑修改
+     - `src/composables/useUserList.ts`：移除 success 判断
+     - `src/composables/useOAuthClientList.ts`：移除 success 判断
+     - `src/composables/useOAuthClientForm.ts`：移除 success 判断
+     - `src/views/OAuthClients.vue`：移除多处 success 判断
 
 #### 5.2 错误路由与全局错误页联动
 
