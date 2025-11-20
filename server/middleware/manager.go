@@ -39,11 +39,7 @@ func (m *Manager) LoadGlobal(engine *gin.Engine) {
 
 // CORS中间件
 func (m *Manager) CORS() gin.HandlerFunc {
-	return security.NewCORSMiddleware(security.CORSConfig{
-		AllowOrigins: m.config.CORS.AllowOrigins,
-		AllowMethods: m.config.CORS.AllowMethods,
-		AllowHeaders: m.config.CORS.AllowHeaders,
-	})
+	return security.NewCORSMiddleware()
 }
 
 func (m *Manager) OAuth(requiredScopes ...string) gin.HandlerFunc {
