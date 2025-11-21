@@ -5,10 +5,11 @@ import (
 
 	"goauth/controllers"
 	"goauth/middleware"
+	"goauth/services"
 )
 
-func LoadUserRoutes(router *gin.Engine, ctrl *controllers.UserController) {
-	m := middleware.NewManager()
+func LoadUserRoutes(router *gin.Engine, ctrl *controllers.UserController, authService *services.AuthService) {
+	m := middleware.NewManager(authService)
 	userRouter := router.Group("/api/v1/users")
 	userRouter.POST("", ctrl.CreateUserHandler)
 	userRouter.GET("/:user_id", m.Auth(), m.ResourceOwner("param"), ctrl.GetUserHandler)

@@ -43,7 +43,7 @@ func extractToken(c *gin.Context) string {
 }
 
 // Auth 访问令牌验证中间件
-func AuthTokenMiddleware() gin.HandlerFunc {
+func AuthTokenMiddleware(authService *services.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// ctx := c.Request.Context()
 
