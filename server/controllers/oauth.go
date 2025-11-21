@@ -8,40 +8,55 @@ import (
 
 	"goauth/dto"
 	"goauth/services"
+	"goauth/utils"
 )
 
 type OAuthController struct {
 	oauthAuthorizationCodeService *services.OAuthAuthorizationCodeService
 
 	oauthAccessTokenService *services.OAuthAccessTokenService
+
+	oauthClientService *services.OAuthClientService
 }
 
-func NewOAuthController(oauthAuthorizationCodeService *services.OAuthAuthorizationCodeService, oauthAccessTokenService *services.OAuthAccessTokenService) *OAuthController {
-	return &OAuthController{oauthAuthorizationCodeService: oauthAuthorizationCodeService, oauthAccessTokenService: oauthAccessTokenService}
+func NewOAuthController(oauthAuthorizationCodeService *services.OAuthAuthorizationCodeService, oauthAccessTokenService *services.OAuthAccessTokenService, oauthClientService *services.OAuthClientService) *OAuthController {
+	return &OAuthController{oauthAuthorizationCodeService: oauthAuthorizationCodeService, oauthAccessTokenService: oauthAccessTokenService, oauthClientService: oauthClientService}
 }
 
 func (ctrl *OAuthController) AuthorizationCodeHandler(ctx *gin.Context) {
 
+	frontendErrorPageURL := config.GetGlobalConfig().Server.FrontendURL + "/error"
+
+	if responseType := ctx.Query("response_type"); responseType == "" || responseType != "code" {
+		response.RedirectTemporary(ctx, frontendErrorPageURL, errors.InvalidInput().Msg("response_type错误").Build(), nil)
+		return
+	}
+
 	clientID := ctx.Query("client_id")
 	if clientID == "" {
-		response.Error(ctx, errors.InvalidInput().Msg("client_id不能为空").Build())
+		response.RedirectTemporary(ctx, frontendErrorPageURL, errors.InvalidInput().Msg("client_id不能为空").Build(), nil)
+		return
+	}
+
+	oauthClient, err := ctrl.oauthClientService.GetOAuthClient(ctx.Request.Context(), map[string]any{"id": clientID})
+	if err != nil {
+		response.RedirectTemporary(ctx, frontendErrorPageURL, err, nil)
 		return
 	}
 
 	redirectURI := ctx.Query("redirect_uri")
-	if redirectURI == "" {
-		response.Error(ctx, errors.InvalidInput().Msg("redirect_uri不能为空").Build())
-		return
-	}
-
-	scope := ctx.Query("scope")
-
-	if responseType := ctx.Query("response_type"); responseType == "" || responseType != "code" {
-		response.Error(ctx, errors.InvalidInput().Msg("response_type错误").Build())
+	if redirectURI == "" || !utils.IsRedirectURIValid(redirectURI, oauthClient.RedirectURIs) {
+		response.RedirectTemporary(ctx, frontendErrorPageURL, errors.InvalidInput().Msg("redirect_uri为空或不在客户端的回调地址列表中").Build(), nil)
 		return
 	}
 
 	state := ctx.Query("state")
+
+	scope := ctx.Query("scope")
+	if !utils.IsScopeValid(scope, oauthClient.Scopes) {
+		response.RedirectTemporary(ctx, redirectURI, errors.InvalidInput().Msg("scope不在客户端的权限范围列表中").Build(), map[string]string{"state": state})
+		return
+	}
 
 	userID := uint(ctx.GetUint64("user_id"))
 
