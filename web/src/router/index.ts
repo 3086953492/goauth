@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { emitAuthEvent } from '@/utils/authFeedbackBus'
 import authRoutes from './modules/auth'
 import userRoutes from './modules/user'
 import oauthRoutes from './modules/oauth'
@@ -32,12 +33,14 @@ router.beforeEach((to, _from, next) => {
 
   // 需要认证的页面
   if (to.meta.requiresAuth && !isAuthenticated) {
-    // 用户未登录，清理状态并重定向到登录页
+    // 用户未登录，清理状态并通过事件总线发出登录要求事件
     authStore.logout()
-    next({
-      path: '/login',
-      query: { redirect: to.fullPath }
+    emitAuthEvent('auth:login-required', {
+      message: '请先登录以访问该页面',
+      redirectPath: to.fullPath
     })
+    // 阻止导航，让 AuthFeedbackProvider 处理跳转
+    next(false)
     return
   }
 

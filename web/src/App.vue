@@ -1,10 +1,11 @@
 <script setup lang="ts">
-// App 组件入口
+import AuthFeedbackProvider from '@/components/auth/AuthFeedbackProvider.vue'
 </script>
 
 <template>
   <div id="app">
     <router-view />
+    <AuthFeedbackProvider />
   </div>
 </template>
 

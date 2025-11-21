@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { emitAuthEvent } from '@/utils/authFeedbackBus'
 import { API_BASE_URL } from '@/constants'
 
 // 防抖标志，避免多个401请求重复重定向
@@ -66,40 +66,33 @@ request.interceptors.response.use(
           // 401 未授权/登录过期，优先使用后端返回的 message
           errorMessage = errorMessage || '登录已过期，请重新登录'
           
-          // 清理状态并跳转登录
-          const authStore = useAuthStore()
-          authStore.logout()
-          
+          // 通过事件总线发出登录失效事件，由 AuthFeedbackProvider 统一处理
           if (!isRedirecting) {
             isRedirecting = true
-            // 统一在此处提示一次登录失效消息
-            ElMessage.warning(errorMessage)
-            router.push({
-              path: '/login',
-              query: { redirect: router.currentRoute.value.fullPath }
-            }).finally(() => {
-              setTimeout(() => {
-                isRedirecting = false
-              }, 1000)
+            emitAuthEvent('auth:login-expired', {
+              message: errorMessage,
+              redirectPath: router.currentRoute.value.fullPath
             })
+            // 防抖重置
+            setTimeout(() => {
+              isRedirecting = false
+            }, 1000)
           }
           break
         case 403:
           errorMessage = errorMessage || '拒绝访问'
-          // 403 权限错误，跳转到错误页
+          // 403 权限错误，通过事件总线发出权限不足事件
           if (!isNavigatingToError) {
             isNavigatingToError = true
-            router.push({
-              name: 'Error',
-              query: {
-                error: '403',
-                error_description: errorMessage
-              }
-            }).finally(() => {
-              setTimeout(() => {
-                isNavigatingToError = false
-              }, 1000)
+            emitAuthEvent('auth:forbidden', {
+              message: errorMessage,
+              errorCode: '403',
+              errorDescription: errorMessage
             })
+            // 防抖重置
+            setTimeout(() => {
+              isNavigatingToError = false
+            }, 1000)
           }
           break
         case 404:

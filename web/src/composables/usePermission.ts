@@ -1,13 +1,12 @@
 import { computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { emitAuthEvent } from '@/utils/authFeedbackBus'
 
 /**
  * 权限检查相关的组合式函数
  */
 export function usePermission() {
-  const router = useRouter()
   const route = useRoute()
   const authStore = useAuthStore()
 
@@ -22,11 +21,12 @@ export function usePermission() {
    */
   const checkLogin = (): boolean => {
     if (!authStore.isAuthenticated) {
-      ElMessage.error('未登录或登录已过期，请先登录')
-      authStore.logout() // 清理可能存在的无效状态
-      router.push({
-        path: '/login',
-        query: { redirect: route.fullPath }
+      // 清理可能存在的无效状态
+      authStore.logout()
+      // 通过事件总线发出登录要求事件，由 AuthFeedbackProvider 统一处理提示和跳转
+      emitAuthEvent('auth:login-required', {
+        message: '未登录或登录已过期，请先登录',
+        redirectPath: route.fullPath
       })
       return false
     }
@@ -56,8 +56,11 @@ export function usePermission() {
       return true
     }
 
-    ElMessage.error('您没有权限编辑其他用户的信息')
-    router.push('/profile')
+    // 通过事件总线发出权限不足事件
+    emitAuthEvent('auth:forbidden', {
+      message: '您没有权限编辑其他用户的信息',
+      redirectPath: '/profile'
+    })
     return false
   }
 
@@ -70,8 +73,11 @@ export function usePermission() {
     }
 
     if (!isAdmin.value) {
-      ElMessage.error('您没有管理员权限')
-      router.push('/home')
+      // 通过事件总线发出权限不足事件
+      emitAuthEvent('auth:forbidden', {
+        message: '您没有管理员权限',
+        redirectPath: '/home'
+      })
       return false
     }
 
