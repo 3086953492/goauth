@@ -78,7 +78,7 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 	accessToken := &models.OAuthAccessToken{
 		AccessToken: accessTokenString,
 		TokenType:   "Bearer",
-		ExpiresAt:   time.Now().Add(config.GetGlobalConfig().JWT.Expire),
+		ExpiresAt:   time.Now().Add(config.GetGlobalConfig().AuthToken.AccessExpire),
 		ClientID:    oauthAuthorizationCode.ClientID,
 		Scope:       oauthAuthorizationCode.Scope,
 		UserID:      &oauthAuthorizationCode.UserID,
@@ -92,7 +92,7 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 	return &dto.OAuthAccessTokenResponse{
 		AccessToken:  accessTokenString,
 		TokenType:    "Bearer",
-		ExpiresIn:    int(config.GetGlobalConfig().JWT.Expire.Seconds()),
+		ExpiresIn:    int(config.GetGlobalConfig().AuthToken.AccessExpire.Seconds()),
 		RefreshToken: "",
 		Scope:        accessToken.Scope,
 	}, nil

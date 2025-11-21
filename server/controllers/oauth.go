@@ -60,7 +60,7 @@ func (ctrl *OAuthController) AuthorizationCodeHandler(ctx *gin.Context) {
 
 	userID := uint(ctx.GetUint64("user_id"))
 
-	expiresIn := config.GetGlobalConfig().JWT.Expire.Seconds()
+	expiresIn := config.GetGlobalConfig().AuthToken.AccessExpire.Seconds()
 
 	authorizationCode, err := ctrl.oauthAuthorizationCodeService.GenerateAuthorizationCode(ctx.Request.Context(), userID, clientID, redirectURI, scope, expiresIn)
 	if err != nil {

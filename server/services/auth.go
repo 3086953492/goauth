@@ -53,7 +53,7 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (accessT
 		return "", 0, "", 0, nil, errors.Internal().Msg("生成刷新令牌失败").Err(err).Log()
 	}
 
-	return accessToken, int(config.GetGlobalConfig().JWT.Expire.Seconds()), refreshToken, int(config.GetGlobalConfig().JWT.RefreshExpire.Seconds()), &dto.UserResponse{
+	return accessToken, int(config.GetGlobalConfig().AuthToken.AccessExpire.Seconds()), refreshToken, int(config.GetGlobalConfig().AuthToken.RefreshExpire.Seconds()), &dto.UserResponse{
 		ID:        user.ID,
 		Username:  user.Username,
 		Nickname:  user.Nickname,
@@ -94,5 +94,5 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (ac
 		return "", 0, errors.InvalidInput().Msg("刷新令牌验证失败").Err(err).Log()
 	}
 
-	return accessToken, int(config.GetGlobalConfig().JWT.Expire.Seconds()), nil
+	return accessToken, int(config.GetGlobalConfig().AuthToken.AccessExpire.Seconds()), nil
 }

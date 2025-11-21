@@ -64,7 +64,7 @@ func main() {
 		return
 	}
 
-	if err := jwt.InitJWT(cfg.JWT); err != nil {
+	if err := jwt.InitJWT(cfg.AuthToken); err != nil {
 		errors.Internal().Msg("初始化 JWT 失败").Err(err).Log()
 		return
 	}
