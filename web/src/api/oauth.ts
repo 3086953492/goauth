@@ -1,10 +1,8 @@
-import request from './request'
-import type { ApiResponse } from '@/types/common'
-
+import { API_BASE_URL } from '@/constants'
 /**
- * OAuth 授权请求参数
+ * OAuth 授权参数
  */
-export interface OAuthAuthorizeRequest {
+export interface OAuthAuthorizationParams {
   client_id: string
   redirect_uri: string
   response_type: string
@@ -13,22 +11,24 @@ export interface OAuthAuthorizeRequest {
 }
 
 /**
- * OAuth 授权响应
+ * 构建 OAuth 授权 URL
+ * 用于直接跳转到后端授权接口，由后端完成重定向
  */
-export interface OAuthAuthorizeResponse {
-  redirect_uri: string
-}
-
-/**
- * 确认 OAuth 授权
- * 注意：此接口使用 Cookie 鉴权（HttpOnly），不使用 Bearer token
- */
-export const confirmAuthorize = (data: OAuthAuthorizeRequest): Promise<ApiResponse<OAuthAuthorizeResponse>> => {
-  return request({
-    url: '/api/v1/oauth/authorize',
-    method: 'post',
-    data,
-    withCredentials: true // 确保携带 Cookie
-  })
+export const buildAuthorizationUrl = (params: OAuthAuthorizationParams): string => {
+  const url = new URL(`${API_BASE_URL}/api/v1/oauth/authorization`, window.location.origin)
+  
+  url.searchParams.set('response_type', params.response_type)
+  url.searchParams.set('client_id', params.client_id)
+  url.searchParams.set('redirect_uri', params.redirect_uri)
+  
+  if (params.scope) {
+    url.searchParams.set('scope', params.scope)
+  }
+  
+  if (params.state) {
+    url.searchParams.set('state', params.state)
+  }
+  
+  return url.toString()
 }
 

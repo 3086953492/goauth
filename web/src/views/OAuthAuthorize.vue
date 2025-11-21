@@ -91,7 +91,7 @@ import { ElMessage } from 'element-plus'
 import { Key, Link, Warning } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { usePermission } from '@/composables/usePermission'
-import { confirmAuthorize } from '@/api/oauth'
+import { buildAuthorizationUrl } from '@/api/oauth'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -149,7 +149,7 @@ onMounted(() => {
 })
 
 // 确认授权
-const handleAuthorize = async () => {
+const handleAuthorize = () => {
   if (!isValidRequest.value) {
     ElMessage.error('授权请求参数不完整')
     return
@@ -162,28 +162,18 @@ const handleAuthorize = async () => {
 
   authorizing.value = true
 
-  try {
-    // 调用授权 API（使用 Cookie 鉴权）
-    const response = await confirmAuthorize({
-      client_id: oauthParams.value.client_id,
-      redirect_uri: oauthParams.value.redirect_uri,
-      response_type: oauthParams.value.response_type || 'code',
-      scope: oauthParams.value.scope || undefined,
-      state: oauthParams.value.state || undefined
-    })
+  // 构建授权 URL 并直接跳转到后端接口
+  // 后端会完成参数校验、授权码生成，并 302 重定向到 redirect_uri
+  const authorizationUrl = buildAuthorizationUrl({
+    client_id: oauthParams.value.client_id,
+    redirect_uri: oauthParams.value.redirect_uri,
+    response_type: oauthParams.value.response_type || 'code',
+    scope: oauthParams.value.scope || undefined,
+    state: oauthParams.value.state || undefined
+  })
 
-    // 授权成功，跳转到回调地址
-    if (response.data.redirect_uri) {
-      window.location.href = response.data.redirect_uri
-    } else {
-      ElMessage.error('授权失败：未返回回调地址')
-    }
-  } catch (error: any) {
-    console.error('授权失败:', error)
-    // 错误已在拦截器中处理
-  } finally {
-    authorizing.value = false
-  }
+  // 直接跳转，浏览器会自动携带 Cookie 完成登录态校验
+  window.location.href = authorizationUrl
 }
 
 // 取消授权
