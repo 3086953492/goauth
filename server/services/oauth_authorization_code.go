@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/3086953492/gokit/crypto"
+	"github.com/3086953492/gokit/config"
 	"github.com/3086953492/gokit/errors"
 
 	"goauth/models"
@@ -20,7 +21,7 @@ func NewOAuthAuthorizationCodeService(oauthAuthorizationCodeRepository *reposito
 	return &OAuthAuthorizationCodeService{oauthAuthorizationCodeRepository: oauthAuthorizationCodeRepository, oauthClientService: oauthClientService}
 }
 
-func (s *OAuthAuthorizationCodeService) GenerateAuthorizationCode(ctx context.Context, userID uint, clientID string, redirectURI string, scope string, expiresIn float64) (string, error) {
+func (s *OAuthAuthorizationCodeService) GenerateAuthorizationCode(ctx context.Context, userID uint, clientID string, redirectURI string, scope string) (string, error) {
 
 	codeString, err := crypto.GenerateAuthorizationCode(32)
 	if err != nil {
@@ -33,7 +34,7 @@ func (s *OAuthAuthorizationCodeService) GenerateAuthorizationCode(ctx context.Co
 		ClientID:    clientID,
 		RedirectURI: redirectURI,
 		Scope:       scope,
-		ExpiresAt:   time.Now().Add(time.Duration(expiresIn) * time.Second),
+		ExpiresAt:   time.Now().Add(config.GetGlobalConfig().OAuth.AuthCodeExpire),
 	}
 	if err := s.oauthAuthorizationCodeRepository.Create(ctx, code); err != nil {
 		return "", errors.Database().Msg("创建OAuth授权码失败").Err(err).Field("code", code).Log()
