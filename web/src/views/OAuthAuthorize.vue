@@ -155,10 +155,8 @@ const handleAuthorize = async () => {
     return
   }
 
-  // 检查登录状态
-  if (!authStore.isAuthenticated) {
-    ElMessage.error('未登录或登录已过期')
-    checkLogin()
+  // 检查登录状态（统一由 checkLogin 处理提示和跳转）
+  if (!checkLogin()) {
     return
   }
 

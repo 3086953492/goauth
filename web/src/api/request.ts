@@ -63,15 +63,17 @@ request.interceptors.response.use(
           errorMessage = errorMessage || '请求参数错误'
           break
         case 401:
-          errorMessage = errorMessage || '未授权，请登录'
+          // 401 未授权/登录过期，优先使用后端返回的 message
+          errorMessage = errorMessage || '登录已过期，请重新登录'
           
-          // 401 未授权/登录过期，清理状态并跳转登录
+          // 清理状态并跳转登录
           const authStore = useAuthStore()
           authStore.logout()
           
           if (!isRedirecting) {
             isRedirecting = true
-            ElMessage.warning('登录已过期，请重新登录')
+            // 统一在此处提示一次登录失效消息
+            ElMessage.warning(errorMessage)
             router.push({
               path: '/login',
               query: { redirect: router.currentRoute.value.fullPath }
