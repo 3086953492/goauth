@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { login as loginApi } from '@/api/auth'
+import { login as loginApi, logout as logoutApi } from '@/api/auth'
 import { register as registerApi } from '@/api/user'
 import { useAuthStore } from '@/stores/useAuthStore'
 import type { RegisterRequest } from '@/types/user'
@@ -34,12 +34,12 @@ export function useAuth() {
     try {
       const response = await loginApi(loginForm)
 
-      // 后端返回 { user, access_token: { access_token, expires_in } }
-      // refresh_token 在 HttpOnly Cookie 中，前端不保存
-      authStore.loginSuccess({
-        access_token: response.data.access_token,
-        user: response.data.user
-      })
+      // 后端返回 ApiResponse<User>，data 即为 User 对象
+      if (response.data) {
+        authStore.loginSuccess(response.data)
+      } else {
+         throw new Error('登录返回数据异常')
+      }
 
       return {
         success: true,
@@ -99,8 +99,17 @@ export function useAuth() {
    * 处理登出
    * @returns 登出结果
    */
-  const handleLogout = (): AuthActionResult => {
-    authStore.logout()
+  const handleLogout = async (): Promise<AuthActionResult> => {
+    try {
+      // 调用后端登出接口清理 Cookie
+      await logoutApi()
+    } catch (error) {
+      console.error('登出接口调用失败:', error)
+      // 即使后端接口调用失败，前端也要执行登出操作
+    } finally {
+      authStore.logout()
+    }
+    
     return {
       success: true,
       message: '已退出登录'
@@ -114,4 +123,3 @@ export function useAuth() {
     handleLogout
   }
 }
-

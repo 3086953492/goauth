@@ -27,12 +27,12 @@ router.beforeEach((to, _from, next) => {
 
   const authStore = useAuthStore()
   
-  // 使用新的 isAuthenticated 计算属性（包含过期判断）
+  // 使用新的 isAuthenticated 计算属性
   const isAuthenticated = authStore.isAuthenticated
 
   // 需要认证的页面
   if (to.meta.requiresAuth && !isAuthenticated) {
-    // token 不存在或已过期，清理状态并重定向到登录页
+    // 用户未登录，清理状态并重定向到登录页
     authStore.logout()
     next({
       path: '/login',

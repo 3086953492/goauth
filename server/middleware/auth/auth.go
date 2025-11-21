@@ -2,54 +2,23 @@ package auth
 
 import (
 	"strconv"
-	"strings"
 
+	"github.com/3086953492/gokit/cookie"
 	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/jwt"
 	"github.com/3086953492/gokit/response"
 	"github.com/gin-gonic/gin"
 
+	"goauth/services"
 	"goauth/utils"
 )
-
-// extractToken 从请求头或 Cookie 中提取访问令牌
-// 优先级：Authorization 头 > Authorization Cookie > access_token Cookie
-func extractToken(c *gin.Context) string {
-	// 1. 尝试从 Authorization 请求头获取
-	authHeader := c.GetHeader("Authorization")
-	if authHeader != "" {
-		tokenParts := strings.Split(authHeader, " ")
-		if len(tokenParts) == 2 && strings.ToLower(tokenParts[0]) == "bearer" {
-			return tokenParts[1]
-		}
-	}
-
-	// 2. 尝试从 Authorization Cookie 获取
-	authCookie, err := c.Cookie("Authorization")
-	if err == nil && authCookie != "" {
-		tokenParts := strings.Split(authCookie, " ")
-		if len(tokenParts) == 2 && strings.ToLower(tokenParts[0]) == "bearer" {
-			return tokenParts[1]
-		}
-	}
-
-	// 3. 尝试从 access_token Cookie 获取（纯 token，无 Bearer 前缀）
-	accessToken, err := c.Cookie("access_token")
-	if err == nil && accessToken != "" {
-		return accessToken
-	}
-
-	return ""
-}
 
 // Auth 访问令牌验证中间件
 func AuthTokenMiddleware(authService *services.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// ctx := c.Request.Context()
-
-		// 从请求头或 Cookie 中获取令牌
-		token := extractToken(c)
-		if token == "" {
+		// 从 Cookie 中获取令牌
+		token, err := cookie.GetAccessToken(c)
+		if err != nil || token == "" {
 			response.Error(c, errors.Unauthorized().Msg("令牌为空").Build())
 			c.Abort()
 			return
@@ -57,9 +26,19 @@ func AuthTokenMiddleware(authService *services.AuthService) gin.HandlerFunc {
 
 		claims, err := jwt.ParseToken(token)
 		if err != nil {
-			response.Error(c, errors.Unauthorized().Msg("令牌验证失败").Build())
-			c.Abort()
-			return
+			if errors.IsJwtTokenExpiredError(err) {
+				accessToken, accessTokenExpire, err := authService.RefreshToken(c.Request.Context(), token)
+				if err != nil {
+					response.Error(c, err)
+					c.Abort()
+					return
+				}
+				cookie.SetAccessToken(c, accessToken, accessTokenExpire, "", "/")
+			} else {
+				response.Error(c, errors.Unauthorized().Msg("令牌验证失败").Err(err).Build())
+				c.Abort()
+				return
+			}
 		}
 
 		userID, err := strconv.ParseUint(claims.UserID, 10, 64)

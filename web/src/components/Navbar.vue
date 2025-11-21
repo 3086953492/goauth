@@ -72,7 +72,7 @@ const handleLogout = async () => {
     })
 
     // 执行登出业务逻辑
-    const result = logout()
+    const result = await logout()
     
     if (result.success) {
       // 登出成功：显示提示并跳转到登录页

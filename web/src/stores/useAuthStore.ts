@@ -1,19 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User } from '@/types/user'
-import type { AccessTokenResponse } from '@/types/auth'
 
 // sessionStorage 键名常量
 const AUTH_STORAGE_KEY = 'auth_state'
 
-// 时间偏移量（提前 30 秒视为过期，用于容错）
-const TOKEN_EXPIRY_SKEW = 30 * 1000
-
 // 认证状态接口
 interface AuthState {
-  accessToken: string
-  tokenType: string
-  expiresAt: number // 毫秒时间戳
   user: User | null
 }
 
@@ -50,82 +43,31 @@ const clearSession = (): void => {
 
 export const useAuthStore = defineStore('auth', () => {
   // ========== 状态定义 ==========
-  const accessToken = ref<string | null>(null)
-  const tokenType = ref<string>('Bearer')
-  const expiresAt = ref<number | null>(null)
   const user = ref<User | null>(null)
 
   // ========== 计算属性 ==========
   
   /**
-   * 判断 token 是否已过期
-   */
-  const isExpired = computed(() => {
-    if (!expiresAt.value) return true
-    return Date.now() >= expiresAt.value
-  })
-
-  /**
-   * 判断用户是否已认证（有 token 且未过期）
+   * 判断用户是否已认证（有用户信息）
    */
   const isAuthenticated = computed(() => {
-    return !!accessToken.value && !isExpired.value
+    return !!user.value
   })
 
   // ========== 操作方法 ==========
 
   /**
-   * 登录成功后调用，保存 token 和用户信息
-   * @param payload 包含 access_token 和 user 的登录响应数据
+   * 登录成功后调用，保存用户信息
+   * @param userData 用户信息
    */
-  const loginSuccess = (payload: { access_token: AccessTokenResponse; user: User }) => {
-    const { access_token, user: userData } = payload
-    
-    // 计算过期时间戳（提前 skew 秒视为过期）
-    const calculatedExpiresAt = Date.now() + access_token.expires_in * 1000 - TOKEN_EXPIRY_SKEW
-    
+  const loginSuccess = (userData: User) => {
     // 更新状态
-    accessToken.value = access_token.access_token
-    tokenType.value = 'Bearer'
-    expiresAt.value = calculatedExpiresAt
     user.value = userData
     
     // 持久化到 sessionStorage
     saveToSession({
-      accessToken: accessToken.value,
-      tokenType: tokenType.value,
-      expiresAt: expiresAt.value,
       user: user.value
     })
-  }
-
-  /**
-   * 设置访问令牌（用于刷新 token 后更新）
-   * @param token 访问令牌字符串
-   * @param expiresIn 过期秒数
-   */
-  const setAccessToken = (token: string, expiresIn: number) => {
-    // 计算过期时间戳（提前 skew 秒视为过期）
-    const calculatedExpiresAt = Date.now() + expiresIn * 1000 - TOKEN_EXPIRY_SKEW
-    
-    // 更新状态
-    accessToken.value = token
-    expiresAt.value = calculatedExpiresAt
-    
-    // 持久化到 sessionStorage
-    saveToSession({
-      accessToken: accessToken.value,
-      tokenType: tokenType.value,
-      expiresAt: expiresAt.value,
-      user: user.value
-    })
-  }
-
-  /**
-   * 获取当前访问令牌
-   */
-  const getAccessToken = (): string | null => {
-    return accessToken.value
   }
 
   /**
@@ -137,23 +79,13 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * 从 sessionStorage 初始化认证状态
-   * 应用启动时调用，如果 token 已过期则自动清理
+   * 应用启动时调用
    */
   const initFromSession = () => {
     const stored = loadFromSession()
     if (!stored) return
     
-    // 检查是否已过期
-    if (Date.now() >= stored.expiresAt) {
-      // 已过期，清理状态
-      clearSession()
-      return
-    }
-    
     // 恢复状态
-    accessToken.value = stored.accessToken
-    tokenType.value = stored.tokenType
-    expiresAt.value = stored.expiresAt
     user.value = stored.user
   }
 
@@ -161,29 +93,19 @@ export const useAuthStore = defineStore('auth', () => {
    * 登出，清空所有认证状态
    */
   const logout = () => {
-    accessToken.value = null
-    tokenType.value = 'Bearer'
-    expiresAt.value = null
     user.value = null
-    
     clearSession()
   }
 
   return {
     // 状态
-    accessToken,
-    tokenType,
-    expiresAt,
     user,
     
     // 计算属性
-    isExpired,
     isAuthenticated,
     
     // 操作方法
     loginSuccess,
-    setAccessToken,
-    getAccessToken,
     clearAuth,
     initFromSession,
     logout

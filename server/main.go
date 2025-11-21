@@ -8,6 +8,7 @@ import (
 
 	"github.com/3086953492/gokit/cache"
 	"github.com/3086953492/gokit/config"
+	"github.com/3086953492/gokit/cookie"
 	"github.com/3086953492/gokit/database"
 	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/jwt"
@@ -72,6 +73,8 @@ func main() {
 		// 根据运行环境决定是否显示错误详情
 		response.WithShowErrorDetail(cfg.Server.Mode == "debug"),
 	)
+
+	cookie.Init(cfg.Server.Mode != "debug")
 
 	container := initialize.NewContainer()
 
