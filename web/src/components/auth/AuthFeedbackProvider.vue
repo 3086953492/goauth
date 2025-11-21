@@ -18,6 +18,33 @@ let isRedirecting = false
 // 防抖标志，避免多次跳转错误页
 let isNavigatingToError = false
 
+// 认证 toast 时间窗配置（毫秒）
+const AUTH_TOAST_WINDOW_MS = 3000
+
+// 记录每类认证提示的最近一次展示时间戳
+const lastAuthToastTime: Record<string, number> = {}
+
+/**
+ * 判断是否应该展示认证 toast（基于时间窗防抖）
+ * @param type 认证事件类型
+ * @param message 提示消息
+ * @returns 是否应该展示 toast
+ */
+const shouldShowAuthToast = (type: AuthEventType, message: string): boolean => {
+  const key = `${type}:${message}`
+  const now = Date.now()
+  const last = lastAuthToastTime[key]
+
+  // 如果不存在记录或已超过时间窗，则允许展示
+  if (!last || now - last >= AUTH_TOAST_WINDOW_MS) {
+    lastAuthToastTime[key] = now
+    return true
+  }
+
+  // 在时间窗内，不重复展示
+  return false
+}
+
 /**
  * 统一的认证事件处理器
  */
@@ -39,6 +66,13 @@ const handleAuthEvent = (type: AuthEventType, payload: AuthEventPayload) => {
  * 处理登录失效/未登录事件
  */
 const handleLoginRequired = (payload: AuthEventPayload) => {
+  // 计算最终提示消息
+  const message = payload.message || '登录已过期，请重新登录'
+
+  // 时间窗防抖：判断是否应该展示 toast
+  const shouldShowToast = shouldShowAuthToast('auth:login-expired', message)
+
+  // 导航防抖：避免多次重定向
   if (isRedirecting) {
     return
   }
@@ -48,8 +82,10 @@ const handleLoginRequired = (payload: AuthEventPayload) => {
   // 清理登录态
   authStore.logout()
 
-  // 显示提示
-  ElMessage.warning(payload.message || '登录已过期，请重新登录')
+  // 仅在时间窗允许时展示提示
+  if (shouldShowToast) {
+    ElMessage.warning(message)
+  }
 
   // 跳转到登录页，保留重定向路径
   router.push({
@@ -66,8 +102,16 @@ const handleLoginRequired = (payload: AuthEventPayload) => {
  * 处理权限不足事件
  */
 const handleForbidden = (payload: AuthEventPayload) => {
-  // 显示提示
-  ElMessage.error(payload.message || '您没有权限执行此操作')
+  // 计算最终提示消息
+  const message = payload.message || '您没有权限执行此操作'
+
+  // 时间窗防抖：判断是否应该展示 toast
+  const shouldShowToast = shouldShowAuthToast('auth:forbidden', message)
+
+  // 仅在时间窗允许时展示提示
+  if (shouldShowToast) {
+    ElMessage.error(message)
+  }
 
   // 如果有错误码（如 403），跳转到错误页
   if (payload.errorCode) {
