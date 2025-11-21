@@ -44,3 +44,13 @@ func IsScopeValid(requestedScope string, allowedScopesJSON []byte) bool {
 
 	return true
 }
+
+// IsGrantTypeValid 验证授权类型是否在允许的列表中
+func IsGrantTypeValid(grantType string, allowedGrantTypesJSON []byte) bool {
+	var allowedGrantTypes []string
+	if err := json.Unmarshal(allowedGrantTypesJSON, &allowedGrantTypes); err != nil {
+		return false
+	}
+
+	return slices.Contains(allowedGrantTypes, grantType)
+}

@@ -12,6 +12,7 @@ import (
 	"goauth/dto"
 	"goauth/models"
 	"goauth/repositories"
+	"goauth/utils"
 )
 
 type OAuthAccessTokenService struct {
@@ -30,9 +31,13 @@ func NewOAuthAccessTokenService(oauthAccessTokenRepository *repositories.OAuthAc
 
 func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form *dto.ExchangeAccessTokenForm, clientID, clientSecret string) (*dto.OAuthAccessTokenResponse, error) {
 
-	_, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"client_id": clientID, "client_secret": clientSecret})
+	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"client_id": clientID, "client_secret": clientSecret})
 	if err != nil {
 		return nil, err
+	}
+
+	if form.GrantType != "authorization_code" || !utils.IsGrantTypeValid("authorization_code", oauthClient.GrantTypes) {
+		return nil, errors.InvalidInput().Msg("授权类型不支持").Build()
 	}
 
 	oauthAuthorizationCode, err := s.oauthAuthorizationCodeService.GetOAuthAuthorizationCode(ctx, map[string]any{"code": form.Code})
