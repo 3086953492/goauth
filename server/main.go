@@ -46,6 +46,7 @@ func main() {
 		models.OAuthClient{},
 		models.OAuthAuthorizationCode{},
 		models.OAuthAccessToken{},
+		models.OAuthRefreshToken{},
 	}
 
 	if err := database.AutoMigrateModels(models...); err != nil {
