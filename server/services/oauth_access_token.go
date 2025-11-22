@@ -31,7 +31,7 @@ func NewOAuthAccessTokenService(oauthAccessTokenRepository *repositories.OAuthAc
 
 func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form *dto.ExchangeAccessTokenForm, clientID, clientSecret string) (*dto.OAuthAccessTokenResponse, error) {
 
-	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"client_id": clientID, "client_secret": clientSecret})
+	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"id": clientID, "client_secret": clientSecret})
 	if err != nil {
 		return nil, err
 	}
