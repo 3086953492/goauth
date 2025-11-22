@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/3086953492/gokit/cache"
@@ -45,7 +44,7 @@ func (s *OAuthClientService) CreateOAuthClient(ctx context.Context, req *dto.Cre
 }
 
 func (s *OAuthClientService) ListOAuthClients(ctx context.Context, page, pageSize int, conds map[string]any) (*dto.PaginationResponse[dto.OAuthClientListResponse], error) {
-	oauthClientsPagination, err := cache.New[dto.PaginationResponse[dto.OAuthClientListResponse]]().Key(fmt.Sprintf("list_oauth_clients:%v", conds)).TTL(10*time.Minute).GetOrSet(ctx, func() (*dto.PaginationResponse[dto.OAuthClientListResponse], error) {
+	oauthClientsPagination, err := cache.New[dto.PaginationResponse[dto.OAuthClientListResponse]]().KeyWithConds("list_oauth_clients", conds).TTL(10*time.Minute).GetOrSet(ctx, func() (*dto.PaginationResponse[dto.OAuthClientListResponse], error) {
 		oauthClients, total, err := s.oauthClientRepository.List(ctx, page, pageSize, conds)
 		if err != nil {
 			return nil, errors.Database().Msg("获取OAuth客户端列表失败").Err(err).Field("conds", conds).Log()
@@ -74,7 +73,7 @@ func (s *OAuthClientService) ListOAuthClients(ctx context.Context, page, pageSiz
 }
 
 func (s *OAuthClientService) GetOAuthClient(ctx context.Context, conds map[string]any) (*dto.OAuthClientDetailResponse, error) {
-	oauthClient, err := cache.New[dto.OAuthClientDetailResponse]().Key(fmt.Sprintf("oauth_client:%v", conds)).TTL(10*time.Minute).GetOrSet(ctx, func() (*dto.OAuthClientDetailResponse, error) {
+	oauthClient, err := cache.New[dto.OAuthClientDetailResponse]().KeyWithConds("oauth_client", conds).TTL(10*time.Minute).GetOrSet(ctx, func() (*dto.OAuthClientDetailResponse, error) {
 		oauthClient, err := s.oauthClientRepository.Get(ctx, conds)
 		if err != nil {
 			if errors.IsNotFoundError(err) {
@@ -132,7 +131,7 @@ func (s *OAuthClientService) UpdateOAuthClient(ctx context.Context, id uint, req
 	if err := cache.DeleteByPrefix(ctx, "list_oauth_clients:"); err != nil {
 		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
 	}
-	if err := cache.DeleteByPrefix(ctx, fmt.Sprintf("oauth_client:%v", id)); err != nil {
+	if err := cache.DeleteByConds(ctx,"oauth_client",map[string]any{"id": id}); err != nil {
 		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
 	}
 
@@ -146,7 +145,7 @@ func (s *OAuthClientService) DeleteOAuthClient(ctx context.Context, id uint) err
 	if err := cache.DeleteByPrefix(ctx, "list_oauth_clients:"); err != nil {
 		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
 	}
-	if err := cache.DeleteByContains(ctx,fmt.Sprintf("oauth_client:%v", id)); err != nil {
+	if err := cache.DeleteByConds(ctx,"oauth_client",map[string]any{"id": id}); err != nil {
 		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
 	}
 	logger.Info("删除OAuth客户端成功", zap.Uint("id", id))

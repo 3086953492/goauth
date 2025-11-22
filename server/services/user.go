@@ -58,7 +58,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 }
 
 func (s *UserService) GetUser(ctx context.Context, conds map[string]any) (*models.User, error) {
-	user, err := cache.New[models.User]().Key(fmt.Sprintf("%v", conds)).TTL(10*time.Minute).GetOrSet(ctx, func() (*models.User, error) {
+	user, err := cache.New[models.User]().KeyWithConds("user", conds).TTL(10*time.Minute).GetOrSet(ctx, func() (*models.User, error) {
 		user, err := s.userRepository.Get(ctx, conds)
 		if err != nil {
 			if errors.IsNotFoundError(err) {
@@ -115,7 +115,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.Upd
 	}
 
 	// 删除相关缓存
-	if err := cache.DeleteByContainsList(ctx, []string{fmt.Sprintf("id:%v", userID), fmt.Sprintf("nickname:%v", existingUser.Nickname), fmt.Sprintf("username:%v", existingUser.Username), fmt.Sprintf("nickname:%v", user.Nickname)}); err != nil {
+	if err := cache.DeleteByContainsList(ctx, "user", []map[string]any{{"id": userID}, {"nickname": existingUser.Nickname}, {"username": existingUser.Username}, {"nickname": user.Nickname}}); err != nil {
 		errors.Database().Msg("删除缓存失败").Err(err).Field("user_id", userID).Log() // 记录日志，但继续执行
 	}
 	if err := cache.DeleteByPrefix(ctx, "list_users:"); err != nil {
@@ -172,7 +172,7 @@ func (s *UserService) DeleteUser(ctx context.Context, userID uint) error {
 		return errors.Database().Msg("删除用户失败").Err(err).Field("user_id", userID).Log()
 	}
 
-	if err := cache.DeleteByContainsList(ctx, []string{fmt.Sprintf("id:%v", userID), fmt.Sprintf("nickname:%v", user.Nickname), fmt.Sprintf("username:%v", user.Username)}); err != nil {
+	if err := cache.DeleteByContainsList(ctx, "user", []map[string]any{{"id": userID}, {"nickname": user.Nickname}, {"username": user.Username}}); err != nil {
 		errors.Database().Msg("删除缓存失败").Err(err).Field("user_id", userID).Log() // 记录日志，但继续执行
 	}
 	if err := cache.DeleteByPrefix(ctx, "list_users:"); err != nil {
