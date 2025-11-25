@@ -23,10 +23,12 @@ type OAuthAccessTokenService struct {
 	userService *UserService
 
 	oauthClientService *OAuthClientService
+
+	oauthRefreshTokenService *OAuthRefreshTokenService
 }
 
-func NewOAuthAccessTokenService(oauthAccessTokenRepository *repositories.OAuthAccessTokenRepository, oauthAuthorizationCodeService *OAuthAuthorizationCodeService, userService *UserService, oauthClientService *OAuthClientService) *OAuthAccessTokenService {
-	return &OAuthAccessTokenService{oauthAccessTokenRepository: oauthAccessTokenRepository, oauthAuthorizationCodeService: oauthAuthorizationCodeService, userService: userService, oauthClientService: oauthClientService}
+func NewOAuthAccessTokenService(oauthAccessTokenRepository *repositories.OAuthAccessTokenRepository, oauthAuthorizationCodeService *OAuthAuthorizationCodeService, userService *UserService, oauthClientService *OAuthClientService, oauthRefreshTokenService *OAuthRefreshTokenService) *OAuthAccessTokenService {
+	return &OAuthAccessTokenService{oauthAccessTokenRepository: oauthAccessTokenRepository, oauthAuthorizationCodeService: oauthAuthorizationCodeService, userService: userService, oauthClientService: oauthClientService, oauthRefreshTokenService: oauthRefreshTokenService}
 }
 
 func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form *dto.ExchangeAccessTokenForm, clientID, clientSecret string) (*dto.OAuthAccessTokenResponse, error) {
@@ -84,8 +86,11 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 		UserID:      &oauthAuthorizationCode.UserID,
 	}
 
-	// 刷新令牌后面再提供，现在只返回访问令牌
-
+	refreshToken, err := s.oauthRefreshTokenService.GenerateRefreshToken(ctx, accessToken.ID, oauthAuthorizationCode.ClientID, oauthAuthorizationCode.Scope, oauthAuthorizationCode.UserID, user.Username, user.Role)
+	if err != nil {
+		return nil, err
+	}
+	
 	if err := s.oauthAccessTokenRepository.Create(ctx, accessToken); err != nil {
 		return nil, errors.Database().Msg("创建OAuth访问令牌失败").Err(err).Field("accessToken", accessToken).Log()
 	}
@@ -93,7 +98,7 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 		AccessToken:  accessTokenString,
 		TokenType:    "Bearer",
 		ExpiresIn:    int(config.GetGlobalConfig().OAuth.AccessTokenExpire.Seconds()),
-		RefreshToken: "",
+		RefreshToken: refreshToken,
 		Scope:        accessToken.Scope,
 	}, nil
 }
