@@ -9,12 +9,11 @@ import (
 	"github.com/3086953492/gokit/response"
 	"github.com/gin-gonic/gin"
 
-	"goauth/services"
 	"goauth/utils"
 )
 
 // Auth 访问令牌验证中间件
-func AuthTokenMiddleware(authService *services.AuthService) gin.HandlerFunc {
+func AuthTokenMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 从 Cookie 中获取令牌
 		token, err := cookie.GetAccessToken(c)
@@ -26,19 +25,9 @@ func AuthTokenMiddleware(authService *services.AuthService) gin.HandlerFunc {
 
 		claims, err := jwt.ParseToken(token)
 		if err != nil {
-			if errors.IsJwtTokenExpiredError(err) {
-				accessToken, accessTokenExpire, err := authService.RefreshToken(c.Request.Context(), token)
-				if err != nil {
-					response.Error(c, err)
-					c.Abort()
-					return
-				}
-				cookie.SetAccessToken(c, accessToken, accessTokenExpire, "", "/")
-			} else {
-				response.Error(c, errors.Unauthorized().Msg("令牌验证失败").Err(err).Build())
-				c.Abort()
-				return
-			}
+			response.Error(c, errors.Unauthorized().Msg("令牌验证失败").Err(err).Build())
+			c.Abort()
+			return
 		}
 
 		userID, err := strconv.ParseUint(claims.UserID, 10, 64)

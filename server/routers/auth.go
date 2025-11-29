@@ -5,12 +5,12 @@ import (
 
 	"goauth/controllers"
 	"goauth/middleware"
-	"goauth/services"
 )
 
-func LoadAuthRoutes(router *gin.Engine,ctrl *controllers.AuthController, authService *services.AuthService) {
-	m := middleware.NewManager(authService)
+func LoadAuthRoutes(router *gin.Engine, ctrl *controllers.AuthController) {
+	m := middleware.NewManager()
 	authRouter := router.Group("/api/v1/auth")
 	authRouter.POST("/login", ctrl.LoginHandler)
-	authRouter.POST("/logout",m.Auth(), ctrl.LogoutHandler)
+	authRouter.POST("/logout", m.Auth(), ctrl.LogoutHandler)
+	authRouter.POST("/refresh_token", ctrl.RefreshTokenHandler)
 }

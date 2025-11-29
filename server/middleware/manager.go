@@ -8,23 +8,20 @@ import (
 	"goauth/middleware/auth"
 	"goauth/middleware/oauth"
 	"goauth/middleware/security"
-	"goauth/services"
 )
 
 // 中间件管理器 - 先做个简单版本
 type Manager struct {
 	config *types.MiddlewareConfig
-	authService *services.AuthService
 }
 
 // 创建管理器
-func NewManager(authService *services.AuthService) *Manager {
+func NewManager() *Manager {
 
 	config := config.GetGlobalConfig().Middleware
 
 	return &Manager{
 		config: &config,
-		authService: authService,
 	}
 }
 
@@ -50,7 +47,7 @@ func (m *Manager) OAuth(requiredScopes ...string) gin.HandlerFunc {
 }
 
 func (m *Manager) Auth() gin.HandlerFunc {
-	return auth.AuthTokenMiddleware(m.authService)
+	return auth.AuthTokenMiddleware()
 }
 
 func (m *Manager) Role(requiredRole string) gin.HandlerFunc {

@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { login as loginApi, logout as logoutApi } from '@/api/auth'
 import { register as registerApi } from '@/api/user'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { startTokenRefresh, stopTokenRefresh } from '@/composables/useTokenRefresh'
 import type { RegisterRequest } from '@/types/user'
 
 /**
@@ -34,9 +35,15 @@ export function useAuth() {
     try {
       const response = await loginApi(loginForm)
 
-      // 后端返回 ApiResponse<User>，data 即为 User 对象
-      if (response.data) {
-        authStore.loginSuccess(response.data)
+      // 后端返回 ApiResponse<LoginResponse>，包含 user 和令牌过期时间
+      if (response.data?.user) {
+        authStore.loginSuccess(
+          response.data.user,
+          response.data.access_token_expire_at,
+          response.data.refresh_token_expire_at
+        )
+        // 登录成功后启动令牌自动刷新
+        startTokenRefresh()
       } else {
          throw new Error('登录返回数据异常')
       }
@@ -100,6 +107,9 @@ export function useAuth() {
    * @returns 登出结果
    */
   const handleLogout = async (): Promise<AuthActionResult> => {
+    // 停止令牌自动刷新
+    stopTokenRefresh()
+    
     try {
       // 调用后端登出接口清理 Cookie
       await logoutApi()

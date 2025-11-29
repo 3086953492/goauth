@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"time"
+
 	"github.com/3086953492/gokit/cookie"
 	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/response"
@@ -37,10 +39,33 @@ func (ctrl *AuthController) LoginHandler(ctx *gin.Context) {
 	cookie.SetAccessToken(ctx, accessToken, accessTokenExpire, "", "/")
 	cookie.SetRefreshToken(ctx, refreshToken, refreshTokenExpire, "", "/")
 
-	response.Success(ctx, "登录成功", userResp)
+	response.Success(ctx, "登录成功", dto.LoginResponse{
+		User: userResp,
+		AccessTokenExpireAt:  time.Now().Add(time.Duration(accessTokenExpire) * time.Second),
+		RefreshTokenExpireAt: time.Now().Add(time.Duration(refreshTokenExpire) * time.Second),
+	})
 }
 
 func (ctrl *AuthController) LogoutHandler(ctx *gin.Context) {
 	cookie.ClearTokens(ctx, "", "/")
 	response.Success(ctx, "登出成功", nil)
+}
+
+func (ctrl *AuthController) RefreshTokenHandler(ctx *gin.Context) {
+	token, err := cookie.GetRefreshToken(ctx)
+	if err != nil {
+		response.Error(ctx, errors.Unauthorized().Msg("刷新令牌不存在").Err(err).Build())
+		return
+	}
+	accessToken, accessTokenExpire, err := ctrl.authService.RefreshToken(ctx.Request.Context(), token)
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+
+	cookie.SetAccessToken(ctx, accessToken, accessTokenExpire, "", "/")
+
+	response.Success(ctx, "刷新令牌成功", dto.RefreshTokenResponse{
+		AccessTokenExpireAt: time.Now().Add(time.Duration(accessTokenExpire) * time.Second),
+	})
 }
