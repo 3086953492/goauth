@@ -6,12 +6,21 @@ type AuthorizationCodeResponse struct {
 	State       string `json:"state"`
 }
 
+type ExchangeAccessTokenResponse struct {
+	AccessToken  OAuthAccessTokenResponse  `json:"access_token"`
+	RefreshToken OAuthRefreshTokenResponse `json:"refresh_token"`
+	TokenType    string                    `json:"token_type"`
+	Scope        string                    `json:"scope"`
+}
+
 type OAuthAccessTokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int    `json:"expires_in"`
+	AccessToken string `json:"access_token"`
+	ExpiresIn   int    `json:"expires_in"`
+}
+
+type OAuthRefreshTokenResponse struct {
 	RefreshToken string `json:"refresh_token"`
-	Scope        string `json:"scope"`
+	ExpiresIn    int    `json:"expires_in"`
 }
 
 type ExchangeAccessTokenForm struct {
