@@ -86,13 +86,15 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 		UserID:      &oauthAuthorizationCode.UserID,
 	}
 
+	// 先保存 access token，获取自增 ID
+	if err := s.oauthAccessTokenRepository.Create(ctx, accessToken); err != nil {
+		return nil, errors.Database().Msg("创建OAuth访问令牌失败").Err(err).Field("accessToken", accessToken).Log()
+	}
+
+	// 使用保存后的 accessToken.ID 生成 refresh token
 	refreshToken, err := s.oauthRefreshTokenService.GenerateRefreshToken(ctx, accessToken.ID, oauthAuthorizationCode.ClientID, oauthAuthorizationCode.Scope, oauthAuthorizationCode.UserID, user.Username, user.Role)
 	if err != nil {
 		return nil, err
-	}
-
-	if err := s.oauthAccessTokenRepository.Create(ctx, accessToken); err != nil {
-		return nil, errors.Database().Msg("创建OAuth访问令牌失败").Err(err).Field("accessToken", accessToken).Log()
 	}
 	return &dto.ExchangeAccessTokenResponse{
 		AccessToken: dto.OAuthAccessTokenResponse{
