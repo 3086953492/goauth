@@ -54,6 +54,13 @@ func (r *OAuthAuthorizationCodeRepository) MarkAsUsed(ctx context.Context, id ui
 		Update("used", true).Error
 }
 
+// MarkAsUsedWithTx 在事务中标记授权码为已使用
+func (r *OAuthAuthorizationCodeRepository) MarkAsUsedWithTx(ctx context.Context, tx *gorm.DB, id uint) error {
+	return tx.WithContext(ctx).Model(&models.OAuthAuthorizationCode{}).
+		Where("id = ?", id).
+		Update("used", true).Error
+}
+
 // Delete 软删除OAuth授权码
 func (r *OAuthAuthorizationCodeRepository) Delete(ctx context.Context, id uint) error {
 	return r.db.WithContext(ctx).Delete(&models.OAuthAuthorizationCode{}, id).Error

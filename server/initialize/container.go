@@ -54,7 +54,7 @@ func NewContainer() *Container {
 	c.OAuthRefreshTokenService = services.NewOAuthRefreshTokenService(c.OAuthRefreshTokenRepository)
 
 	c.OAuthAccessTokenRepository = repositories.NewOAuthAccessTokenRepository(db)
-	c.OAuthAccessTokenService = services.NewOAuthAccessTokenService(c.OAuthAccessTokenRepository, c.OAuthAuthorizationCodeService, c.UserService, c.OAuthClientService, c.OAuthRefreshTokenService)
+	c.OAuthAccessTokenService = services.NewOAuthAccessTokenService(db, c.OAuthAccessTokenRepository, c.OAuthAuthorizationCodeService, c.UserService, c.OAuthClientService, c.OAuthRefreshTokenService)
 
 	c.OAuthController = controllers.NewOAuthController(c.OAuthAuthorizationCodeService, c.OAuthAccessTokenService, c.OAuthClientService)
 

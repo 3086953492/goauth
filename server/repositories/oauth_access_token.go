@@ -25,6 +25,11 @@ func (r *OAuthAccessTokenRepository) Create(ctx context.Context, token *models.O
 	return r.db.WithContext(ctx).Create(token).Error
 }
 
+// CreateWithTx 在事务中创建OAuth访问令牌
+func (r *OAuthAccessTokenRepository) CreateWithTx(ctx context.Context, tx *gorm.DB, token *models.OAuthAccessToken) error {
+	return tx.WithContext(ctx).Create(token).Error
+}
+
 // Get 根据传入的条件查询OAuth访问令牌
 func (r *OAuthAccessTokenRepository) Get(ctx context.Context, conds map[string]any) (*models.OAuthAccessToken, error) {
 	var token models.OAuthAccessToken
@@ -78,4 +83,3 @@ func (r *OAuthAccessTokenRepository) List(ctx context.Context, page, pageSize in
 
 	return tokens, total, nil
 }
-

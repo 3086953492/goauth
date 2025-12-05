@@ -8,6 +8,7 @@ import (
 	"github.com/3086953492/gokit/config"
 	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/jwt"
+	"gorm.io/gorm"
 
 	"goauth/dto"
 	"goauth/models"
@@ -16,6 +17,8 @@ import (
 )
 
 type OAuthAccessTokenService struct {
+	db *gorm.DB
+
 	oauthAccessTokenRepository *repositories.OAuthAccessTokenRepository
 
 	oauthAuthorizationCodeService *OAuthAuthorizationCodeService
@@ -27,8 +30,22 @@ type OAuthAccessTokenService struct {
 	oauthRefreshTokenService *OAuthRefreshTokenService
 }
 
-func NewOAuthAccessTokenService(oauthAccessTokenRepository *repositories.OAuthAccessTokenRepository, oauthAuthorizationCodeService *OAuthAuthorizationCodeService, userService *UserService, oauthClientService *OAuthClientService, oauthRefreshTokenService *OAuthRefreshTokenService) *OAuthAccessTokenService {
-	return &OAuthAccessTokenService{oauthAccessTokenRepository: oauthAccessTokenRepository, oauthAuthorizationCodeService: oauthAuthorizationCodeService, userService: userService, oauthClientService: oauthClientService, oauthRefreshTokenService: oauthRefreshTokenService}
+func NewOAuthAccessTokenService(
+	db *gorm.DB,
+	oauthAccessTokenRepository *repositories.OAuthAccessTokenRepository,
+	oauthAuthorizationCodeService *OAuthAuthorizationCodeService,
+	userService *UserService,
+	oauthClientService *OAuthClientService,
+	oauthRefreshTokenService *OAuthRefreshTokenService,
+) *OAuthAccessTokenService {
+	return &OAuthAccessTokenService{
+		db:                            db,
+		oauthAccessTokenRepository:    oauthAccessTokenRepository,
+		oauthAuthorizationCodeService: oauthAuthorizationCodeService,
+		userService:                   userService,
+		oauthClientService:            oauthClientService,
+		oauthRefreshTokenService:      oauthRefreshTokenService,
+	}
 }
 
 func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form *dto.ExchangeAccessTokenForm, clientID, clientSecret string) (*dto.ExchangeAccessTokenResponse, error) {
@@ -63,10 +80,6 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 		return nil, errors.InvalidInput().Msg("授权码客户端ID不匹配").Build()
 	}
 
-	if err := s.oauthAuthorizationCodeService.MarkAsUsed(ctx, oauthAuthorizationCode.ID); err != nil {
-		return nil, err
-	}
-
 	user, err := s.userService.GetUser(ctx, map[string]any{"id": oauthAuthorizationCode.UserID})
 	if err != nil {
 		return nil, err
@@ -86,23 +99,42 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 		UserID:      &oauthAuthorizationCode.UserID,
 	}
 
-	// 先保存 access token，获取自增 ID
-	if err := s.oauthAccessTokenRepository.Create(ctx, accessToken); err != nil {
-		return nil, errors.Database().Msg("创建OAuth访问令牌失败").Err(err).Field("accessToken", accessToken).Log()
+	// 用于在事务中保存 refresh token 字符串
+	var refreshTokenString string
+
+	// 使用数据库事务确保授权码、访问令牌和刷新令牌的一致性，当任一步失败时整体回滚
+	txErr := s.db.Transaction(func(tx *gorm.DB) error {
+		// 在事务中标记授权码为已使用
+		if err := s.oauthAuthorizationCodeService.MarkAsUsedWithTx(ctx, tx, oauthAuthorizationCode.ID); err != nil {
+			return err
+		}
+
+		// 在事务中保存 access token，获取自增 ID
+		if err := s.oauthAccessTokenRepository.CreateWithTx(ctx, tx, accessToken); err != nil {
+			return errors.Database().Msg("创建OAuth访问令牌失败").Err(err).Field("accessToken", accessToken).Log()
+		}
+
+		// 在事务中使用保存后的 accessToken.ID 生成 refresh token
+		var genErr error
+		refreshTokenString, genErr = s.oauthRefreshTokenService.GenerateRefreshTokenWithTx(ctx, tx, accessToken.ID, oauthAuthorizationCode.ClientID, oauthAuthorizationCode.Scope, oauthAuthorizationCode.UserID, user.Username, user.Role)
+		if genErr != nil {
+			return genErr
+		}
+
+		return nil
+	})
+
+	if txErr != nil {
+		return nil, txErr
 	}
 
-	// 使用保存后的 accessToken.ID 生成 refresh token
-	refreshToken, err := s.oauthRefreshTokenService.GenerateRefreshToken(ctx, accessToken.ID, oauthAuthorizationCode.ClientID, oauthAuthorizationCode.Scope, oauthAuthorizationCode.UserID, user.Username, user.Role)
-	if err != nil {
-		return nil, err
-	}
 	return &dto.ExchangeAccessTokenResponse{
 		AccessToken: dto.OAuthAccessTokenResponse{
 			AccessToken: accessTokenString,
 			ExpiresIn:   int(config.GetGlobalConfig().OAuth.AccessTokenExpire.Seconds()),
 		},
 		RefreshToken: dto.OAuthRefreshTokenResponse{
-			RefreshToken: refreshToken,
+			RefreshToken: refreshTokenString,
 			ExpiresIn:    int(config.GetGlobalConfig().OAuth.RefreshTokenExpire.Seconds()),
 		},
 		Scope:     accessToken.Scope,

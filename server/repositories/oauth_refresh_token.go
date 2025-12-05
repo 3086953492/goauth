@@ -25,6 +25,11 @@ func (r *OAuthRefreshTokenRepository) Create(ctx context.Context, token *models.
 	return r.db.WithContext(ctx).Create(token).Error
 }
 
+// CreateWithTx 在事务中创建OAuth刷新令牌
+func (r *OAuthRefreshTokenRepository) CreateWithTx(ctx context.Context, tx *gorm.DB, token *models.OAuthRefreshToken) error {
+	return tx.WithContext(ctx).Create(token).Error
+}
+
 // Get 根据传入的条件查询OAuth刷新令牌
 func (r *OAuthRefreshTokenRepository) Get(ctx context.Context, conds map[string]any) (*models.OAuthRefreshToken, error) {
 	var token models.OAuthRefreshToken

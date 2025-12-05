@@ -4,9 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/3086953492/gokit/crypto"
 	"github.com/3086953492/gokit/config"
+	"github.com/3086953492/gokit/crypto"
 	"github.com/3086953492/gokit/errors"
+	"gorm.io/gorm"
 
 	"goauth/models"
 	"goauth/repositories"
@@ -56,6 +57,14 @@ func (s *OAuthAuthorizationCodeService) GetOAuthAuthorizationCode(ctx context.Co
 
 func (s *OAuthAuthorizationCodeService) MarkAsUsed(ctx context.Context, id uint) error {
 	if err := s.oauthAuthorizationCodeRepository.MarkAsUsed(ctx, id); err != nil {
+		return errors.Database().Msg("标记授权码为已使用失败").Err(err).Log()
+	}
+	return nil
+}
+
+// MarkAsUsedWithTx 在事务中标记授权码为已使用
+func (s *OAuthAuthorizationCodeService) MarkAsUsedWithTx(ctx context.Context, tx *gorm.DB, id uint) error {
+	if err := s.oauthAuthorizationCodeRepository.MarkAsUsedWithTx(ctx, tx, id); err != nil {
 		return errors.Database().Msg("标记授权码为已使用失败").Err(err).Log()
 	}
 	return nil
