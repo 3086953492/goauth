@@ -90,3 +90,31 @@ func (ctrl *OAuthController) ExchangeAccessTokenHandler(ctx *gin.Context) {
 
 	response.Success(ctx, "访问令牌交换成功", accessToken)
 }
+
+func (ctrl *OAuthController) IntrospectAccessTokenHandler(ctx *gin.Context) {
+	// 绑定请求参数
+	var form dto.IntrospectionRequest
+	if err := ctx.ShouldBind(&form); err != nil {
+		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", form).Build())
+		return
+	}
+
+	// 客户端 Basic 认证
+	clientID, clientSecret, ok := ctx.Request.BasicAuth()
+	if !ok || clientID == "" || clientSecret == "" {
+		response.Error(ctx, errors.InvalidInput().Msg("客户端认证失败").Build())
+		return
+	}
+
+	// 验证客户端合法性
+	_, err := ctrl.oauthClientService.GetOAuthClient(ctx.Request.Context(), map[string]any{"id": clientID, "client_secret": clientSecret})
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+
+	// 调用服务层内省访问令牌
+	resp := ctrl.oauthAccessTokenService.IntrospectAccessToken(ctx.Request.Context(), form.Token)
+
+	response.Success(ctx, "内省成功", resp)
+}

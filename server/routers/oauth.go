@@ -12,4 +12,5 @@ func LoadOAuthRoutes(router *gin.Engine, ctrl *controllers.OAuthController) {
 	oauthRouter := router.Group("/api/v1/oauth")
 	oauthRouter.GET("/authorization", m.Auth(), ctrl.AuthorizationCodeHandler)
 	oauthRouter.POST("/token", ctrl.ExchangeAccessTokenHandler)
+	oauthRouter.POST("/introspect", ctrl.IntrospectAccessTokenHandler)
 }
