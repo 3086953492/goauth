@@ -92,6 +92,7 @@ import { Key, Link, Warning } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { usePermission } from '@/composables/usePermission'
 import { buildAuthorizationUrl } from '@/api/oauth'
+import { refreshToken } from '@/api/auth'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -126,6 +127,25 @@ const scopeList = computed(() => {
   return oauthParams.value.scope.split(' ').filter(s => s.trim())
 })
 
+/**
+ * 授权前检查/刷新令牌有效性
+ * 调用 refreshToken 接口确保 access token 有效
+ * 成功时更新 authStore 中的过期时间并返回 true
+ * 失败时由 Axios 拦截器与 AuthFeedbackProvider 统一处理登录过期，返回 false
+ */
+const ensureTokenValidBeforeAuthorize = async (): Promise<boolean> => {
+  try {
+    const response = await refreshToken()
+    if (response.data?.access_token_expire_at) {
+      authStore.updateAccessTokenExpireAt(response.data.access_token_expire_at)
+    }
+    return true
+  } catch {
+    // 错误和登录过期跳转由 Axios 拦截器与 AuthFeedbackProvider 统一处理
+    return false
+  }
+}
+
 // 初始化
 onMounted(() => {
   // 读取 OAuth 参数（先读取参数，以便在重定向时保留）
@@ -149,7 +169,7 @@ onMounted(() => {
 })
 
 // 确认授权
-const handleAuthorize = () => {
+const handleAuthorize = async () => {
   if (!isValidRequest.value) {
     ElMessage.error('授权请求参数不完整')
     return
@@ -162,18 +182,31 @@ const handleAuthorize = () => {
 
   authorizing.value = true
 
-  // 构建授权 URL 并直接跳转到后端接口
-  // 后端会完成参数校验、授权码生成，并 302 重定向到 redirect_uri
-  const authorizationUrl = buildAuthorizationUrl({
-    client_id: oauthParams.value.client_id,
-    redirect_uri: oauthParams.value.redirect_uri,
-    response_type: oauthParams.value.response_type || 'code',
-    scope: oauthParams.value.scope || undefined,
-    state: oauthParams.value.state || undefined
-  })
+  try {
+    // 授权前检查/刷新令牌有效性
+    const tokenValid = await ensureTokenValidBeforeAuthorize()
+    if (!tokenValid) {
+      // 令牌检查失败，错误处理已在内部完成，直接返回
+      return
+    }
 
-  // 直接跳转，浏览器会自动携带 Cookie 完成登录态校验
-  window.location.href = authorizationUrl
+    // 构建授权 URL 并直接跳转到后端接口
+    // 后端会完成参数校验、授权码生成，并 302 重定向到 redirect_uri
+    const authorizationUrl = buildAuthorizationUrl({
+      client_id: oauthParams.value.client_id,
+      redirect_uri: oauthParams.value.redirect_uri,
+      response_type: oauthParams.value.response_type || 'code',
+      scope: oauthParams.value.scope || undefined,
+      state: oauthParams.value.state || undefined
+    })
+
+    // 直接跳转，浏览器会自动携带 Cookie 完成登录态校验
+    window.location.href = authorizationUrl
+  } finally {
+    // 如果跳转未发生（如令牌检查失败），确保状态复位
+    // 注意：若跳转成功，此行不会执行（页面已跳走）
+    authorizing.value = false
+  }
 }
 
 // 取消授权
