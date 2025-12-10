@@ -66,3 +66,20 @@ func (s *OAuthRefreshTokenService) GenerateRefreshTokenWithTx(ctx context.Contex
 
 	return refreshTokenString, nil
 }
+
+// GetOAuthRefreshToken 根据条件查询刷新令牌
+func (s *OAuthRefreshTokenService) GetOAuthRefreshToken(ctx context.Context, conds map[string]any) (*models.OAuthRefreshToken, error) {
+	refreshToken, err := s.oauthRefreshTokenRepository.Get(ctx, conds)
+	if err != nil {
+		return nil, errors.NotFound().Msg("刷新令牌不存在").Err(err).Log()
+	}
+	return refreshToken, nil
+}
+
+// RevokeRefreshTokenWithTx 在事务中撤销刷新令牌
+func (s *OAuthRefreshTokenService) RevokeRefreshTokenWithTx(ctx context.Context, tx *gorm.DB, id uint) error {
+	if err := tx.WithContext(ctx).Model(&models.OAuthRefreshToken{}).Where("id = ?", id).Update("revoked", true).Error; err != nil {
+		return errors.Database().Msg("撤销刷新令牌失败").Err(err).Log()
+	}
+	return nil
+}

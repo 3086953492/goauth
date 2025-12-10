@@ -29,6 +29,11 @@ type ExchangeAccessTokenForm struct {
 	RedirectURI string `form:"redirect_uri" binding:"required"`
 }
 
+type RefreshAccessTokenForm struct {
+	GrantType    string `form:"grant_type" binding:"required,oneof=refresh_token"`
+	RefreshToken string `form:"refresh_token" binding:"required"`
+}
+
 // IntrospectionRequest 内省请求结构体
 type IntrospectionRequest struct {
 	Token         string `form:"token" binding:"required"`

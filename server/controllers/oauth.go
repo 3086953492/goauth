@@ -70,25 +70,49 @@ func (ctrl *OAuthController) AuthorizationCodeHandler(ctx *gin.Context) {
 }
 
 func (ctrl *OAuthController) ExchangeAccessTokenHandler(ctx *gin.Context) {
-	var form dto.ExchangeAccessTokenForm
-	if err := ctx.ShouldBind(&form); err != nil {
-		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", form).Build())
-		return
-	}
-
+	// 客户端 Basic 认证
 	clientID, clientSecret, ok := ctx.Request.BasicAuth()
 	if !ok || clientID == "" || clientSecret == "" {
-		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Build())
+		response.Error(ctx, errors.InvalidInput().Msg("客户端认证失败").Build())
 		return
 	}
 
-	accessToken, err := ctrl.oauthAccessTokenService.ExchangeAccessToken(ctx.Request.Context(), &form, clientID, clientSecret)
-	if err != nil {
-		response.Error(ctx, err)
-		return
-	}
+	// 根据 grant_type 分支处理
+	grantType := ctx.PostForm("grant_type")
+	switch grantType {
+	case "authorization_code":
+		var form dto.ExchangeAccessTokenForm
+		if err := ctx.ShouldBind(&form); err != nil {
+			response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", form).Build())
+			return
+		}
 
-	response.Success(ctx, "访问令牌交换成功", accessToken)
+		accessToken, err := ctrl.oauthAccessTokenService.ExchangeAccessToken(ctx.Request.Context(), &form, clientID, clientSecret)
+		if err != nil {
+			response.Error(ctx, err)
+			return
+		}
+
+		response.Success(ctx, "访问令牌交换成功", accessToken)
+
+	case "refresh_token":
+		var form dto.RefreshAccessTokenForm
+		if err := ctx.ShouldBind(&form); err != nil {
+			response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", form).Build())
+			return
+		}
+
+		accessToken, err := ctrl.oauthAccessTokenService.RefreshAccessToken(ctx.Request.Context(), &form, clientID, clientSecret)
+		if err != nil {
+			response.Error(ctx, err)
+			return
+		}
+
+		response.Success(ctx, "访问令牌刷新成功", accessToken)
+
+	default:
+		response.Error(ctx, errors.InvalidInput().Msg("授权类型不支持").Build())
+	}
 }
 
 func (ctrl *OAuthController) IntrospectAccessTokenHandler(ctx *gin.Context) {

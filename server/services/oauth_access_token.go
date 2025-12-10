@@ -181,3 +181,100 @@ func (s *OAuthAccessTokenService) IntrospectAccessToken(ctx context.Context, acc
 
 	return resp
 }
+
+func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *dto.RefreshAccessTokenForm, clientID, clientSecret string) (*dto.ExchangeAccessTokenResponse, error) {
+	// 校验客户端合法性
+	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"id": clientID, "client_secret": clientSecret})
+	if err != nil {
+		return nil, err
+	}
+
+	// 校验客户端是否支持 refresh_token 授权类型
+	if !utils.IsGrantTypeValid("refresh_token", oauthClient.GrantTypes) {
+		return nil, errors.InvalidInput().Msg("客户端不支持refresh_token授权类型").Build()
+	}
+
+	// 查询刷新令牌
+	refreshToken, err := s.oauthRefreshTokenService.GetOAuthRefreshToken(ctx, map[string]any{"refresh_token": form.RefreshToken})
+	if err != nil {
+		return nil, err
+	}
+
+	// 校验刷新令牌是否已撤销
+	if refreshToken.Revoked {
+		return nil, errors.InvalidInput().Msg("刷新令牌已撤销").Build()
+	}
+
+	// 校验刷新令牌是否已过期
+	if refreshToken.ExpiresAt.Before(time.Now()) {
+		return nil, errors.InvalidInput().Msg("刷新令牌已过期").Build()
+	}
+
+	// 校验刷新令牌的客户端ID是否与当前客户端一致
+	if refreshToken.ClientID != clientID {
+		return nil, errors.InvalidInput().Msg("刷新令牌客户端ID不匹配").Build()
+	}
+
+	// 查询用户信息
+	user, err := s.userService.GetUser(ctx, map[string]any{"id": refreshToken.UserID})
+	if err != nil {
+		return nil, err
+	}
+
+	// 生成新的访问令牌
+	accessTokenString, err := jwt.GenerateToken(strconv.FormatUint(uint64(user.ID), 10), user.Username, map[string]any{"role": user.Role})
+	if err != nil {
+		return nil, errors.Internal().Msg("生成访问令牌失败").Err(err).Log()
+	}
+
+	accessToken := &models.OAuthAccessToken{
+		AccessToken: accessTokenString,
+		TokenType:   "Bearer",
+		ExpiresAt:   time.Now().Add(config.GetGlobalConfig().OAuth.AccessTokenExpire),
+		ClientID:    refreshToken.ClientID,
+		Scope:       refreshToken.Scope,
+		UserID:      &refreshToken.UserID,
+	}
+
+	// 用于在事务中保存新的 refresh token 字符串
+	var newRefreshTokenString string
+
+	// 使用数据库事务确保访问令牌、新刷新令牌和旧刷新令牌撤销的一致性
+	txErr := s.db.Transaction(func(tx *gorm.DB) error {
+		// 在事务中保存新的 access token
+		if err := s.oauthAccessTokenRepository.CreateWithTx(ctx, tx, accessToken); err != nil {
+			return errors.Database().Msg("创建OAuth访问令牌失败").Err(err).Field("accessToken", accessToken).Log()
+		}
+
+		// 在事务中撤销旧的 refresh token
+		if err := s.oauthRefreshTokenService.RevokeRefreshTokenWithTx(ctx, tx, refreshToken.ID); err != nil {
+			return err
+		}
+
+		// 在事务中生成新的 refresh token
+		var genErr error
+		newRefreshTokenString, genErr = s.oauthRefreshTokenService.GenerateRefreshTokenWithTx(ctx, tx, accessToken.ID, refreshToken.ClientID, refreshToken.Scope, refreshToken.UserID, user.Username, user.Role)
+		if genErr != nil {
+			return genErr
+		}
+
+		return nil
+	})
+
+	if txErr != nil {
+		return nil, txErr
+	}
+
+	return &dto.ExchangeAccessTokenResponse{
+		AccessToken: dto.OAuthAccessTokenResponse{
+			AccessToken: accessTokenString,
+			ExpiresIn:   int(config.GetGlobalConfig().OAuth.AccessTokenExpire.Seconds()),
+		},
+		RefreshToken: dto.OAuthRefreshTokenResponse{
+			RefreshToken: newRefreshTokenString,
+			ExpiresIn:    int(config.GetGlobalConfig().OAuth.RefreshTokenExpire.Seconds()),
+		},
+		Scope:     accessToken.Scope,
+		TokenType: "Bearer",
+	}, nil
+}
