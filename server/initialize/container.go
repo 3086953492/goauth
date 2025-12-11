@@ -1,7 +1,7 @@
 package initialize
 
 import (
-	"github.com/3086953492/gokit/database"
+	"gorm.io/gorm"
 
 	"goauth/controllers"
 	"goauth/repositories"
@@ -32,9 +32,8 @@ type Container struct {
 	OAuthController *controllers.OAuthController
 }
 
-func NewContainer() *Container {
+func NewContainer(db *gorm.DB) *Container {
 	c := &Container{}
-	db := database.GetGlobalDB()
 
 	c.UserRepository = repositories.NewUserRepository(db)
 	c.UserService = services.NewUserService(c.UserRepository)

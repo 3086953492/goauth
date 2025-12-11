@@ -36,10 +36,12 @@ func main() {
 
 	// 初始化数据库
 	dsn := database.BuildMySQLDSN(cfg.Database)
-	if err := database.InitDBWithDialector(mysql.Open(dsn)); err != nil {
+	dbManager, err := database.NewManager(mysql.Open(dsn))
+	if err != nil {
 		errors.Internal().Msg("初始化数据库失败").Err(err).Field("dsn", dsn).Log()
 		return
 	}
+	defer dbManager.Close()
 
 	models := []any{
 		models.User{},
@@ -49,7 +51,7 @@ func main() {
 		models.OAuthRefreshToken{},
 	}
 
-	if err := database.AutoMigrateModels(models...); err != nil {
+	if err := dbManager.AutoMigrate(models...); err != nil {
 		errors.Internal().Msg("自动迁移数据库失败").Err(err).Field("models", models).Log()
 		return
 	}
@@ -78,7 +80,7 @@ func main() {
 
 	cookie.Init(cfg.Server.Mode != "debug")
 
-	container := initialize.NewContainer()
+	container := initialize.NewContainer(dbManager.DB())
 
 	initialize.InitValidator(container)
 
@@ -99,7 +101,7 @@ func main() {
 	}
 
 	defer func() {
-		if err := database.CloseDB(); err != nil {
+		if err := dbManager.Close(); err != nil {
 			errors.Internal().Msg("关闭数据库失败").Err(err).Log()
 		}
 	}()
