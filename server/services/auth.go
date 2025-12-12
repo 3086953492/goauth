@@ -20,8 +20,8 @@ type AuthService struct {
 }
 
 // NewAuthService 创建授权服务实例
-func NewAuthService(userRepository *repositories.UserRepository) *AuthService {
-	return &AuthService{userRepository: userRepository, userService: NewUserService(userRepository)}
+func NewAuthService(userRepository *repositories.UserRepository, userService *UserService) *AuthService {
+	return &AuthService{userRepository: userRepository, userService: userService}
 }
 
 func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (accessToken string, accessTokenExpire int, refreshToken string, refreshTokenExpire int, userResp *dto.UserResponse, err error) {

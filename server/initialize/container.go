@@ -39,7 +39,7 @@ func NewContainer(db *gorm.DB) *Container {
 	c.UserService = services.NewUserService(c.UserRepository)
 	c.UserController = controllers.NewUserController(c.UserService)
 
-	c.AuthService = services.NewAuthService(c.UserRepository)
+	c.AuthService = services.NewAuthService(c.UserRepository, c.UserService)
 	c.AuthController = controllers.NewAuthController(c.AuthService)
 
 	c.OAuthClientRepository = repositories.NewOAuthClientRepository(db)
