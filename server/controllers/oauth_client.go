@@ -6,6 +6,7 @@ import (
 	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/response"
 	"github.com/3086953492/gokit/validator"
+	vgin "github.com/3086953492/gokit/validator/provider_gin"
 	"github.com/gin-gonic/gin"
 
 	"goauth/dto"
@@ -14,21 +15,23 @@ import (
 
 type OAuthClientController struct {
 	oauthClientService *services.OAuthClientService
+	validatorManager *validator.Manager
 }
 
-func NewOAuthClientController(oauthClientService *services.OAuthClientService) *OAuthClientController {
-	return &OAuthClientController{oauthClientService: oauthClientService}
+func NewOAuthClientController(oauthClientService *services.OAuthClientService, validatorManager *validator.Manager) *OAuthClientController {
+	return &OAuthClientController{oauthClientService: oauthClientService, validatorManager: validatorManager}
 }
 
 func (ctrl *OAuthClientController) CreateOAuthClientHandler(ctx *gin.Context) {
 	var req dto.CreateOAuthClientRequest
-	if result, err := validator.BindAndValidate(ctx, &req); err != nil {
+	if result, err := vgin.BindAndValidate(ctrl.validatorManager, ctx, &req); err != nil {
 		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", req).Build())
 		return
 	} else if !result.Valid {
 		response.Error(ctx, errors.InvalidInput().Msg(result.Message).Err(result.Err).Field("request", req).Build())
 		return
 	}
+
 	if err := ctrl.oauthClientService.CreateOAuthClient(ctx.Request.Context(), &req); err != nil {
 		response.Error(ctx, err)
 		return
@@ -88,7 +91,7 @@ func (ctrl *OAuthClientController) UpdateOAuthClientHandler(ctx *gin.Context) {
 	}
 
 	var req dto.UpdateOAuthClientRequest
-	if result, err := validator.BindAndValidate(ctx, &req); err != nil {
+	if result, err := vgin.BindAndValidate(ctrl.validatorManager, ctx, &req); err != nil {
 		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", req).Build())
 		return
 	} else if !result.Valid {

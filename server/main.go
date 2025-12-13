@@ -15,6 +15,7 @@ import (
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
 	"github.com/3086953492/gokit/response"
+	"github.com/3086953492/gokit/validator"
 	"gorm.io/driver/mysql"
 
 	"goauth/initialize"
@@ -80,9 +81,18 @@ func main() {
 
 	cookie.Init(cfg.Server.Mode != "debug")
 
-	container := initialize.NewContainer(dbManager.DB())
+	validatorManager, err := validator.New()
+	if err != nil {
+		errors.Internal().Msg("初始化验证器失败").Err(err).Log()
+		return
+	}
 
-	initialize.InitValidator(container)
+	container := initialize.NewContainer(dbManager.DB(), storageManager, validatorManager)
+
+	if err := initialize.InitValidator(container); err != nil {
+		errors.Internal().Msg("注册自定义验证规则失败").Err(err).Log()
+		return
+	}
 
 	// 获取端口号，优先使用命令行参数
 	port := cfg.Server.Port

@@ -3,7 +3,7 @@ module goauth
 go 1.23.4
 
 require (
-	github.com/3086953492/gokit v0.69.0
+	github.com/3086953492/gokit v0.73.0
 	github.com/gin-gonic/gin v1.11.0
 	go.uber.org/zap v1.27.0
 	gorm.io/datatypes v1.2.7
@@ -13,6 +13,7 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/aliyun/alibabacloud-oss-go-sdk-v2 v1.3.0 // indirect
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -66,6 +67,7 @@ require (
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/time v0.4.0 // indirect
 	golang.org/x/tools v0.35.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect

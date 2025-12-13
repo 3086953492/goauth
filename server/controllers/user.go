@@ -6,6 +6,7 @@ import (
 	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/response"
 	"github.com/3086953492/gokit/validator"
+	vgin "github.com/3086953492/gokit/validator/provider_gin"
 	"github.com/gin-gonic/gin"
 
 	"goauth/dto"
@@ -15,15 +16,16 @@ import (
 
 type UserController struct {
 	userService *services.UserService
+	validatorManager *validator.Manager
 }
 
-func NewUserController(userService *services.UserService) *UserController {
-	return &UserController{userService: userService}
+func NewUserController(userService *services.UserService, validatorManager *validator.Manager) *UserController {
+	return &UserController{userService: userService, validatorManager: validatorManager}
 }
 
 func (ctrl *UserController) CreateUserHandler(ctx *gin.Context) {
 	var req dto.CreateUserRequest
-	if result, err := validator.BindAndValidate(ctx, &req); err != nil {
+	if result, err := vgin.BindAndValidate(ctrl.validatorManager, ctx, &req); err != nil {
 		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", req).Build())
 		return
 	} else if !result.Valid {
@@ -41,7 +43,7 @@ func (ctrl *UserController) CreateUserHandler(ctx *gin.Context) {
 
 func (ctrl *UserController) UpdateUserHandler(ctx *gin.Context) {
 	var req dto.UpdateUserRequest
-	if result, err := validator.BindAndValidate(ctx, &req); err != nil {
+	if result, err := vgin.BindAndValidate(ctrl.validatorManager, ctx, &req); err != nil {
 		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", req).Build())
 		return
 	} else if !result.Valid {
@@ -96,7 +98,7 @@ func (ctrl *UserController) ListUsersHandler(ctx *gin.Context) {
 		response.Error(ctx, errors.InvalidInput().Msg("每页条数格式错误").Err(err).Build())
 		return
 	}
-	
+
 	status := ctx.Query("status")
 	role := ctx.Query("role")
 	nickname := ctx.Query("nickname")

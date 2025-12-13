@@ -7,6 +7,7 @@ import (
 	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/response"
 	"github.com/3086953492/gokit/validator"
+	vgin "github.com/3086953492/gokit/validator/provider_gin"
 	"github.com/gin-gonic/gin"
 
 	"goauth/dto"
@@ -14,22 +15,24 @@ import (
 )
 
 type AuthController struct {
-	authService *services.AuthService
+	authService      *services.AuthService
+	validatorManager *validator.Manager
 }
 
-func NewAuthController(authService *services.AuthService) *AuthController {
-	return &AuthController{authService: authService}
+func NewAuthController(authService *services.AuthService, validatorManager *validator.Manager) *AuthController {
+	return &AuthController{authService: authService, validatorManager: validatorManager}
 }
 
 func (ctrl *AuthController) LoginHandler(ctx *gin.Context) {
 	var req dto.LoginRequest
-	if result, err := validator.BindAndValidate(ctx, &req); err != nil {
+	if result, err := vgin.BindAndValidate(ctrl.validatorManager, ctx, &req); err != nil {
 		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", req).Build())
 		return
 	} else if !result.Valid {
 		response.Error(ctx, errors.InvalidInput().Msg(result.Message).Err(result.Err).Field("request", req).Build())
 		return
 	}
+
 	accessToken, accessTokenExpire, refreshToken, refreshTokenExpire, userResp, err := ctrl.authService.Login(ctx.Request.Context(), &req)
 	if err != nil {
 		response.Error(ctx, err)
@@ -40,7 +43,7 @@ func (ctrl *AuthController) LoginHandler(ctx *gin.Context) {
 	cookie.SetRefreshToken(ctx, refreshToken, refreshTokenExpire, "", "/")
 
 	response.Success(ctx, "登录成功", dto.LoginResponse{
-		User: userResp,
+		User:                 userResp,
 		AccessTokenExpireAt:  time.Now().Add(time.Duration(accessTokenExpire) * time.Second),
 		RefreshTokenExpireAt: time.Now().Add(time.Duration(refreshTokenExpire) * time.Second),
 	})
