@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"github.com/3086953492/gokit/storage"
 	"github.com/3086953492/gokit/validator"
 	"gorm.io/gorm"
 
@@ -37,11 +38,11 @@ type Container struct {
 	ValidatorManager *validator.Manager
 }
 
-func NewContainer(db *gorm.DB, validatorManager *validator.Manager) *Container {
+func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager *validator.Manager) *Container {
 	c := &Container{}
 
 	c.UserRepository = repositories.NewUserRepository(db)
-	c.UserService = services.NewUserService(c.UserRepository)
+	c.UserService = services.NewUserService(c.UserRepository, storageManager)
 	c.UserController = controllers.NewUserController(c.UserService, validatorManager)
 	c.UserValidator = validations.NewUserValidators(c.UserService)
 

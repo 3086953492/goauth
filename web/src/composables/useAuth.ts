@@ -3,7 +3,7 @@ import { login as loginApi, logout as logoutApi } from '@/api/auth'
 import { register as registerApi } from '@/api/user'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { startTokenRefresh, stopTokenRefresh } from '@/composables/useTokenRefresh'
-import type { RegisterRequest } from '@/types/user'
+import type { RegisterFormValues } from '@/types/user'
 
 /**
  * 认证操作的返回结果类型
@@ -65,7 +65,7 @@ export function useAuth() {
 
   /**
    * 处理注册
-   * @param registerForm 注册表单数据
+   * @param registerForm 注册表单数据（avatar 为 File | null）
    * @returns 注册结果
    */
   const handleRegister = async (registerForm: {
@@ -73,19 +73,19 @@ export function useAuth() {
     password: string
     confirmPassword: string
     nickname: string
-    avatar: string
+    avatar: File | null
   }): Promise<AuthActionResult> => {
     loading.value = true
     try {
-      const requestData: RegisterRequest = {
+      const payload: RegisterFormValues = {
         username: registerForm.username,
         password: registerForm.password,
-        confirm_password: registerForm.confirmPassword,
+        confirmPassword: registerForm.confirmPassword,
         nickname: registerForm.nickname,
-        avatar: registerForm.avatar || undefined
+        avatar: registerForm.avatar
       }
 
-      const response = await registerApi(requestData)
+      const response = await registerApi(payload)
 
       return {
         success: true,

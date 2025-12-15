@@ -15,7 +15,7 @@ import (
 )
 
 type UserController struct {
-	userService *services.UserService
+	userService      *services.UserService
 	validatorManager *validator.Manager
 }
 
@@ -24,16 +24,22 @@ func NewUserController(userService *services.UserService, validatorManager *vali
 }
 
 func (ctrl *UserController) CreateUserHandler(ctx *gin.Context) {
-	var req dto.CreateUserRequest
-	if result, err := vgin.BindAndValidate(ctrl.validatorManager, ctx, &req); err != nil {
-		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", req).Build())
+	var form dto.CreateUserForm
+	if result, err := vgin.BindFormAndValidate(ctrl.validatorManager, ctx, &form); err != nil {
+		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", form).Build())
 		return
 	} else if !result.Valid {
-		response.Error(ctx, errors.InvalidInput().Msg(result.Message).Err(result.Err).Field("request", req).Build())
+		response.Error(ctx, errors.InvalidInput().Msg(result.Message).Err(result.Err).Field("request", form).Build())
 		return
 	}
 
-	if err := ctrl.userService.CreateUser(ctx.Request.Context(), &req); err != nil {
+	fileMeta, err := utils.GetFormFile(ctx, "avatar", 4*1024*1024, []string{"image/png", "image/jpeg", "image/jpg", "image/webp"})
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	
+	if err := ctrl.userService.CreateUser(ctx.Request.Context(), &form, fileMeta); err != nil {
 		response.Error(ctx, err)
 		return
 	}

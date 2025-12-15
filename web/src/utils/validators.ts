@@ -33,11 +33,43 @@ export const createPasswordValidator = (): FormItemRule[] => [
 ]
 
 /**
- * 头像URL验证规则
+ * 头像URL验证规则（用于 URL 输入场景，如个人资料编辑）
  */
 export const avatarRules: FormItemRule[] = [
   { type: 'url', message: '请输入有效的URL', trigger: 'blur' }
 ]
+
+// 头像文件允许类型与最大大小（4MB）
+const AVATAR_ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+const AVATAR_MAX_SIZE = 4 * 1024 * 1024
+
+/**
+ * 头像文件验证规则工厂（用于文件上传场景）
+ * 头像可选，只有选择文件时才校验类型/大小
+ */
+export const createAvatarFileValidator = (): FormItemRule => {
+  return {
+    validator: (_rule: any, value: any, callback: any) => {
+      // 头像可选，未选择文件时跳过校验
+      if (!value) {
+        callback()
+        return
+      }
+      // 类型检查
+      if (!AVATAR_ALLOWED_TYPES.includes(value.type)) {
+        callback(new Error('仅支持 PNG、JPG、JPEG、WebP 格式的图片'))
+        return
+      }
+      // 大小检查
+      if (value.size > AVATAR_MAX_SIZE) {
+        callback(new Error('头像文件不能超过 4MB'))
+        return
+      }
+      callback()
+    },
+    trigger: 'change'
+  }
+}
 
 /**
  * 确认密码验证规则工厂

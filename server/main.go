@@ -15,6 +15,8 @@ import (
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
 	"github.com/3086953492/gokit/response"
+	"github.com/3086953492/gokit/storage"
+	"github.com/3086953492/gokit/storage/provider_aliyunoss"
 	"github.com/3086953492/gokit/validator"
 	"gorm.io/driver/mysql"
 
@@ -71,6 +73,18 @@ func main() {
 
 	if err := jwt.InitJWT(cfg.AuthToken); err != nil {
 		errors.Internal().Msg("初始化 JWT 失败").Err(err).Log()
+		return
+	}
+
+	store, err := provider_aliyunoss.New(provider_aliyunoss.Config(cfg.AliyunOSS))
+	if err != nil {
+		errors.Internal().Msg("初始化 OSS 失败").Err(err).Log()
+		return
+	}
+
+	storageManager, err := storage.NewManager(storage.WithStore(store))
+	if err != nil {
+		errors.Internal().Msg("初始化文件管理器失败").Err(err).Log()
 		return
 	}
 

@@ -24,6 +24,10 @@ const request: AxiosInstance = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // 如果请求体是 FormData，删除默认 Content-Type，让浏览器自动带上 multipart/form-data + boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type']
+    }
     // 全局使用 Cookie 鉴权，不再需要手动设置 Authorization 头
     return config
   },

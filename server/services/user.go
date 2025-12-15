@@ -10,6 +10,7 @@ import (
 	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
+	"github.com/3086953492/gokit/storage"
 	"go.uber.org/zap"
 
 	"goauth/dto"
@@ -20,14 +21,15 @@ import (
 // UserService 用户服务实现
 type UserService struct {
 	userRepository *repositories.UserRepository
+	storageManager *storage.Manager
 }
 
 // NewUserService 创建用户服务实例
-func NewUserService(userRepository *repositories.UserRepository) *UserService {
-	return &UserService{userRepository: userRepository}
+func NewUserService(userRepository *repositories.UserRepository, storageManager *storage.Manager) *UserService {
+	return &UserService{userRepository: userRepository, storageManager: storageManager}
 }
 
-func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserRequest) error {
+func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, fileMeta dto.FileMeta) error {
 
 	// 对用户名加锁，防止并发创建相同用户名。
 	lockKey := fmt.Sprintf("user:create:%s", req.Username)
@@ -42,11 +44,20 @@ func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 		return errors.Internal().Msg("密码哈希失败").Err(err).Log()
 	}
 
+	var avatarURL string
+	if fileMeta.Data != nil {
+		meta, err := s.storageManager.Upload(ctx,time.Now().Format("2006/01/02")+"/"+fileMeta.Filename, fileMeta.Data, storage.WithContentType(fileMeta.ContentType))
+		if err != nil {
+			return errors.Internal().Msg("头像上传失败").Err(err).Log()
+		}
+		avatarURL = meta.URL
+	}
+
 	user := &models.User{
 		Username: req.Username,
 		Password: hashedPassword,
 		Nickname: req.Nickname,
-		Avatar:   req.Avatar,
+		Avatar:   avatarURL,
 		Role:     "user",
 	}
 	if err := s.userRepository.Create(ctx, user); err != nil {

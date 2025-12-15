@@ -1,15 +1,24 @@
 import request from './request'
-import type { User, RegisterRequest, UpdateUserRequest, UserListResponse } from '@/types/user'
+import type { User, RegisterFormValues, UpdateUserRequest, UserListResponse } from '@/types/user'
 import type { ApiResponse, PaginationResponse } from '@/types/common'
 
 /**
- * 用户注册
+ * 用户注册（multipart/form-data 提交）
+ * @param values UI 表单数据（驼峰命名），包含可选的 avatar 文件
  */
-export const register = (data: RegisterRequest): Promise<ApiResponse> => {
+export const register = (values: RegisterFormValues): Promise<ApiResponse> => {
+  const formData = new FormData()
+  formData.append('username', values.username)
+  formData.append('password', values.password)
+  formData.append('confirm_password', values.confirmPassword)
+  formData.append('nickname', values.nickname)
+  if (values.avatar) {
+    formData.append('avatar', values.avatar)
+  }
   return request({
     url: '/api/v1/users',
     method: 'post',
-    data
+    data: formData
   })
 }
 

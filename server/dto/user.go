@@ -22,12 +22,11 @@ type UpdateUserRequest struct { // *字段传递空值会更新为空值，不�
 	Role     string  `json:"role" validate:"omitempty,oneof=admin user"`
 }
 
-type CreateUserRequest struct {
-	Username        string `json:"username" validate:"required,min=3,max=20,username_unique"`
-	Password        string `json:"password" validate:"required,min=6,max=20"`
-	ConfirmPassword string `json:"confirm_password" validate:"required,eqfield=Password"`
-	Nickname        string `json:"nickname" validate:"required,min=1,max=20"`
-	Avatar          string `json:"avatar" validate:"omitempty,url"`
+type CreateUserForm struct {
+	Username        string `form:"username" validate:"required,min=3,max=20,username_unique"`
+	Password        string `form:"password" validate:"required,min=6,max=20"`
+	ConfirmPassword string `form:"confirm_password" validate:"required,eqfield=Password"`
+	Nickname        string `form:"nickname" validate:"required,min=1,max=20"`
 }
 
 type UserListResponse struct {
