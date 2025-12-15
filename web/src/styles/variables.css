@@ -165,12 +165,47 @@
   --icon-size-large: 80px;
 
   /* ==================== 上传卡片变量 ==================== */
-  /* 头像上传卡片尺寸 */
-  --avatar-upload-size: 120px;
+  /* 头像上传卡片 - 整体尺寸与布局 */
+  --avatar-upload-size: 160px;
+  --avatar-upload-avatar-size: 96px;  /* 圆形头像尺寸 */
   --avatar-upload-border-width: 2px;
-  --avatar-upload-border-color-dashed: var(--color-border);
-  --avatar-upload-border-color-drag: var(--color-primary);
-  --avatar-upload-background: var(--color-background-lighter);
-  --avatar-upload-background-drag: rgba(64, 158, 255, 0.06);
+
+  /* 头像上传卡片 - 空态样式 */
+  --avatar-upload-surface: var(--color-card-background);
+  --avatar-upload-border: var(--color-border-light);
+  --avatar-upload-border-hover: var(--color-primary-lighter);
+  --avatar-upload-border-drag: var(--color-primary);
+  --avatar-upload-background-drag: rgba(64, 158, 255, 0.04);
+
+  /* 头像上传卡片 - 空态图标容器 */
+  --avatar-upload-icon-container-size: 56px;
+  --avatar-upload-icon-bg: var(--color-background-lighter);
+  --avatar-upload-icon-bg-hover: rgba(64, 158, 255, 0.08);
+  --avatar-upload-icon-color: var(--color-text-tertiary);
+  --avatar-upload-icon-color-hover: var(--color-primary);
+  --avatar-upload-icon-color-drag: var(--color-primary);
+
+  /* 头像上传卡片 - 空态提示文字 */
+  --avatar-upload-hint-color: var(--color-text-secondary);
+  --avatar-upload-sub-hint-color: var(--color-text-tertiary);
+
+  /* 头像上传卡片 - 预览态圆形头像 */
+  --avatar-upload-avatar-ring: 3px solid var(--color-card-background);
+  --avatar-upload-avatar-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --avatar-upload-avatar-border: 1px solid rgba(0, 0, 0, 0.06);
+
+  /* 头像上传卡片 - chips 操作条 */
+  --avatar-upload-chips-gap: 6px;
+  --avatar-upload-chip-bg: var(--color-card-background);
+  --avatar-upload-chip-bg-hover: var(--color-background-lighter);
+  --avatar-upload-chip-border: 1px solid var(--color-border-light);
+  --avatar-upload-chip-text: var(--color-text-secondary);
+  --avatar-upload-chip-text-hover: var(--color-primary);
+  --avatar-upload-chip-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --avatar-upload-chip-danger-text: var(--color-danger);
+  --avatar-upload-chip-danger-text-hover: var(--color-danger-light);
+
+  /* 头像上传卡片 - focus ring */
+  --avatar-upload-focus-ring: 0 0 0 3px rgba(64, 158, 255, 0.25);
 }
 
