@@ -1,42 +1,50 @@
 package utils
 
 import (
+	"fmt"
+	"mime/multipart"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"time"
 
 	"github.com/3086953492/gokit/errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-
-	"goauth/dto"
 )
 
-func GetFormFile(ctx *gin.Context, fieldName string, maxSize int64, allowedTypes []string) (dto.FileMeta, error) {
-	if file, err := ctx.FormFile(fieldName); err == nil {
-		fileData, err := file.Open()
-		if err != nil {
-			return dto.FileMeta{}, errors.InvalidInput().Msg("文件读取失败").Err(err).Build()
-		}
-		defer fileData.Close()
+// FormFileResult 保存校验后的文件元信息（不包含打开的句柄）
+type FormFileResult struct {
+	FileHeader  *multipart.FileHeader
+	Filename    string // 生成的唯一文件名
+	ContentType string
+}
 
-		if file.Size > maxSize {
-			return dto.FileMeta{}, errors.InvalidInput().Msg("文件大小不能超过 " + strconv.FormatInt(maxSize, 10) + "MB").Build()
-		}
-
-		if !slices.Contains(allowedTypes, file.Header.Get("Content-Type")) {
-			return dto.FileMeta{}, errors.InvalidInput().Msg("文件格式错误").Build()
-		}
-
-		return dto.FileMeta{
-			Data:        fileData,
-			Filename:    generateUniqueFilename(file.Filename),
-			ContentType: file.Header.Get("Content-Type"),
-			Size:        file.Size,
-		}, nil
+// ValidateFormFile 校验表单文件（类型、大小），返回 FileHeader 和元信息，不打开文件
+// 如果字段为空（用户未上传），返回 nil, nil
+func ValidateFormFile(ctx *gin.Context, fieldName string, maxSize int64, allowedTypes []string) (*FormFileResult, error) {
+	fh, err := ctx.FormFile(fieldName)
+	if err != nil {
+		// 字段为空或不存在，属于可选场景
+		return nil, nil
 	}
-	return dto.FileMeta{}, nil
+
+	// 校验文件大小
+	if fh.Size > maxSize {
+		return nil, errors.InvalidInput().Msg(fmt.Sprintf("文件大小不能超过 %dMB", maxSize/(1024*1024))).Build()
+	}
+
+	// 校验 Content-Type
+	contentType := fh.Header.Get("Content-Type")
+	allowed := slices.Contains(allowedTypes, contentType)
+	if !allowed {
+		return nil, errors.InvalidInput().Msg("文件格式错误").Build()
+	}
+
+	return &FormFileResult{
+		FileHeader:  fh,
+		Filename:    generateUniqueFilename(fh.Filename),
+		ContentType: contentType,
+	}, nil
 }
 
 // generateUniqueFilename 生成唯一文件名，格式: 时间戳_uuid.扩展名

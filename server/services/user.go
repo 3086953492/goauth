@@ -16,6 +16,7 @@ import (
 	"goauth/dto"
 	"goauth/models"
 	"goauth/repositories"
+	"goauth/utils"
 )
 
 // UserService 用户服务实现
@@ -29,7 +30,7 @@ func NewUserService(userRepository *repositories.UserRepository, storageManager 
 	return &UserService{userRepository: userRepository, storageManager: storageManager}
 }
 
-func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, fileMeta dto.FileMeta) error {
+func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, avatarFile *utils.FormFileResult) error {
 
 	// 对用户名加锁，防止并发创建相同用户名。
 	lockKey := fmt.Sprintf("user:create:%s", req.Username)
@@ -45,8 +46,15 @@ func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, f
 	}
 
 	var avatarURL string
-	if fileMeta.Data != nil {
-		meta, err := s.storageManager.Upload(ctx,time.Now().Format("2006/01/02")+"/"+fileMeta.Filename, fileMeta.Data, storage.WithContentType(fileMeta.ContentType))
+	if avatarFile != nil {
+		f, err := avatarFile.FileHeader.Open()
+		if err != nil {
+			return errors.Internal().Msg("文件读取失败").Err(err).Log()
+		}
+		defer f.Close()
+
+		objectKey := time.Now().Format("2006/01/02") + "/" + avatarFile.Filename
+		meta, err := s.storageManager.Upload(ctx, objectKey, f, storage.WithContentType(avatarFile.ContentType))
 		if err != nil {
 			return errors.Internal().Msg("头像上传失败").Err(err).Log()
 		}

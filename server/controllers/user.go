@@ -33,13 +33,14 @@ func (ctrl *UserController) CreateUserHandler(ctx *gin.Context) {
 		return
 	}
 
-	fileMeta, err := utils.GetFormFile(ctx, "avatar", 4*1024*1024, []string{"image/png", "image/jpeg", "image/jpg", "image/webp"})
+	// 校验头像文件（可选），不打开文件
+	avatarFile, err := utils.ValidateFormFile(ctx, "avatar", 4*1024*1024, []string{"image/png", "image/jpeg", "image/jpg", "image/webp"})
 	if err != nil {
 		response.Error(ctx, err)
 		return
 	}
-	
-	if err := ctrl.userService.CreateUser(ctx.Request.Context(), &form, fileMeta); err != nil {
+
+	if err := ctrl.userService.CreateUser(ctx.Request.Context(), &form, avatarFile); err != nil {
 		response.Error(ctx, err)
 		return
 	}
