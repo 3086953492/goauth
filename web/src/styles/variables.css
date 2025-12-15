@@ -163,5 +163,14 @@
   --icon-size-small: 18px;
   --icon-size-medium: 50px;
   --icon-size-large: 80px;
+
+  /* ==================== 上传卡片变量 ==================== */
+  /* 头像上传卡片尺寸 */
+  --avatar-upload-size: 120px;
+  --avatar-upload-border-width: 2px;
+  --avatar-upload-border-color-dashed: var(--color-border);
+  --avatar-upload-border-color-drag: var(--color-primary);
+  --avatar-upload-background: var(--color-background-lighter);
+  --avatar-upload-background-drag: rgba(64, 158, 255, 0.06);
 }
 

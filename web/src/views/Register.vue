@@ -1,6 +1,6 @@
 <template>
   <div class="register-page">
-    <el-card class="register-page__card" @paste="handleAvatarPaste">
+    <el-card class="register-page__card">
       <template #header>
         <div class="register-page__header">
           <h2>用户注册</h2>
@@ -28,28 +28,8 @@
         </el-form-item>
 
         <el-form-item label="头像" prop="avatar">
-          <div class="register-page__avatar-upload">
-            <div v-if="avatarPreview" class="register-page__avatar-preview">
-              <el-avatar :size="80" :src="avatarPreview" />
-              <el-button class="register-page__avatar-remove" type="danger" circle size="small" @click="removeAvatar">
-                <el-icon><Close /></el-icon>
-              </el-button>
-            </div>
-            <div v-else class="register-page__avatar-actions">
-              <el-button type="default" @click="triggerFileInput">
-                <el-icon class="register-page__upload-icon"><Plus /></el-icon>
-                选择头像（可选）
-              </el-button>
-              <span class="register-page__avatar-hint">可在卡片空白处粘贴图片</span>
-            </div>
-            <input
-              ref="fileInputRef"
-              type="file"
-              accept="image/png,image/jpeg,image/jpg,image/webp"
-              class="register-page__file-input"
-              @change="handleFileChange"
-            />
-          </div>
+          <AvatarUploadCard v-model="registerForm.avatar" :preview-url="avatarPreviewUrl" :max-size="MAX_SIZE"
+            :allowed-types="ALLOWED_TYPES" @update:model-value="onAvatarChange" @crop="openCropperDialog" />
         </el-form-item>
 
         <el-form-item label-width="0" class="register-page__button-form-item">
@@ -64,21 +44,25 @@
         </div>
       </el-form>
     </el-card>
+
+    <!-- 裁剪弹窗 -->
+    <AvatarCropperDialog v-model="cropperDialogVisible" :file="cropperSourceFile" @confirm="onCropConfirm" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, onUnmounted } from 'vue'
+import { reactive, ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { User, Lock, Avatar, Plus, Close } from '@element-plus/icons-vue'
+import { User, Lock, Avatar } from '@element-plus/icons-vue'
 import { useAuth } from '@/composables/useAuth'
 import { usernameRules, passwordRules, nicknameRules, createConfirmPasswordValidator, createAvatarFileValidator } from '@/utils/validators'
+import AvatarUploadCard from '@/components/auth/AvatarUploadCard.vue'
+import AvatarCropperDialog from '@/components/auth/AvatarCropperDialog.vue'
 
 const router = useRouter()
 const registerFormRef = ref<FormInstance>()
-const fileInputRef = ref<HTMLInputElement | null>(null)
 
 // 表单数据（avatar 改为 File | null）
 const registerForm = reactive<{
@@ -97,7 +81,6 @@ const registerForm = reactive<{
 
 // 头像本地预览 URL
 const avatarPreviewUrl = ref<string | null>(null)
-const avatarPreview = computed(() => avatarPreviewUrl.value)
 
 // 清理预览 URL 防止内存泄漏
 onUnmounted(() => {
@@ -106,111 +89,50 @@ onUnmounted(() => {
   }
 })
 
-// 触发原生文件选择
-const triggerFileInput = () => {
-  fileInputRef.value?.click()
-}
-
 // 允许的图片类型与最大大小（4MB）
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
 const MAX_SIZE = 4 * 1024 * 1024
 
 /**
- * 统一设置头像文件（供文件选择与粘贴复用）
- * @param file 图片文件
- * @returns 是否设置成功
+ * 更新预览 URL（内部管理，以便 URL 在组件卸载时被正确清理）
  */
-const setAvatarFromFile = (file: File): boolean => {
-  // 验证类型
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    ElMessage.warning('仅支持 PNG、JPG、JPEG、WebP 格式的图片')
-    return false
-  }
-  // 验证大小
-  if (file.size > MAX_SIZE) {
-    ElMessage.warning('头像文件不能超过 4MB')
-    return false
-  }
-
+const updatePreviewUrl = (file: File | null) => {
   // 释放旧的预览 URL
   if (avatarPreviewUrl.value) {
     URL.revokeObjectURL(avatarPreviewUrl.value)
+    avatarPreviewUrl.value = null
   }
+  if (file) {
+    avatarPreviewUrl.value = URL.createObjectURL(file)
+  }
+}
+
+/**
+ * 响应 AvatarUploadCard 的 v-model 更新
+ */
+const onAvatarChange = (file: File | null) => {
   registerForm.avatar = file
-  avatarPreviewUrl.value = URL.createObjectURL(file)
-
-  // 触发表单校验更新（清除之前的错误状态）
+  updatePreviewUrl(file)
+  // 触发表单校验更新
   registerFormRef.value?.validateField('avatar')
-
-  return true
 }
 
-// 处理文件选择
-const handleFileChange = (e: Event) => {
-  const target = e.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) return
+// ========== 裁剪弹窗相关 ==========
+const cropperDialogVisible = ref(false)
+const cropperSourceFile = ref<File | null>(null)
 
-  const success = setAvatarFromFile(file)
-  if (!success) {
-    target.value = ''
-  }
+/** 打开裁剪弹窗 */
+const openCropperDialog = () => {
+  if (!registerForm.avatar) return
+  cropperSourceFile.value = registerForm.avatar
+  cropperDialogVisible.value = true
 }
 
-// 处理粘贴图片（卡片空白处触发，输入框内保持正常文本粘贴）
-const handleAvatarPaste = (e: ClipboardEvent) => {
-  // 若目标是输入控件，不拦截，让其正常粘贴文本
-  const target = e.target as HTMLElement
-  if (
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement ||
-    target.isContentEditable
-  ) {
-    return
-  }
-
-  const items = e.clipboardData?.items
-  if (!items) return
-
-  // 过滤出图片类型的项
-  const imageItems: DataTransferItem[] = []
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i]
-    if (item && item.type.startsWith('image/')) {
-      imageItems.push(item)
-    }
-  }
-
-  // 剪贴板中没有图片，不处理（让其他粘贴行为正常）
-  if (imageItems.length === 0) return
-
-  // 阻止默认行为，防止图片被粘贴到其他地方
-  e.preventDefault()
-
-  // 多张图片时提示，只取第一张
-  if (imageItems.length > 1) {
-    ElMessage.info('检测到多张图片，已取第一张')
-  }
-
-  const firstItem = imageItems[0]
-  if (firstItem) {
-    const file = firstItem.getAsFile()
-    if (file) {
-      setAvatarFromFile(file)
-    }
-  }
-}
-
-// 移除已选头像
-const removeAvatar = () => {
-  if (avatarPreviewUrl.value) {
-    URL.revokeObjectURL(avatarPreviewUrl.value)
-  }
-  registerForm.avatar = null
-  avatarPreviewUrl.value = null
-  if (fileInputRef.value) {
-    fileInputRef.value.value = ''
-  }
+/** 裁剪确认回调 */
+const onCropConfirm = (croppedFile: File) => {
+  registerForm.avatar = croppedFile
+  updatePreviewUrl(croppedFile)
+  registerFormRef.value?.validateField('avatar')
 }
 
 // 表单验证规则
@@ -231,7 +153,7 @@ const handleRegister = async () => {
 
   // 执行表单校验
   const valid = await registerFormRef.value.validate().catch(() => false)
-  
+
   if (!valid) {
     ElMessage.warning('请填写完整的表单信息')
     return
@@ -266,7 +188,7 @@ const goToLogin = () => {
   justify-content: center;
   align-items: center;
   background: var(--color-page-background-alt);
-  background-image: 
+  background-image:
     radial-gradient(circle at var(--pattern-size-dot-small) var(--pattern-size-dot-small), rgba(0, 0, 0, 0.03) 2%, transparent 0%),
     radial-gradient(circle at var(--pattern-size-dot-large) var(--pattern-size-dot-large), rgba(0, 0, 0, 0.03) 2%, transparent 0%);
   background-size: var(--pattern-size-grid) var(--pattern-size-grid);
@@ -334,42 +256,6 @@ const goToLogin = () => {
   border-radius: var(--border-radius-button);
 }
 
-/* 头像上传 */
-.register-page__avatar-upload {
-  display: flex;
-  align-items: center;
-}
-
-.register-page__avatar-preview {
-  position: relative;
-  display: inline-block;
-}
-
-.register-page__avatar-remove {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-}
-
-.register-page__avatar-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--spacing-xs);
-}
-
-.register-page__avatar-hint {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-}
-
-.register-page__upload-icon {
-  margin-right: var(--spacing-xs);
-}
-
-.register-page__file-input {
-  display: none;
-}
 
 /* 响应式设计 */
 /* 小屏幕：对应 --breakpoint-mobile (480px) */
