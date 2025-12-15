@@ -1,6 +1,6 @@
 <template>
   <div class="register-page">
-    <el-card class="register-page__card">
+    <el-card class="register-page__card" @paste="handleAvatarPaste">
       <template #header>
         <div class="register-page__header">
           <h2>用户注册</h2>
@@ -35,10 +35,13 @@
                 <el-icon><Close /></el-icon>
               </el-button>
             </div>
-            <el-button v-else type="default" @click="triggerFileInput">
-              <el-icon class="register-page__upload-icon"><Plus /></el-icon>
-              选择头像（可选）
-            </el-button>
+            <div v-else class="register-page__avatar-actions">
+              <el-button type="default" @click="triggerFileInput">
+                <el-icon class="register-page__upload-icon"><Plus /></el-icon>
+                选择头像（可选）
+              </el-button>
+              <span class="register-page__avatar-hint">可在卡片空白处粘贴图片</span>
+            </div>
             <input
               ref="fileInputRef"
               type="file"
@@ -112,23 +115,21 @@ const triggerFileInput = () => {
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
 const MAX_SIZE = 4 * 1024 * 1024
 
-// 处理文件选择
-const handleFileChange = (e: Event) => {
-  const target = e.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) return
-
+/**
+ * 统一设置头像文件（供文件选择与粘贴复用）
+ * @param file 图片文件
+ * @returns 是否设置成功
+ */
+const setAvatarFromFile = (file: File): boolean => {
   // 验证类型
   if (!ALLOWED_TYPES.includes(file.type)) {
     ElMessage.warning('仅支持 PNG、JPG、JPEG、WebP 格式的图片')
-    target.value = ''
-    return
+    return false
   }
   // 验证大小
   if (file.size > MAX_SIZE) {
     ElMessage.warning('头像文件不能超过 4MB')
-    target.value = ''
-    return
+    return false
   }
 
   // 释放旧的预览 URL
@@ -137,6 +138,67 @@ const handleFileChange = (e: Event) => {
   }
   registerForm.avatar = file
   avatarPreviewUrl.value = URL.createObjectURL(file)
+
+  // 触发表单校验更新（清除之前的错误状态）
+  registerFormRef.value?.validateField('avatar')
+
+  return true
+}
+
+// 处理文件选择
+const handleFileChange = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  const success = setAvatarFromFile(file)
+  if (!success) {
+    target.value = ''
+  }
+}
+
+// 处理粘贴图片（卡片空白处触发，输入框内保持正常文本粘贴）
+const handleAvatarPaste = (e: ClipboardEvent) => {
+  // 若目标是输入控件，不拦截，让其正常粘贴文本
+  const target = e.target as HTMLElement
+  if (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target.isContentEditable
+  ) {
+    return
+  }
+
+  const items = e.clipboardData?.items
+  if (!items) return
+
+  // 过滤出图片类型的项
+  const imageItems: DataTransferItem[] = []
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+    if (item && item.type.startsWith('image/')) {
+      imageItems.push(item)
+    }
+  }
+
+  // 剪贴板中没有图片，不处理（让其他粘贴行为正常）
+  if (imageItems.length === 0) return
+
+  // 阻止默认行为，防止图片被粘贴到其他地方
+  e.preventDefault()
+
+  // 多张图片时提示，只取第一张
+  if (imageItems.length > 1) {
+    ElMessage.info('检测到多张图片，已取第一张')
+  }
+
+  const firstItem = imageItems[0]
+  if (firstItem) {
+    const file = firstItem.getAsFile()
+    if (file) {
+      setAvatarFromFile(file)
+    }
+  }
 }
 
 // 移除已选头像
@@ -287,6 +349,18 @@ const goToLogin = () => {
   position: absolute;
   top: -8px;
   right: -8px;
+}
+
+.register-page__avatar-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-xs);
+}
+
+.register-page__avatar-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
 }
 
 .register-page__upload-icon {
