@@ -128,6 +128,9 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.Upd
 		if err != nil {
 			return errors.Internal().Msg("头像上传失败").Err(err).Log()
 		}
+		if err := s.storageManager.DeleteByURL(ctx, existingUser.Avatar); err != nil {
+			errors.Internal().Msg("旧头像清理失败").Err(err).Log()
+		}
 		updates["avatar"] = meta.URL
 	}
 
