@@ -5,7 +5,7 @@ import (
 	"github.com/3086953492/gokit/validator"
 )
 
-func InitValidator(container *Container) error {
+func RegisterValidations(container *Container) error {
 
 	if err := container.ValidatorManager.RegisterRules([]validator.Rule{
 		{

@@ -103,7 +103,7 @@ func main() {
 
 	container := initialize.NewContainer(dbManager.DB(), storageManager, validatorManager)
 
-	if err := initialize.InitValidator(container); err != nil {
+	if err := initialize.RegisterValidations(container); err != nil {
 		errors.Internal().Msg("注册自定义验证规则失败").Err(err).Log()
 		return
 	}
