@@ -20,17 +20,6 @@ export interface RegisterFormValues {
   avatar?: File | null
 }
 
-/**
- * @deprecated 旧的 JSON 请求类型，现已改用 multipart/form-data 提交
- */
-export interface RegisterRequest {
-  username: string
-  password: string
-  confirm_password: string
-  nickname: string
-  avatar?: string
-}
-
 export interface UpdateUserRequest {
   nickname?: string
   avatar?: string
