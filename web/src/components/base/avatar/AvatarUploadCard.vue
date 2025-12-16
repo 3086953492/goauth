@@ -9,7 +9,7 @@
     tabindex="0"
     role="button"
     :aria-disabled="disabled"
-    :aria-label="internalPreviewUrl ? '已选择头像，可更换、裁剪或移除' : '点击或拖拽上传头像'"
+    :aria-label="internalPreviewUrl ? (hasFileSelected ? '已选择新头像，可更换、裁剪或移除' : '当前头像，可更换') : '点击或拖拽上传头像'"
     @dragenter.prevent="onDragEnter"
     @dragover.prevent="onDragOver"
     @dragleave.prevent="onDragLeave"
@@ -46,6 +46,7 @@
 
       <!-- chips 操作条 -->
       <div class="avatar-upload-card__chips">
+        <!-- 更换按钮：始终显示 -->
         <button
           type="button"
           class="avatar-upload-card__chip"
@@ -55,24 +56,27 @@
         >
           <el-icon><Refresh /></el-icon>
         </button>
-        <button
-          type="button"
-          class="avatar-upload-card__chip"
-          :disabled="disabled"
-          title="裁剪"
-          @click.stop="handleCrop"
-        >
-          <el-icon><Crop /></el-icon>
-        </button>
-        <button
-          type="button"
-          class="avatar-upload-card__chip avatar-upload-card__chip--danger"
-          :disabled="disabled"
-          title="移除"
-          @click.stop="handleRemove"
-        >
-          <el-icon><Close /></el-icon>
-        </button>
+        <!-- 裁剪/移除按钮：仅当选择了新文件时显示 -->
+        <template v-if="hasFileSelected">
+          <button
+            type="button"
+            class="avatar-upload-card__chip"
+            :disabled="disabled"
+            title="裁剪"
+            @click.stop="handleCrop"
+          >
+            <el-icon><Crop /></el-icon>
+          </button>
+          <button
+            type="button"
+            class="avatar-upload-card__chip avatar-upload-card__chip--danger"
+            :disabled="disabled"
+            title="移除"
+            @click.stop="handleRemove"
+          >
+            <el-icon><Close /></el-icon>
+          </button>
+        </template>
       </div>
     </div>
 
@@ -126,8 +130,12 @@ const isDragging = ref(false)
 /** 内部生成的预览 URL */
 const internalPreviewUrlRaw = ref<string | null>(null)
 
-// 如果外部传入了 previewUrl，优先使用，否则使用内部生成的
-const internalPreviewUrl = computed(() => props.previewUrl ?? internalPreviewUrlRaw.value)
+// 预览 URL 优先级：新文件预览 > 外部传入的旧头像 URL
+// 当选择了新文件时，显示新文件的预览；否则显示外部传入的旧头像
+const internalPreviewUrl = computed(() => internalPreviewUrlRaw.value ?? props.previewUrl)
+
+// 是否有选择新文件（显示完整操作按钮：裁剪/移除）
+const hasFileSelected = computed(() => !!props.modelValue)
 
 // 允许的类型字符串用于 <input accept>
 const allowedTypesStr = computed(() => props.allowedTypes.join(','))

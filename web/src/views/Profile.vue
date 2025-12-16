@@ -12,8 +12,12 @@
 
         <div class="profile-page__content">
           <el-form ref="profileFormRef" :model="formData" :rules="formRules" label-width="90px" size="large">
-            <UserInfoForm v-model="userInfo" :username="targetUser.username"
-              :can-edit-permission="isAdmin && !isEditingSelf" />
+            <UserInfoForm
+              v-model="userInfo"
+              v-model:avatar-file="avatarFile"
+              :username="targetUser.username"
+              :can-edit-permission="isAdmin && !isEditingSelf"
+            />
 
             <PasswordForm v-model="passwordData" />
 
@@ -35,7 +39,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { createPasswordValidator, createConfirmPasswordValidator, nicknameRules, avatarRules } from '@/utils/validators'
+import { createPasswordValidator, createConfirmPasswordValidator, nicknameRules, createAvatarFileValidator } from '@/utils/validators'
 import { useUserProfile } from '@/composables/useUserProfile'
 import Navbar from '@/components/Navbar.vue'
 import UserInfoForm from '@/components/profile/UserInfoForm.vue'
@@ -49,6 +53,7 @@ const {
   submitLoading,
   targetUser,
   userInfo,
+  avatarFile,
   passwordData,
   formData,
   isEditingSelf,
@@ -61,7 +66,7 @@ const {
 // 表单验证规则
 const formRules = computed<FormRules>(() => ({
   nickname: nicknameRules,
-  avatar: avatarRules,
+  avatarFile: [createAvatarFileValidator()],
   password: createPasswordValidator(),
   confirmPassword: [createConfirmPasswordValidator(() => passwordData.value.password)]
 }))

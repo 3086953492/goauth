@@ -1,9 +1,18 @@
 <template>
   <div class="user-info-form">
-    <!-- 头像预览 -->
-    <div class="user-info-form__avatar-preview">
-      <el-avatar :size="avatarSize" :src="modelValue.avatar" :icon="Avatar" />
-    </div>
+    <!-- 头像展示区（置顶） -->
+    <el-form-item label-width="0" prop="avatarFile" class="user-info-form__avatar-item">
+      <div class="user-info-form__avatar-card">
+        <AvatarUploadCard
+          :model-value="avatarFile"
+          :preview-url="currentAvatarUrl"
+          :max-size="MAX_SIZE"
+          :allowed-types="ALLOWED_TYPES"
+          @update:model-value="onAvatarFileChange"
+          @crop="openCropperDialog"
+        />
+      </div>
+    </el-form-item>
 
     <!-- 用户信息表单 -->
     <div class="user-info-form__section">
@@ -14,13 +23,13 @@
       </el-form-item>
 
       <el-form-item label="昵称" prop="nickname">
-        <el-input :model-value="modelValue.nickname" @input="updateField('nickname', $event)" placeholder="请输入昵称"
-          clearable :prefix-icon="Avatar" />
-      </el-form-item>
-
-      <el-form-item label="头像URL" prop="avatar">
-        <el-input :model-value="modelValue.avatar" @input="updateField('avatar', $event)" placeholder="请输入头像URL"
-          clearable :prefix-icon="Picture" />
+        <el-input
+          :model-value="modelValue.nickname"
+          @input="updateField('nickname', $event)"
+          placeholder="请输入昵称"
+          clearable
+          :prefix-icon="AvatarIcon"
+        />
       </el-form-item>
 
       <!-- 仅管理员可编辑的字段 -->
@@ -42,12 +51,21 @@
         </el-form-item>
       </template>
     </div>
+
+    <!-- 裁剪弹窗 -->
+    <AvatarCropperDialog
+      v-model="cropperDialogVisible"
+      :file="cropperSourceFile"
+      @confirm="onCropConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { User, Avatar, Picture } from '@element-plus/icons-vue'
+import { ref, computed } from 'vue'
+import { User, Avatar as AvatarIcon } from '@element-plus/icons-vue'
 import { USER_ROLES, USER_STATUS } from '@/constants'
+import { AvatarUploadCard, AvatarCropperDialog } from '@/components/base/avatar'
 
 interface UserInfo {
   nickname: string
@@ -58,22 +76,55 @@ interface UserInfo {
 
 interface Props {
   modelValue: UserInfo
+  /** 新头像文件 (v-model:avatarFile) */
+  avatarFile?: File | null
   username?: string
   canEditPermission: boolean
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: UserInfo): void
-}>()
+const props = withDefaults(defineProps<Props>(), {
+  avatarFile: null
+})
 
-// 头像尺寸
-const avatarSize = 100
+const emit = defineEmits<{
+  'update:modelValue': [value: UserInfo]
+  'update:avatarFile': [value: File | null]
+}>()
 
 const userRoleOptions = USER_ROLES
 const userStatusOptions = USER_STATUS
 
-const updateField = (field: keyof UserInfo, value: any) => {
+// 允许的图片类型与最大大小（4MB）
+const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+const MAX_SIZE = 4 * 1024 * 1024
+
+// 当前头像 URL（旧头像），当没有选择新文件时显示
+const currentAvatarUrl = computed(() => props.modelValue.avatar || null)
+
+/**
+ * 响应 AvatarUploadCard 的 v-model 更新
+ */
+const onAvatarFileChange = (file: File | null) => {
+  emit('update:avatarFile', file)
+}
+
+// ========== 裁剪弹窗相关 ==========
+const cropperDialogVisible = ref(false)
+const cropperSourceFile = ref<File | null>(null)
+
+/** 打开裁剪弹窗 */
+const openCropperDialog = () => {
+  if (!props.avatarFile) return
+  cropperSourceFile.value = props.avatarFile
+  cropperDialogVisible.value = true
+}
+
+/** 裁剪确认回调 */
+const onCropConfirm = (croppedFile: File) => {
+  emit('update:avatarFile', croppedFile)
+}
+
+const updateField = (field: keyof UserInfo, value: unknown) => {
   emit('update:modelValue', {
     ...props.modelValue,
     [field]: value
@@ -86,15 +137,18 @@ const updateField = (field: keyof UserInfo, value: any) => {
   margin-bottom: var(--spacing-lg);
 }
 
-.user-info-form__avatar-preview {
-  display: flex;
-  justify-content: center;
+/* 头像展示区：居中，与下方内容留出间距 */
+.user-info-form__avatar-item {
   margin-bottom: var(--spacing-xl);
 }
 
-.user-info-form__avatar-preview :deep(.el-avatar) {
-  border: var(--border-width-thick) solid var(--color-background-lighter);
-  box-shadow: var(--shadow-avatar);
+.user-info-form__avatar-item :deep(.el-form-item__content) {
+  justify-content: center;
+}
+
+.user-info-form__avatar-card {
+  display: flex;
+  justify-content: center;
 }
 
 .user-info-form__section {

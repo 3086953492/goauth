@@ -20,13 +20,19 @@ export interface RegisterFormValues {
   avatar?: File | null
 }
 
-export interface UpdateUserRequest {
+/**
+ * 更新用户表单数据（用于 multipart/form-data 提交）
+ * 字段名与后端 UpdateUserForm 一致
+ */
+export interface UpdateUserFormValues {
   nickname?: string
-  avatar?: string
   password?: string
   confirm_password?: string
+  /** 状态：0=禁用，1=启用 */
   status?: number
   role?: string
+  /** 新头像文件（可选） */
+  avatar?: File | null
 }
 
 export interface UserListResponse {

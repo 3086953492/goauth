@@ -49,18 +49,18 @@ func (ctrl *UserController) CreateUserHandler(ctx *gin.Context) {
 }
 
 func (ctrl *UserController) UpdateUserHandler(ctx *gin.Context) {
-	var req dto.UpdateUserRequest
-	if result, err := vgin.BindAndValidate(ctrl.validatorManager, ctx, &req); err != nil {
-		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", req).Build())
+	var form dto.UpdateUserForm
+	if result, err := vgin.BindFormAndValidate(ctrl.validatorManager, ctx, &form); err != nil {
+		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", form).Build())
 		return
 	} else if !result.Valid {
-		response.Error(ctx, errors.InvalidInput().Msg(result.Message).Err(result.Err).Field("request", req).Build())
+		response.Error(ctx, errors.InvalidInput().Msg(result.Message).Err(result.Err).Field("request", form).Build())
 		return
 	}
 
 	if !utils.IsRole(ctx, "admin") { // 非管理员不能修改状态和角色
-		req.Status = nil
-		req.Role = ""
+		form.Status = nil
+		form.Role = ""
 	}
 
 	userID := ctx.Param("user_id")
@@ -70,13 +70,13 @@ func (ctrl *UserController) UpdateUserHandler(ctx *gin.Context) {
 		return
 	}
 
-	if err := ctrl.userService.UpdateUser(ctx.Request.Context(), uint(userIDUint), &dto.UpdateUserRequest{
-		Nickname: req.Nickname,
-		Avatar:   req.Avatar,
-		Status:   req.Status,
-		Role:     req.Role,
-		Password: req.Password,
-	}); err != nil {
+	avatarFile, err := utils.ValidateFormFile(ctx, "avatar", 4*1024*1024, []string{"image/png", "image/jpeg", "image/jpg", "image/webp"})
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+
+	if err := ctrl.userService.UpdateUser(ctx.Request.Context(), uint(userIDUint), &form, avatarFile); err != nil {
 		response.Error(ctx, err)
 		return
 	}

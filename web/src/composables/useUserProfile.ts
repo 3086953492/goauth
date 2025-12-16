@@ -4,7 +4,7 @@ import { ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
 import { getUserInfo, updateUser } from '@/api/user'
 import { useAuthStore } from '@/stores/useAuthStore'
-import type { User as UserType, UpdateUserRequest } from '@/types/user'
+import type { User as UserType, UpdateUserFormValues } from '@/types/user'
 import { usePermission } from './usePermission'
 import { detectChanges } from '@/utils/dataTransform'
 
@@ -21,7 +21,7 @@ export function useUserProfile() {
   const submitLoading = ref(false)
   const targetUser = ref<UserType>({} as UserType)
 
-  // 用户信息数据
+  // 用户信息数据（不再包含 avatar URL，avatar 只用于显示当前头像）
   const userInfo = ref({
     nickname: '',
     avatar: '',
@@ -29,14 +29,21 @@ export function useUserProfile() {
     role: 'user'
   })
 
+  // 新头像文件（可选）
+  const avatarFile = ref<File | null>(null)
+
   // 密码数据
   const passwordData = ref({
     password: '',
     confirmPassword: ''
   })
 
-  // 原始数据（用于对比变化）
-  let originalData: any = {}
+  // 原始数据（用于对比变化，不包含 avatar）
+  let originalData: { nickname: string; status: number; role: string } = {
+    nickname: '',
+    status: 1,
+    role: 'user'
+  }
 
   // 目标用户ID
   const targetUserId = computed(() => {
@@ -52,6 +59,7 @@ export function useUserProfile() {
   // 合并的表单数据（用于验证）
   const formData = computed(() => ({
     ...userInfo.value,
+    avatarFile: avatarFile.value,
     ...passwordData.value
   }))
 
@@ -78,18 +86,20 @@ export function useUserProfile() {
           role: response.data.role
         }
 
-        // 保存原始数据
+        // 保存原始数据（不包含 avatar，因为 avatar 通过文件上传）
         originalData = {
           nickname: response.data.nickname,
-          avatar: response.data.avatar || '',
           status: response.data.status,
           role: response.data.role
         }
+
+        // 清空头像文件选择
+        avatarFile.value = null
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('加载用户信息失败:', error)
       ElMessage.error('加载用户信息失败')
-      router.push('/home')
+      void router.push('/home')
     } finally {
       pageLoading.value = false
     }
@@ -105,18 +115,20 @@ export function useUserProfile() {
       if (valid) {
         submitLoading.value = true
         try {
-          // 构建更新数据 - 只发送已修改的字段
-          const updateData: UpdateUserRequest = {}
+          // 构建更新数据
+          const updateData: UpdateUserFormValues = {}
 
-          // 检测基本信息变化
+          // 检测基本信息变化（不包含 avatar）
           const changes = detectChanges(originalData, userInfo.value, [
             'nickname',
-            'avatar',
             'status',
             'role'
           ])
 
-          Object.assign(updateData, changes)
+          // 昵称变更
+          if ('nickname' in changes) {
+            updateData.nickname = changes.nickname as string
+          }
 
           // 密码修改
           if (passwordData.value.password) {
@@ -124,10 +136,19 @@ export function useUserProfile() {
             updateData.confirm_password = passwordData.value.confirmPassword
           }
 
-          // 管理员才能修改状态和角色，非管理员的变更需要过滤掉
-          if (!isAdmin.value) {
-            delete updateData.status
-            delete updateData.role
+          // 管理员才能修改状态和角色
+          if (isAdmin.value) {
+            if ('status' in changes) {
+              updateData.status = changes.status as number
+            }
+            if ('role' in changes) {
+              updateData.role = changes.role as string
+            }
+          }
+
+          // 新头像文件
+          if (avatarFile.value) {
+            updateData.avatar = avatarFile.value
           }
 
           // 如果没有任何修改
@@ -154,7 +175,7 @@ export function useUserProfile() {
 
           // 重新加载用户信息
           await loadUserInfo()
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('更新失败:', error)
           // 错误已在拦截器中处理
         } finally {
@@ -178,6 +199,7 @@ export function useUserProfile() {
     submitLoading,
     targetUser,
     userInfo,
+    avatarFile,
     passwordData,
     formData,
     targetUserId,
@@ -188,4 +210,3 @@ export function useUserProfile() {
     cancel
   }
 }
-

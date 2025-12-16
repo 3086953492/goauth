@@ -93,7 +93,7 @@ func (s *UserService) GetUser(ctx context.Context, conds map[string]any) (*model
 	return user, err
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.UpdateUserRequest) error {
+func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.UpdateUserForm, avatarFile *utils.FormFileResult) error {
 
 	// 获取更新前的用户信息
 	existingUser, err := s.GetUser(ctx, map[string]any{"id": userID})
@@ -116,8 +116,19 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.Upd
 		updates["password"] = hashedPassword
 	}
 
-	if user.Avatar != nil {
-		updates["avatar"] = *user.Avatar
+	if avatarFile != nil {
+		f, err := avatarFile.FileHeader.Open()
+		if err != nil {
+			return errors.Internal().Msg("文件读取失败").Err(err).Log()
+		}
+		defer f.Close()
+
+		objectKey := time.Now().Format("2006/01/02") + "/" + avatarFile.Filename
+		meta, err := s.storageManager.Upload(ctx, objectKey, f, storage.WithContentType(avatarFile.ContentType))
+		if err != nil {
+			return errors.Internal().Msg("头像上传失败").Err(err).Log()
+		}
+		updates["avatar"] = meta.URL
 	}
 
 	if user.Status != nil {
