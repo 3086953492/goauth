@@ -58,8 +58,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { User, Lock, Avatar } from '@element-plus/icons-vue'
 import { useAuth } from '@/composables/useAuth'
 import { usernameRules, passwordRules, nicknameRules, createConfirmPasswordValidator, createAvatarFileValidator } from '@/utils/validators'
-import AvatarUploadCard from '@/components/auth/AvatarUploadCard.vue'
-import AvatarCropperDialog from '@/components/auth/AvatarCropperDialog.vue'
+import { AvatarUploadCard, AvatarCropperDialog } from '@/components/base/avatar'
 
 const router = useRouter()
 const registerFormRef = ref<FormInstance>()

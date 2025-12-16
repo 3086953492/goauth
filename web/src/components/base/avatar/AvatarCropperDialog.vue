@@ -85,8 +85,8 @@ const props = withDefaults(defineProps<AvatarCropperDialogProps>(), {
 
 // Emits
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'confirm', file: File): void
+  'update:modelValue': [value: boolean]
+  'confirm': [file: File]
 }>()
 
 // 弹窗显隐双向绑定
@@ -224,3 +224,4 @@ const onDialogClosed = () => {
   flex-wrap: wrap;
 }
 </style>
+

@@ -115,9 +115,9 @@ const props = withDefaults(defineProps<AvatarUploadCardProps>(), {
 
 // Emits
 const emit = defineEmits<{
-  (e: 'update:modelValue', file: File | null): void
+  'update:modelValue': [file: File | null]
   /** 用户请求裁剪当前图片 */
-  (e: 'crop'): void
+  'crop': []
 }>()
 
 // 内部状态
@@ -525,3 +525,4 @@ const handleRemove = () => {
   border: 0;
 }
 </style>
+
