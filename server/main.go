@@ -28,11 +28,18 @@ import (
 
 func main() {
 	// 初始化配置
-	if err := config.InitConfig("./configs"); err != nil {
-		log.Fatalf("初始化配置失败: %v", err)
+	mgr, err := config.NewManager(
+		config.WithConfigDir("./configs"),
+		config.WithMode("debug"),
+	)
+	if err != nil {
+		log.Fatalf("加载配置失败: %v", err)
 	}
 
-	cfg := config.GetGlobalConfig()
+	cfg, err := mgr.Load(context.Background())
+	if err != nil {
+		log.Fatalf("加载配置失败: %v", err)
+	}
 
 	// 初始化日志
 	if err := logger.InitWithConfig(cfg.Log); err != nil {
@@ -119,7 +126,7 @@ func main() {
 		return
 	}
 
-	container := initialize.NewContainer(dbManager.DB(), storageManager, validatorManager, redisMgr, cacheMgr)
+	container := initialize.NewContainer(dbManager.DB(), storageManager, validatorManager, redisMgr, cacheMgr, &cfg)
 
 	if err := initialize.RegisterValidations(container); err != nil {
 		errors.Internal().Msg("注册自定义验证规则失败").Err(err).Log()

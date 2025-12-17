@@ -4,13 +4,12 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/3086953492/gokit/config"
+	"github.com/3086953492/gokit/config/types"
 	"github.com/gin-gonic/gin"
 )
 
-func NewCORSMiddleware() gin.HandlerFunc {
+func NewCORSMiddleware(corsConfig types.CorsMiddlewareConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		corsConfig := config.GetGlobalConfig().Middleware.CORS
 		origin := c.Request.Header.Get("Origin")
 
 		// 设置CORS头

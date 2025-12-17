@@ -17,11 +17,12 @@ import (
 type AuthService struct {
 	userRepository *repositories.UserRepository
 	userService    *UserService
+	cfg *config.Config
 }
 
 // NewAuthService 创建授权服务实例
-func NewAuthService(userRepository *repositories.UserRepository, userService *UserService) *AuthService {
-	return &AuthService{userRepository: userRepository, userService: userService}
+func NewAuthService(userRepository *repositories.UserRepository, userService *UserService, cfg *config.Config) *AuthService {
+	return &AuthService{userRepository: userRepository, userService: userService, cfg: cfg}
 }
 
 func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (accessToken string, accessTokenExpire int, refreshToken string, refreshTokenExpire int, userResp *dto.UserResponse, err error) {
@@ -53,7 +54,7 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (accessT
 		return "", 0, "", 0, nil, errors.Internal().Msg("生成刷新令牌失败").Err(err).Log()
 	}
 
-	return accessToken, int(config.GetGlobalConfig().AuthToken.AccessExpire.Seconds()), refreshToken, int(config.GetGlobalConfig().AuthToken.RefreshExpire.Seconds()), &dto.UserResponse{
+	return accessToken, int(s.cfg.AuthToken.AccessExpire.Seconds()), refreshToken, int(s.cfg.AuthToken.RefreshExpire.Seconds()), &dto.UserResponse{
 		ID:        user.ID,
 		Username:  user.Username,
 		Nickname:  user.Nickname,
@@ -94,5 +95,5 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (ac
 		return "", 0, errors.InvalidInput().Msg("刷新令牌验证失败").Err(err).Log()
 	}
 
-	return accessToken, int(config.GetGlobalConfig().AuthToken.AccessExpire.Seconds()), nil
+	return accessToken, int(s.cfg.AuthToken.AccessExpire.Seconds()), nil
 }

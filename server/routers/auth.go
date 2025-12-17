@@ -7,8 +7,7 @@ import (
 	"goauth/middleware"
 )
 
-func LoadAuthRoutes(router *gin.Engine, ctrl *controllers.AuthController) {
-	m := middleware.NewManager()
+func LoadAuthRoutes(router *gin.Engine, ctrl *controllers.AuthController, m *middleware.Manager) {
 	authRouter := router.Group("/api/v1/auth")
 	authRouter.POST("/login", ctrl.LoginHandler)
 	authRouter.POST("/logout", m.Auth(), ctrl.LogoutHandler)

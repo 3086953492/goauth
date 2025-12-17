@@ -16,10 +16,11 @@ import (
 type OAuthAuthorizationCodeService struct {
 	oauthAuthorizationCodeRepository *repositories.OAuthAuthorizationCodeRepository
 	oauthClientService               *OAuthClientService
+	cfg *config.Config
 }
 
-func NewOAuthAuthorizationCodeService(oauthAuthorizationCodeRepository *repositories.OAuthAuthorizationCodeRepository, oauthClientService *OAuthClientService) *OAuthAuthorizationCodeService {
-	return &OAuthAuthorizationCodeService{oauthAuthorizationCodeRepository: oauthAuthorizationCodeRepository, oauthClientService: oauthClientService}
+func NewOAuthAuthorizationCodeService(oauthAuthorizationCodeRepository *repositories.OAuthAuthorizationCodeRepository, oauthClientService *OAuthClientService, cfg *config.Config) *OAuthAuthorizationCodeService {
+	return &OAuthAuthorizationCodeService{oauthAuthorizationCodeRepository: oauthAuthorizationCodeRepository, oauthClientService: oauthClientService, cfg: cfg}
 }
 
 func (s *OAuthAuthorizationCodeService) GenerateAuthorizationCode(ctx context.Context, userID uint, clientID string, redirectURI string, scope string) (string, error) {
@@ -35,7 +36,7 @@ func (s *OAuthAuthorizationCodeService) GenerateAuthorizationCode(ctx context.Co
 		ClientID:    clientID,
 		RedirectURI: redirectURI,
 		Scope:       scope,
-		ExpiresAt:   time.Now().Add(config.GetGlobalConfig().OAuth.AuthCodeExpire),
+		ExpiresAt:   time.Now().Add(s.cfg.OAuth.AuthCodeExpire),
 	}
 	if err := s.oauthAuthorizationCodeRepository.Create(ctx, code); err != nil {
 		return "", errors.Database().Msg("创建OAuth授权码失败").Err(err).Field("code", code).Log()

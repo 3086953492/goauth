@@ -16,10 +16,11 @@ import (
 
 type OAuthRefreshTokenService struct {
 	oauthRefreshTokenRepository *repositories.OAuthRefreshTokenRepository
+	cfg *config.Config
 }
 
-func NewOAuthRefreshTokenService(oauthRefreshTokenRepository *repositories.OAuthRefreshTokenRepository) *OAuthRefreshTokenService {
-	return &OAuthRefreshTokenService{oauthRefreshTokenRepository: oauthRefreshTokenRepository}
+func NewOAuthRefreshTokenService(oauthRefreshTokenRepository *repositories.OAuthRefreshTokenRepository, cfg *config.Config) *OAuthRefreshTokenService {
+	return &OAuthRefreshTokenService{oauthRefreshTokenRepository: oauthRefreshTokenRepository, cfg: cfg}
 }
 
 func (s *OAuthRefreshTokenService) GenerateRefreshToken(ctx context.Context, accessTokenID uint, clientID string, scope string, userID uint, username string, role string) (string, error) {
@@ -34,7 +35,7 @@ func (s *OAuthRefreshTokenService) GenerateRefreshToken(ctx context.Context, acc
 		ClientID:      clientID,
 		Scope:         scope,
 		UserID:        userID,
-		ExpiresAt:     time.Now().Add(config.GetGlobalConfig().OAuth.RefreshTokenExpire),
+		ExpiresAt:     time.Now().Add(s.cfg.OAuth.RefreshTokenExpire),
 	}
 
 	if err := s.oauthRefreshTokenRepository.Create(ctx, refreshToken); err != nil {
@@ -57,7 +58,7 @@ func (s *OAuthRefreshTokenService) GenerateRefreshTokenWithTx(ctx context.Contex
 		ClientID:      clientID,
 		Scope:         scope,
 		UserID:        userID,
-		ExpiresAt:     time.Now().Add(config.GetGlobalConfig().OAuth.RefreshTokenExpire),
+		ExpiresAt:     time.Now().Add(s.cfg.OAuth.RefreshTokenExpire),
 	}
 
 	if err := s.oauthRefreshTokenRepository.CreateWithTx(ctx, tx, refreshToken); err != nil {

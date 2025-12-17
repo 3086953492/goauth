@@ -17,15 +17,17 @@ type OAuthController struct {
 	oauthAccessTokenService *services.OAuthAccessTokenService
 
 	oauthClientService *services.OAuthClientService
+
+	cfg *config.Config
 }
 
-func NewOAuthController(oauthAuthorizationCodeService *services.OAuthAuthorizationCodeService, oauthAccessTokenService *services.OAuthAccessTokenService, oauthClientService *services.OAuthClientService) *OAuthController {
-	return &OAuthController{oauthAuthorizationCodeService: oauthAuthorizationCodeService, oauthAccessTokenService: oauthAccessTokenService, oauthClientService: oauthClientService}
+func NewOAuthController(oauthAuthorizationCodeService *services.OAuthAuthorizationCodeService, oauthAccessTokenService *services.OAuthAccessTokenService, oauthClientService *services.OAuthClientService, cfg *config.Config) *OAuthController {
+	return &OAuthController{oauthAuthorizationCodeService: oauthAuthorizationCodeService, oauthAccessTokenService: oauthAccessTokenService, oauthClientService: oauthClientService, cfg: cfg}
 }
 
 func (ctrl *OAuthController) AuthorizationCodeHandler(ctx *gin.Context) {
 
-	frontendErrorPageURL := config.GetGlobalConfig().Server.FrontendURL + "/error"
+	frontendErrorPageURL := ctrl.cfg.Server.FrontendURL + "/error"
 
 	if responseType := ctx.Query("response_type"); responseType == "" || responseType != "code" {
 		response.RedirectTemporary(ctx, frontendErrorPageURL, errors.InvalidInput().Msg("response_type错误").Build(), nil)

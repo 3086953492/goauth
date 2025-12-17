@@ -28,6 +28,8 @@ type OAuthAccessTokenService struct {
 	oauthClientService *OAuthClientService
 
 	oauthRefreshTokenService *OAuthRefreshTokenService
+
+	cfg *config.Config
 }
 
 func NewOAuthAccessTokenService(
@@ -93,7 +95,7 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 	accessToken := &models.OAuthAccessToken{
 		AccessToken: accessTokenString,
 		TokenType:   "Bearer",
-		ExpiresAt:   time.Now().Add(config.GetGlobalConfig().OAuth.AccessTokenExpire),
+		ExpiresAt:   time.Now().Add(s.cfg.OAuth.AccessTokenExpire),
 		ClientID:    oauthAuthorizationCode.ClientID,
 		Scope:       oauthAuthorizationCode.Scope,
 		UserID:      &oauthAuthorizationCode.UserID,
@@ -131,11 +133,11 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 	return &dto.ExchangeAccessTokenResponse{
 		AccessToken: dto.OAuthAccessTokenResponse{
 			AccessToken: accessTokenString,
-			ExpiresIn:   int(config.GetGlobalConfig().OAuth.AccessTokenExpire.Seconds()),
+			ExpiresIn:   int(s.cfg.OAuth.AccessTokenExpire.Seconds()),
 		},
 		RefreshToken: dto.OAuthRefreshTokenResponse{
 			RefreshToken: refreshTokenString,
-			ExpiresIn:    int(config.GetGlobalConfig().OAuth.RefreshTokenExpire.Seconds()),
+			ExpiresIn:    int(s.cfg.OAuth.RefreshTokenExpire.Seconds()),
 		},
 		Scope:     accessToken.Scope,
 		TokenType: "Bearer",
@@ -230,7 +232,7 @@ func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *
 	accessToken := &models.OAuthAccessToken{
 		AccessToken: accessTokenString,
 		TokenType:   "Bearer",
-		ExpiresAt:   time.Now().Add(config.GetGlobalConfig().OAuth.AccessTokenExpire),
+		ExpiresAt:   time.Now().Add(s.cfg.OAuth.AccessTokenExpire),
 		ClientID:    refreshToken.ClientID,
 		Scope:       refreshToken.Scope,
 		UserID:      &refreshToken.UserID,
@@ -268,11 +270,11 @@ func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *
 	return &dto.ExchangeAccessTokenResponse{
 		AccessToken: dto.OAuthAccessTokenResponse{
 			AccessToken: accessTokenString,
-			ExpiresIn:   int(config.GetGlobalConfig().OAuth.AccessTokenExpire.Seconds()),
+			ExpiresIn:   int(s.cfg.OAuth.AccessTokenExpire.Seconds()),
 		},
 		RefreshToken: dto.OAuthRefreshTokenResponse{
 			RefreshToken: newRefreshTokenString,
-			ExpiresIn:    int(config.GetGlobalConfig().OAuth.RefreshTokenExpire.Seconds()),
+			ExpiresIn:    int(s.cfg.OAuth.RefreshTokenExpire.Seconds()),
 		},
 		Scope:     accessToken.Scope,
 		TokenType: "Bearer",
