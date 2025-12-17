@@ -1,6 +1,8 @@
 package initialize
 
 import (
+	"github.com/3086953492/gokit/cache"
+	"github.com/3086953492/gokit/redis"
 	"github.com/3086953492/gokit/storage"
 	"github.com/3086953492/gokit/validator"
 	"gorm.io/gorm"
@@ -38,11 +40,11 @@ type Container struct {
 	ValidatorManager *validator.Manager
 }
 
-func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager *validator.Manager) *Container {
+func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager *validator.Manager,redisMgr *redis.Manager, cacheMgr *cache.Manager) *Container {
 	c := &Container{}
 
 	c.UserRepository = repositories.NewUserRepository(db)
-	c.UserService = services.NewUserService(c.UserRepository, storageManager)
+	c.UserService = services.NewUserService(c.UserRepository, storageManager, redisMgr, cacheMgr)
 	c.UserController = controllers.NewUserController(c.UserService, validatorManager)
 	c.UserValidator = validations.NewUserValidators(c.UserService)
 
@@ -50,7 +52,7 @@ func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager
 	c.AuthController = controllers.NewAuthController(c.AuthService, validatorManager)
 
 	c.OAuthClientRepository = repositories.NewOAuthClientRepository(db)
-	c.OAuthClientService = services.NewOAuthClientService(c.OAuthClientRepository)
+	c.OAuthClientService = services.NewOAuthClientService(c.OAuthClientRepository, cacheMgr)
 	c.OAuthClientController = controllers.NewOAuthClientController(c.OAuthClientService, validatorManager)
 
 	c.OAuthAuthorizationCodeRepository = repositories.NewOAuthAuthorizationCodeRepository(db)

@@ -23,22 +23,24 @@ import (
 type UserService struct {
 	userRepository *repositories.UserRepository
 	storageManager *storage.Manager
+	redisMgr *redis.Manager
+	cacheMgr *cache.Manager
 }
 
 // NewUserService 创建用户服务实例
-func NewUserService(userRepository *repositories.UserRepository, storageManager *storage.Manager) *UserService {
-	return &UserService{userRepository: userRepository, storageManager: storageManager}
+func NewUserService(userRepository *repositories.UserRepository, storageManager *storage.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager) *UserService {
+	return &UserService{userRepository: userRepository, storageManager: storageManager, redisMgr: redisMgr, cacheMgr: cacheMgr}
 }
 
 func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, avatarFile *utils.FormFileResult) error {
 
 	// 对用户名加锁，防止并发创建相同用户名。
 	lockKey := fmt.Sprintf("user:create:%s", req.Username)
-	lock := redis.NewDistributedLock(lockKey, 10*time.Second)
-	if err := lock.Acquire(); err != nil {
+	lock := s.redisMgr.NewDistributedLock(lockKey, 10*time.Second)
+	if err := lock.Acquire(ctx); err != nil {
 		return errors.Internal().Msg("系统繁忙，请稍后再试").Err(err).Field("username", req.Username).Build()
 	}
-	defer lock.Release()
+	defer lock.Release(ctx)
 
 	hashedPassword, err := crypto.HashPassword(req.Password)
 	if err != nil {
@@ -77,7 +79,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, a
 }
 
 func (s *UserService) GetUser(ctx context.Context, conds map[string]any) (*models.User, error) {
-	user, err := cache.New[models.User]().KeyWithConds("user", conds).TTL(10*time.Minute).GetOrSet(ctx, func() (*models.User, error) {
+	user, err := cache.NewBuilder[models.User](s.cacheMgr).KeyWithConds("user", conds).TTL(10*time.Minute).GetOrSet(ctx, func() (*models.User, error) {
 		user, err := s.userRepository.Get(ctx, conds)
 		if err != nil {
 			if errors.IsNotFoundError(err) {
@@ -148,10 +150,10 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.Upd
 	}
 
 	// 删除相关缓存
-	if err := cache.DeleteByContainsList(ctx, "user", []map[string]any{{"id": userID}, {"nickname": existingUser.Nickname}, {"username": existingUser.Username}, {"nickname": user.Nickname}}); err != nil {
+	if err := s.cacheMgr.DeleteByContainsList(ctx, "user", []map[string]any{{"id": userID}, {"nickname": existingUser.Nickname}, {"username": existingUser.Username}, {"nickname": user.Nickname}}); err != nil {
 		errors.Database().Msg("删除缓存失败").Err(err).Field("user_id", userID).Log() // 记录日志，但继续执行
 	}
-	if err := cache.DeleteByPrefix(ctx, "list_users:"); err != nil {
+	if err := s.cacheMgr.DeleteByPrefix(ctx, "list_users:"); err != nil {
 		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
 	}
 
@@ -159,7 +161,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.Upd
 }
 
 func (s *UserService) ListUsers(ctx context.Context, page, pageSize int, conds map[string]any) (*dto.PaginationResponse[dto.UserListResponse], error) {
-	usersPagination, err := cache.New[dto.PaginationResponse[dto.UserListResponse]]().Key(fmt.Sprintf("list_users:%v", conds)).TTL(10*time.Minute).GetOrSet(ctx, func() (*dto.PaginationResponse[dto.UserListResponse], error) {
+	usersPagination, err := cache.NewBuilder[dto.PaginationResponse[dto.UserListResponse]](s.cacheMgr).Key(fmt.Sprintf("list_users:%v", conds)).TTL(10*time.Minute).GetOrSet(ctx, func() (*dto.PaginationResponse[dto.UserListResponse], error) {
 		users, total, err := s.userRepository.List(ctx, page, pageSize, conds)
 		if err != nil {
 			return nil, errors.Database().Msg("获取用户列表失败").Err(err).Field("conds", conds).Log()
@@ -190,11 +192,11 @@ func (s *UserService) ListUsers(ctx context.Context, page, pageSize int, conds m
 
 func (s *UserService) DeleteUser(ctx context.Context, userID uint) error {
 	lockKey := fmt.Sprintf("user:delete:%v", userID)
-	lock := redis.NewDistributedLock(lockKey, 10*time.Second)
-	if err := lock.Acquire(); err != nil {
+	lock := s.redisMgr.NewDistributedLock(lockKey, 10*time.Second)
+	if err := lock.Acquire(ctx); err != nil {
 		return errors.Internal().Msg("系统繁忙，请稍后再试").Err(err).Field("user_id", userID).Build()
 	}
-	defer lock.Release()
+	defer lock.Release(ctx);
 
 	user, err := s.GetUser(ctx, map[string]any{"id": userID})
 	if err != nil {
@@ -205,10 +207,10 @@ func (s *UserService) DeleteUser(ctx context.Context, userID uint) error {
 		return errors.Database().Msg("删除用户失败").Err(err).Field("user_id", userID).Log()
 	}
 
-	if err := cache.DeleteByContainsList(ctx, "user", []map[string]any{{"id": userID}, {"nickname": user.Nickname}, {"username": user.Username}}); err != nil {
+	if err := s.cacheMgr.DeleteByContainsList(ctx, "user", []map[string]any{{"id": userID}, {"nickname": user.Nickname}, {"username": user.Username}}); err != nil {
 		errors.Database().Msg("删除缓存失败").Err(err).Field("user_id", userID).Log() // 记录日志，但继续执行
 	}
-	if err := cache.DeleteByPrefix(ctx, "list_users:"); err != nil {
+	if err := s.cacheMgr.DeleteByPrefix(ctx, "list_users:"); err != nil {
 		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
 	}
 	logger.Info("用户删除成功", zap.Uint("userID", userID))

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/3086953492/gokit/cache"
 	"github.com/3086953492/gokit/config"
@@ -60,16 +62,32 @@ func main() {
 	}
 
 	// 初始化 Redis
-	if err := redis.InitRedisWithConfig(cfg.Redis); err != nil {
-		errors.Internal().Msg("初始化 Redis 失败").Err(err).Field("cfg.Redis", cfg.Redis).Log()
+	redisMgr := redis.NewManager(
+		redis.WithAddress(cfg.Redis.Host+":"+strconv.Itoa(cfg.Redis.Port)),
+		redis.WithPassword(cfg.Redis.Password),
+		redis.WithDB(cfg.Redis.DB),
+	)
+
+	if err := redisMgr.Connect(context.Background()); err != nil {
+		errors.Internal().Msg("连接 Redis 失败").Err(err).Log()
+		return
+	}
+
+	if !redisMgr.IsConnected() {
+		errors.Internal().Msg("Redis 连接失败").Log()
 		return
 	}
 
 	// 初始化缓存
-	if err := cache.InitCache(); err != nil {
+	cacheMgr, err := cache.NewManager(redisMgr,
+		cache.WithDefaultTTL(5*time.Minute),
+		cache.WithLocalCache(true),
+	)
+	if err != nil {
 		errors.Internal().Msg("初始化缓存失败").Err(err).Log()
 		return
 	}
+	defer cacheMgr.Close()
 
 	if err := jwt.InitJWT(cfg.AuthToken); err != nil {
 		errors.Internal().Msg("初始化 JWT 失败").Err(err).Log()
@@ -101,7 +119,7 @@ func main() {
 		return
 	}
 
-	container := initialize.NewContainer(dbManager.DB(), storageManager, validatorManager)
+	container := initialize.NewContainer(dbManager.DB(), storageManager, validatorManager, redisMgr, cacheMgr)
 
 	if err := initialize.RegisterValidations(container); err != nil {
 		errors.Internal().Msg("注册自定义验证规则失败").Err(err).Log()
@@ -127,6 +145,18 @@ func main() {
 	defer func() {
 		if err := dbManager.Close(); err != nil {
 			errors.Internal().Msg("关闭数据库失败").Err(err).Log()
+		}
+	}()
+
+	defer func() {
+		if err := redisMgr.Close(); err != nil {
+			errors.Internal().Msg("关闭 Redis 失败").Err(err).Log()
+		}
+	}()
+
+	defer func() {
+		if err := cacheMgr.Close(); err != nil {
+			errors.Internal().Msg("关闭缓存失败").Err(err).Log()
 		}
 	}()
 }
