@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"goauth/middleware/auth"
-	"goauth/middleware/oauth"
 	"goauth/middleware/security"
 )
 
@@ -40,10 +39,6 @@ func (m *Manager) LoadGlobal(engine *gin.Engine) {
 // CORS中间件
 func (m *Manager) CORS() gin.HandlerFunc {
 	return security.NewCORSMiddleware()
-}
-
-func (m *Manager) OAuth(requiredScopes ...string) gin.HandlerFunc {
-	return oauth.OAuthTokenMiddleware(requiredScopes...)
 }
 
 func (m *Manager) Auth() gin.HandlerFunc {
