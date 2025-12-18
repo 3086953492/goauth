@@ -4,6 +4,7 @@ import (
 	"github.com/3086953492/gokit/cache"
 	"github.com/3086953492/gokit/config"
 	"github.com/3086953492/gokit/jwt"
+	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
 	"github.com/3086953492/gokit/storage"
 	"github.com/3086953492/gokit/validator"
@@ -19,6 +20,7 @@ import (
 type Container struct {
 
 	JwtManager *jwt.Manager
+	LogManager *logger.Manager
 
 	UserRepository *repositories.UserRepository
 	UserService    *services.UserService
@@ -48,11 +50,13 @@ type Container struct {
 	MiddlewareManager *middleware.Manager
 }
 
-func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager *validator.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager, jwtMgr *jwt.Manager, cfg *config.Config) *Container {
+func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager *validator.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager, jwtMgr *jwt.Manager, logMgr *logger.Manager, cfg *config.Config) *Container {
 	c := &Container{}
 
+	c.LogManager = logMgr
+
 	c.UserRepository = repositories.NewUserRepository(db)
-	c.UserService = services.NewUserService(c.UserRepository, storageManager, redisMgr, cacheMgr)
+	c.UserService = services.NewUserService(c.UserRepository, storageManager, redisMgr, cacheMgr, c.LogManager)
 	c.UserController = controllers.NewUserController(c.UserService, validatorManager)
 	c.UserValidator = validations.NewUserValidators(c.UserService)
 
@@ -63,7 +67,7 @@ func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager
 	c.AuthController = controllers.NewAuthController(c.AuthService, validatorManager)
 
 	c.OAuthClientRepository = repositories.NewOAuthClientRepository(db)
-	c.OAuthClientService = services.NewOAuthClientService(c.OAuthClientRepository, cacheMgr)
+	c.OAuthClientService = services.NewOAuthClientService(c.OAuthClientRepository, cacheMgr, c.LogManager)
 	c.OAuthClientController = controllers.NewOAuthClientController(c.OAuthClientService, validatorManager)
 
 	c.OAuthAuthorizationCodeRepository = repositories.NewOAuthAuthorizationCodeRepository(db)

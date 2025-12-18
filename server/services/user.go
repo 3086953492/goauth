@@ -12,7 +12,6 @@ import (
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
 	"github.com/3086953492/gokit/storage"
-	"go.uber.org/zap"
 
 	"goauth/dto"
 	"goauth/models"
@@ -26,11 +25,12 @@ type UserService struct {
 	storageManager *storage.Manager
 	redisMgr *redis.Manager
 	cacheMgr *cache.Manager
+	logMgr *logger.Manager
 }
 
 // NewUserService 创建用户服务实例
-func NewUserService(userRepository *repositories.UserRepository, storageManager *storage.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager) *UserService {
-	return &UserService{userRepository: userRepository, storageManager: storageManager, redisMgr: redisMgr, cacheMgr: cacheMgr}
+func NewUserService(userRepository *repositories.UserRepository, storageManager *storage.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager, logMgr *logger.Manager) *UserService {
+	return &UserService{userRepository: userRepository, storageManager: storageManager, redisMgr: redisMgr, cacheMgr: cacheMgr, logMgr: logMgr}
 }
 
 func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, avatarFile *utils.FormFileResult) error {
@@ -74,7 +74,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, a
 	if err := s.userRepository.Create(ctx, user); err != nil {
 		return errors.Database().Err(err).Field("user", user).Log()
 	}
-	logger.Info("用户注册成功", zap.Uint("userID", user.ID))
+	s.logMgr.Info("用户注册成功", "userID", user.ID)
 
 	return nil
 }
@@ -214,7 +214,7 @@ func (s *UserService) DeleteUser(ctx context.Context, userID uint) error {
 	if err := s.cacheMgr.DeleteByPrefix(ctx, "list_users:"); err != nil {
 		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
 	}
-	logger.Info("用户删除成功", zap.Uint("userID", userID))
+	s.logMgr.Info("用户删除成功", "userID", userID)
 	return nil
 }
 

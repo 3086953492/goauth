@@ -12,7 +12,6 @@ import (
 	"github.com/3086953492/gokit/config"
 	"github.com/3086953492/gokit/cookie"
 	"github.com/3086953492/gokit/database"
-	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/jwt"
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
@@ -41,15 +40,24 @@ func main() {
 	}
 
 	// 初始化日志
-	if err := logger.InitWithConfig(cfg.Log); err != nil {
+	logMgr, err := logger.NewManager(logger.WithLevelString(cfg.Log.Level), logger.WithConsole(cfg.Server.Mode != "release"), logger.WithFile(logger.FileConfig{
+		Filename:       cfg.Log.Filename,
+		MaxSize:        cfg.Log.MaxSize,
+		MaxAge:         cfg.Log.MaxAge,
+		MaxBackups:     cfg.Log.MaxBackups,
+		Compress:       cfg.Log.Compress,
+		RotateStrategy: logger.RotateByDate,
+	}))
+	if err != nil {
 		log.Fatalf("初始化日志失败: %v", err)
 	}
+	defer logMgr.Close()
 
 	// 初始化数据库
 	dsn := database.BuildMySQLDSN(cfg.Database)
 	dbManager, err := database.NewManager(mysql.Open(dsn))
 	if err != nil {
-		errors.Internal().Msg("初始化数据库失败").Err(err).Field("dsn", dsn).Log()
+		logMgr.Error("初始化数据库失败", "dsn", dsn, "error", err)
 		return
 	}
 	defer dbManager.Close()
@@ -63,7 +71,7 @@ func main() {
 	}
 
 	if err := dbManager.AutoMigrate(models...); err != nil {
-		errors.Internal().Msg("自动迁移数据库失败").Err(err).Field("models", models).Log()
+		logMgr.Error("自动迁移数据库失败", "models", models, "error", err)
 		return
 	}
 
@@ -75,12 +83,12 @@ func main() {
 	)
 
 	if err := redisMgr.Connect(context.Background()); err != nil {
-		errors.Internal().Msg("连接 Redis 失败").Err(err).Log()
+		logMgr.Error("连接 Redis 失败", "error", err)
 		return
 	}
 
 	if !redisMgr.IsConnected() {
-		errors.Internal().Msg("Redis 连接失败").Log()
+		logMgr.Error("Redis 连接失败")
 		return
 	}
 
@@ -90,7 +98,7 @@ func main() {
 		cache.WithLocalCache(true),
 	)
 	if err != nil {
-		errors.Internal().Msg("初始化缓存失败").Err(err).Log()
+		logMgr.Error("初始化缓存失败", "error", err)
 		return
 	}
 	defer cacheMgr.Close()
@@ -100,19 +108,19 @@ func main() {
 		jwt.WithAccessTTL(cfg.AuthToken.AccessExpire),
 		jwt.WithRefreshTTL(cfg.AuthToken.RefreshExpire))
 	if err != nil {
-		errors.Internal().Msg("初始化 JWT 失败").Err(err).Log()
+		logMgr.Error("初始化 JWT 失败", "error", err)
 		return
 	}
 
 	store, err := provider_aliyunoss.New(provider_aliyunoss.Config(cfg.AliyunOSS))
 	if err != nil {
-		errors.Internal().Msg("初始化 OSS 失败").Err(err).Log()
+		logMgr.Error("初始化 OSS 失败", "error", err)
 		return
 	}
 
 	storageManager, err := storage.NewManager(storage.WithStore(store))
 	if err != nil {
-		errors.Internal().Msg("初始化文件管理器失败").Err(err).Log()
+		logMgr.Error("初始化文件管理器失败", "error", err)
 		return
 	}
 
@@ -125,14 +133,14 @@ func main() {
 
 	validatorManager, err := validator.New()
 	if err != nil {
-		errors.Internal().Msg("初始化验证器失败").Err(err).Log()
+		logMgr.Error("初始化验证器失败", "error", err)
 		return
 	}
 
-	container := initialize.NewContainer(dbManager.DB(), storageManager, validatorManager, redisMgr, cacheMgr, jwtMgr, &cfg)
+	container := initialize.NewContainer(dbManager.DB(), storageManager, validatorManager, redisMgr, cacheMgr, jwtMgr, logMgr, &cfg)
 
 	if err := initialize.RegisterValidations(container); err != nil {
-		errors.Internal().Msg("注册自定义验证规则失败").Err(err).Log()
+		logMgr.Error("注册自定义验证规则失败", "error", err)
 		return
 	}
 
@@ -149,24 +157,24 @@ func main() {
 	r := initialize.InitRouters(container)
 
 	if err := r.Run(fmt.Sprintf(":%d", port)); err != nil {
-		errors.Internal().Msg("启动服务失败").Err(err).Field("port", port).Log()
+		logMgr.Error("启动服务失败", "port", port, "error", err)
 	}
 
 	defer func() {
 		if err := dbManager.Close(); err != nil {
-			errors.Internal().Msg("关闭数据库失败").Err(err).Log()
+			logMgr.Error("关闭数据库失败", "error", err)
 		}
 	}()
 
 	defer func() {
 		if err := redisMgr.Close(); err != nil {
-			errors.Internal().Msg("关闭 Redis 失败").Err(err).Log()
+			logMgr.Error("关闭 Redis 失败", "error", err)
 		}
 	}()
 
 	defer func() {
 		if err := cacheMgr.Close(); err != nil {
-			errors.Internal().Msg("关闭缓存失败").Err(err).Log()
+			logMgr.Error("关闭缓存失败", "error", err)
 		}
 	}()
 }

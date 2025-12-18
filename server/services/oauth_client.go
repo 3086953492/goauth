@@ -7,7 +7,6 @@ import (
 	"github.com/3086953492/gokit/cache"
 	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/logger"
-	"go.uber.org/zap"
 
 	"goauth/dto"
 	"goauth/models"
@@ -17,10 +16,11 @@ import (
 type OAuthClientService struct {
 	oauthClientRepository *repositories.OAuthClientRepository
 	cacheMgr              *cache.Manager
+	logMgr                *logger.Manager
 }
 
-func NewOAuthClientService(oauthClientRepository *repositories.OAuthClientRepository, cacheMgr *cache.Manager) *OAuthClientService {
-	return &OAuthClientService{oauthClientRepository: oauthClientRepository, cacheMgr: cacheMgr}
+func NewOAuthClientService(oauthClientRepository *repositories.OAuthClientRepository, cacheMgr *cache.Manager, logMgr *logger.Manager) *OAuthClientService {
+	return &OAuthClientService{oauthClientRepository: oauthClientRepository, cacheMgr: cacheMgr, logMgr: logMgr}
 }
 
 func (s *OAuthClientService) CreateOAuthClient(ctx context.Context, req *dto.CreateOAuthClientRequest) error {
@@ -37,9 +37,9 @@ func (s *OAuthClientService) CreateOAuthClient(ctx context.Context, req *dto.Cre
 	if err := s.oauthClientRepository.Create(ctx, client); err != nil {
 		return errors.Database().Msg("创建OAuth客户端失败").Err(err).Field("client", client).Log()
 	}
-	logger.Info("创建OAuth客户端成功", zap.Any("client", client))
+	s.logMgr.Info("创建OAuth客户端成功", "client", client)
 	if err := s.cacheMgr.DeleteByPrefix(ctx, "list_oauth_clients:"); err != nil {
-		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
+		s.logMgr.Error("删除缓存失败", "error", err) // 记录日志，但继续执行
 	}
 	return nil
 }
@@ -130,10 +130,10 @@ func (s *OAuthClientService) UpdateOAuthClient(ctx context.Context, id uint, req
 	}
 
 	if err := s.cacheMgr.DeleteByPrefix(ctx, "list_oauth_clients:"); err != nil {
-		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
+		s.logMgr.Error("删除缓存失败", "error", err) // 记录日志，但继续执行
 	}
 	if err := s.cacheMgr.DeleteByConds(ctx, "oauth_client", map[string]any{"id": id}); err != nil {
-		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
+		s.logMgr.Error("删除缓存失败", "error", err) // 记录日志，但继续执行
 	}
 
 	return nil
@@ -144,11 +144,11 @@ func (s *OAuthClientService) DeleteOAuthClient(ctx context.Context, id uint) err
 		return errors.Database().Msg("删除OAuth客户端失败").Err(err).Field("id", id).Log()
 	}
 	if err := s.cacheMgr.DeleteByPrefix(ctx, "list_oauth_clients:"); err != nil {
-		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
+		s.logMgr.Error("删除缓存失败", "error", err) // 记录日志，但继续执行
 	}
 	if err := s.cacheMgr.DeleteByConds(ctx, "oauth_client", map[string]any{"id": id}); err != nil {
-		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
+		s.logMgr.Error("删除缓存失败", "error", err) // 记录日志，但继续执行
 	}
-	logger.Info("删除OAuth客户端成功", zap.Uint("id", id))
+	s.logMgr.Info("删除OAuth客户端成功", "id", id)
 	return nil
 }
