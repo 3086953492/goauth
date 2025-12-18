@@ -3,7 +3,7 @@ module goauth
 go 1.23.4
 
 require (
-	github.com/3086953492/gokit v0.100.1
+	github.com/3086953492/gokit v0.101.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/google/uuid v1.6.0
 	go.uber.org/zap v1.27.0

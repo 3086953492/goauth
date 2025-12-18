@@ -30,7 +30,6 @@ func main() {
 	// 初始化配置
 	mgr, err := config.NewManager(
 		config.WithConfigDir("./configs"),
-		config.WithMode("debug"),
 	)
 	if err != nil {
 		log.Fatalf("加载配置失败: %v", err)
@@ -99,7 +98,7 @@ func main() {
 	jwtMgr, err := jwt.NewManager(jwt.WithSecret(cfg.AuthToken.Secret),
 		jwt.WithIssuer(cfg.AuthToken.Issuer),
 		jwt.WithAccessTTL(cfg.AuthToken.AccessExpire),
-		jwt.WithRefreshTTL(cfg.AuthToken.RefreshExpire),)
+		jwt.WithRefreshTTL(cfg.AuthToken.RefreshExpire))
 	if err != nil {
 		errors.Internal().Msg("初始化 JWT 失败").Err(err).Log()
 		return
