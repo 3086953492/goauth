@@ -29,6 +29,8 @@ type OAuthAccessTokenService struct {
 
 	oauthRefreshTokenService *OAuthRefreshTokenService
 
+	jwtManager *jwt.Manager
+
 	cfg *config.Config
 }
 
@@ -39,6 +41,7 @@ func NewOAuthAccessTokenService(
 	userService *UserService,
 	oauthClientService *OAuthClientService,
 	oauthRefreshTokenService *OAuthRefreshTokenService,
+	jwtManager *jwt.Manager,
 ) *OAuthAccessTokenService {
 	return &OAuthAccessTokenService{
 		db:                            db,
@@ -87,7 +90,7 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 		return nil, err
 	}
 
-	accessTokenString, err := jwt.GenerateToken(strconv.FormatUint(uint64(user.ID), 10), user.Username, map[string]any{"role": user.Role})
+	accessTokenString, err := s.jwtManager.GenerateAccessToken(strconv.FormatUint(uint64(user.ID), 10), user.Username, map[string]any{"role": user.Role})
 	if err != nil {
 		return nil, errors.Internal().Msg("生成访问令牌失败").Err(err).Log()
 	}
@@ -224,9 +227,9 @@ func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *
 	}
 
 	// 生成新的访问令牌
-	accessTokenString, err := jwt.GenerateToken(strconv.FormatUint(uint64(user.ID), 10), user.Username, map[string]any{"role": user.Role})
+	accessTokenString, err := s.jwtManager.RefreshAccessToken(ctx, form.RefreshToken)
 	if err != nil {
-		return nil, errors.Internal().Msg("生成访问令牌失败").Err(err).Log()
+		return nil, errors.Internal().Msg("刷新访问令牌失败").Err(err).Log()
 	}
 
 	accessToken := &models.OAuthAccessToken{

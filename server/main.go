@@ -96,7 +96,11 @@ func main() {
 	}
 	defer cacheMgr.Close()
 
-	if err := jwt.InitJWT(cfg.AuthToken); err != nil {
+	jwtMgr, err := jwt.NewManager(jwt.WithSecret(cfg.AuthToken.Secret),
+		jwt.WithIssuer(cfg.AuthToken.Issuer),
+		jwt.WithAccessTTL(cfg.AuthToken.AccessExpire),
+		jwt.WithRefreshTTL(cfg.AuthToken.RefreshExpire),)
+	if err != nil {
 		errors.Internal().Msg("初始化 JWT 失败").Err(err).Log()
 		return
 	}
@@ -126,7 +130,7 @@ func main() {
 		return
 	}
 
-	container := initialize.NewContainer(dbManager.DB(), storageManager, validatorManager, redisMgr, cacheMgr, &cfg)
+	container := initialize.NewContainer(dbManager.DB(), storageManager, validatorManager, redisMgr, cacheMgr, jwtMgr, &cfg)
 
 	if err := initialize.RegisterValidations(container); err != nil {
 		errors.Internal().Msg("注册自定义验证规则失败").Err(err).Log()

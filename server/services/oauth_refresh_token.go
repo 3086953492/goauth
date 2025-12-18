@@ -16,15 +16,16 @@ import (
 
 type OAuthRefreshTokenService struct {
 	oauthRefreshTokenRepository *repositories.OAuthRefreshTokenRepository
+	jwtManager *jwt.Manager
 	cfg *config.Config
 }
 
-func NewOAuthRefreshTokenService(oauthRefreshTokenRepository *repositories.OAuthRefreshTokenRepository, cfg *config.Config) *OAuthRefreshTokenService {
-	return &OAuthRefreshTokenService{oauthRefreshTokenRepository: oauthRefreshTokenRepository, cfg: cfg}
+func NewOAuthRefreshTokenService(oauthRefreshTokenRepository *repositories.OAuthRefreshTokenRepository, jwtManager *jwt.Manager, cfg *config.Config) *OAuthRefreshTokenService {
+	return &OAuthRefreshTokenService{oauthRefreshTokenRepository: oauthRefreshTokenRepository, jwtManager: jwtManager, cfg: cfg}
 }
 
 func (s *OAuthRefreshTokenService) GenerateRefreshToken(ctx context.Context, accessTokenID uint, clientID string, scope string, userID uint, username string, role string) (string, error) {
-	refreshTokenString, err := jwt.GenerateToken(strconv.FormatUint(uint64(userID), 10), username, map[string]any{"role": role})
+	refreshTokenString, err := s.jwtManager.GenerateRefreshToken(strconv.FormatUint(uint64(userID), 10))
 	if err != nil {
 		return "", errors.Internal().Msg("生成刷新令牌失败").Err(err).Log()
 	}
@@ -47,7 +48,7 @@ func (s *OAuthRefreshTokenService) GenerateRefreshToken(ctx context.Context, acc
 
 // GenerateRefreshTokenWithTx 在事务中生成并保存刷新令牌
 func (s *OAuthRefreshTokenService) GenerateRefreshTokenWithTx(ctx context.Context, tx *gorm.DB, accessTokenID uint, clientID string, scope string, userID uint, username string, role string) (string, error) {
-	refreshTokenString, err := jwt.GenerateToken(strconv.FormatUint(uint64(userID), 10), username, map[string]any{"role": role})
+	refreshTokenString, err := s.jwtManager.GenerateRefreshToken(strconv.FormatUint(uint64(userID), 10))
 	if err != nil {
 		return "", errors.Internal().Msg("生成刷新令牌失败").Err(err).Log()
 	}

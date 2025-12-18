@@ -13,7 +13,7 @@ import (
 )
 
 // Auth 访问令牌验证中间件
-func AuthTokenMiddleware() gin.HandlerFunc {
+func AuthTokenMiddleware(jwtManager *jwt.Manager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 从 Cookie 中获取令牌
 		token, err := cookie.GetAccessToken(c)
@@ -23,7 +23,7 @@ func AuthTokenMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		claims, err := jwt.ParseToken(token)
+		claims, err := jwtManager.ParseToken(token)
 		if err != nil {
 			response.Error(c, errors.Unauthorized().Msg("令牌验证失败").Err(err).Build())
 			c.Abort()

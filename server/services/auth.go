@@ -17,12 +17,13 @@ import (
 type AuthService struct {
 	userRepository *repositories.UserRepository
 	userService    *UserService
-	cfg *config.Config
+	jwtManager     *jwt.Manager
+	cfg            *config.Config
 }
 
 // NewAuthService 创建授权服务实例
-func NewAuthService(userRepository *repositories.UserRepository, userService *UserService, cfg *config.Config) *AuthService {
-	return &AuthService{userRepository: userRepository, userService: userService, cfg: cfg}
+func NewAuthService(userRepository *repositories.UserRepository, userService *UserService, jwtManager *jwt.Manager, cfg *config.Config) *AuthService {
+	return &AuthService{userRepository: userRepository, userService: userService, jwtManager: jwtManager, cfg: cfg}
 }
 
 func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (accessToken string, accessTokenExpire int, refreshToken string, refreshTokenExpire int, userResp *dto.UserResponse, err error) {
@@ -44,12 +45,12 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (accessT
 	}
 
 	userID := strconv.FormatUint(uint64(user.ID), 10)
-	accessToken, err = jwt.GenerateToken(userID, user.Username, map[string]any{"role": user.Role})
+	accessToken, err = s.jwtManager.GenerateAccessToken(userID, user.Username, map[string]any{"role": user.Role})
 	if err != nil {
 		return "", 0, "", 0, nil, errors.Internal().Msg("生成访问令牌失败").Err(err).Log()
 	}
 
-	refreshToken, err = jwt.GenerateRefreshToken(userID)
+	refreshToken, err = s.jwtManager.GenerateRefreshToken(userID)
 	if err != nil {
 		return "", 0, "", 0, nil, errors.Internal().Msg("生成刷新令牌失败").Err(err).Log()
 	}
@@ -68,7 +69,7 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (accessT
 
 func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (accessToken string, accessTokenExpire int, err error) {
 
-	claims, err := jwt.ParseToken(refreshToken)
+	claims, err := s.jwtManager.ParseRefreshToken(refreshToken)
 	if err != nil {
 		return "", 0, errors.Unauthorized().Msg("刷新令牌验证失败").Err(err).Build()
 	}
@@ -90,7 +91,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (ac
 		return "", 0, errors.Database().Msg("系统繁忙，请稍后再试").Err(err).Field("user_id", userID).Log()
 	}
 
-	accessToken, err = jwt.RefreshAccessToken(refreshToken)
+	accessToken, err = s.jwtManager.RefreshAccessToken(ctx, refreshToken)
 	if err != nil {
 		return "", 0, errors.InvalidInput().Msg("刷新令牌验证失败").Err(err).Log()
 	}

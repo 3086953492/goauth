@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/3086953492/gokit/cache"
@@ -196,7 +197,7 @@ func (s *UserService) DeleteUser(ctx context.Context, userID uint) error {
 	if err := lock.Acquire(ctx); err != nil {
 		return errors.Internal().Msg("系统繁忙，请稍后再试").Err(err).Field("user_id", userID).Build()
 	}
-	defer lock.Release(ctx);
+	defer lock.Release(ctx)
 
 	user, err := s.GetUser(ctx, map[string]any{"id": userID})
 	if err != nil {
@@ -215,4 +216,18 @@ func (s *UserService) DeleteUser(ctx context.Context, userID uint) error {
 	}
 	logger.Info("用户删除成功", zap.Uint("userID", userID))
 	return nil
+}
+
+func (s *UserService) ResolveExtra(ctx context.Context, userIDStr string) (string, map[string]any, error) {
+	userID, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil {
+		return "", nil, err
+	}
+
+	user, err := s.GetUser(ctx, map[string]any{"id": userID})
+	if err != nil {
+		return "", nil, err
+	}
+
+	return user.Username, map[string]any{"role": user.Role}, nil
 }

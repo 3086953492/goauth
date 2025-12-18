@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"github.com/3086953492/gokit/config/types"
+	"github.com/3086953492/gokit/jwt"
 	"github.com/gin-gonic/gin"
 
 	"goauth/middleware/auth"
@@ -11,12 +12,14 @@ import (
 // 中间件管理器
 type Manager struct {
 	config *types.MiddlewareConfig
+	jwtManager *jwt.Manager
 }
 
 // 创建管理器（通过注入配置）
-func NewManager(cfg *types.MiddlewareConfig) *Manager {
+func NewManager(cfg *types.MiddlewareConfig, jwtManager *jwt.Manager) *Manager {
 	return &Manager{
 		config: cfg,
+		jwtManager: jwtManager,
 	}
 }
 
@@ -35,7 +38,7 @@ func (m *Manager) CORS() gin.HandlerFunc {
 }
 
 func (m *Manager) Auth() gin.HandlerFunc {
-	return auth.AuthTokenMiddleware()
+	return auth.AuthTokenMiddleware(m.jwtManager)
 }
 
 func (m *Manager) Role(requiredRole string) gin.HandlerFunc {
