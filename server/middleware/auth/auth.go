@@ -4,9 +4,8 @@ import (
 	"strconv"
 
 	"github.com/3086953492/gokit/cookie"
-	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/jwt"
-	"github.com/3086953492/gokit/response"
+	"github.com/3086953492/gokit/ginx"
 	"github.com/gin-gonic/gin"
 
 	"goauth/utils"
@@ -18,21 +17,21 @@ func AuthTokenMiddleware(jwtManager *jwt.Manager) gin.HandlerFunc {
 		// 从 Cookie 中获取令牌
 		token, err := cookie.GetAccessToken(c)
 		if err != nil || token == "" {
-			response.Error(c, errors.Unauthorized().Msg("令牌为空").Build())
+			ginx.Fail(c, 401, "UNAUTHORIZED", "令牌为空", "about:blank")
 			c.Abort()
 			return
 		}
 
 		claims, err := jwtManager.ParseToken(token)
 		if err != nil {
-			response.Error(c, errors.Unauthorized().Msg("令牌验证失败").Err(err).Build())
+			ginx.Fail(c, 401, "UNAUTHORIZED", "令牌验证失败", "about:blank")
 			c.Abort()
 			return
 		}
 
 		userID, err := strconv.ParseUint(claims.UserID, 10, 64)
 		if err != nil {
-			response.Error(c, errors.Unauthorized().Msg("用户ID格式错误").Build())
+			ginx.Fail(c, 401, "UNAUTHORIZED", "用户ID格式错误", "about:blank")
 			c.Abort()
 			return
 		}
@@ -47,7 +46,7 @@ func AuthTokenMiddleware(jwtManager *jwt.Manager) gin.HandlerFunc {
 func RoleMiddleware(requiredRole string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !utils.IsRole(c, requiredRole) {
-			response.Error(c, errors.Forbidden().Msg("无权限").Build())
+			ginx.Fail(c, 403, "FORBIDDEN", "无权限", "about:blank")
 			c.Abort()
 			return
 		}
@@ -58,7 +57,7 @@ func RoleMiddleware(requiredRole string) gin.HandlerFunc {
 func ResourceOwnerMiddleware(source string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !utils.IsResourceOwner(c, source) {
-			response.Error(c, errors.Forbidden().Msg("无权限").Build())
+			ginx.Fail(c, 403, "FORBIDDEN", "无权限", "about:blank")
 			c.Abort()
 			return
 		}

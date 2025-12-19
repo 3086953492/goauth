@@ -15,7 +15,6 @@ import (
 	"github.com/3086953492/gokit/jwt"
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
-	"github.com/3086953492/gokit/response"
 	"github.com/3086953492/gokit/storage"
 	"github.com/3086953492/gokit/storage/provider_aliyunoss"
 	"github.com/3086953492/gokit/validator"
@@ -123,11 +122,6 @@ func main() {
 		logMgr.Error("初始化文件管理器失败", "error", err)
 		return
 	}
-
-	response.Init(
-		// 根据运行环境决定是否显示错误详情
-		response.WithShowErrorDetail(cfg.Server.Mode == "debug"),
-	)
 
 	cookie.Init(cfg.Server.Mode != "debug")
 

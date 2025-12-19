@@ -3,10 +3,8 @@ package controllers
 import (
 	"strconv"
 
-	"github.com/3086953492/gokit/errors"
-	"github.com/3086953492/gokit/response"
+	"github.com/3086953492/gokit/ginx"
 	"github.com/3086953492/gokit/validator"
-	vgin "github.com/3086953492/gokit/validator/provider_gin"
 	"github.com/gin-gonic/gin"
 
 	"goauth/dto"
@@ -15,7 +13,7 @@ import (
 
 type OAuthClientController struct {
 	oauthClientService *services.OAuthClientService
-	validatorManager *validator.Manager
+	validatorManager   *validator.Manager
 }
 
 func NewOAuthClientController(oauthClientService *services.OAuthClientService, validatorManager *validator.Manager) *OAuthClientController {
@@ -24,31 +22,32 @@ func NewOAuthClientController(oauthClientService *services.OAuthClientService, v
 
 func (ctrl *OAuthClientController) CreateOAuthClientHandler(ctx *gin.Context) {
 	var req dto.CreateOAuthClientRequest
-	if result, err := vgin.BindAndValidate(ctrl.validatorManager, ctx, &req); err != nil {
-		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", req).Build())
+	if ctx.ShouldBindJSON(&req) != nil {
+		ginx.Fail(ctx, 400, "INVALID_REQUEST", "请求参数错误", "about:blank")
 		return
-	} else if !result.Valid {
-		response.Error(ctx, errors.InvalidInput().Msg(result.Message).Err(result.Err).Field("request", req).Build())
+	}
+	if result := ctrl.validatorManager.Validate(req); !result.Valid {
+		ginx.Fail(ctx, 400, "INVALID_REQUEST", result.Message, "about:blank")
 		return
 	}
 
 	if err := ctrl.oauthClientService.CreateOAuthClient(ctx.Request.Context(), &req); err != nil {
-		response.Error(ctx, err)
+		ginx.Fail(ctx, 500, "INTERNAL_SERVER_ERROR", err.Error(), "about:blank")
 		return
 	}
-	response.Success(ctx, "创建OAuth客户端成功", nil)
+	ginx.OK(ctx, nil)
 }
 
 func (ctrl *OAuthClientController) ListOAuthClientsHandler(ctx *gin.Context) {
 	page, pageSize := ctx.Query("page"), ctx.Query("page_size")
 	pageInt, err := strconv.Atoi(page)
 	if err != nil {
-		response.Error(ctx, errors.InvalidInput().Msg("页码格式错误").Err(err).Build())
+		ginx.Fail(ctx, 400, "INVALID_REQUEST", "页码格式错误", "about:blank")
 		return
 	}
 	pageSizeInt, err := strconv.Atoi(pageSize)
 	if err != nil {
-		response.Error(ctx, errors.InvalidInput().Msg("每页条数格式错误").Err(err).Build())
+		ginx.Fail(ctx, 400, "INVALID_REQUEST", "每页条数格式错误", "about:blank")
 		return
 	}
 	conds := map[string]any{}
@@ -61,63 +60,64 @@ func (ctrl *OAuthClientController) ListOAuthClientsHandler(ctx *gin.Context) {
 
 	oauthClientsPagination, err := ctrl.oauthClientService.ListOAuthClients(ctx.Request.Context(), pageInt, pageSizeInt, conds)
 	if err != nil {
-		response.Error(ctx, err)
+		ginx.Fail(ctx, 500, "INTERNAL_SERVER_ERROR", err.Error(), "about:blank")
 		return
 	}
-	response.Success(ctx, "获取OAuth客户端列表成功", oauthClientsPagination)
+	ginx.OK(ctx, oauthClientsPagination)
 }
 
 func (ctrl *OAuthClientController) GetOAuthClientHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	idUint, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		response.Error(ctx, errors.InvalidInput().Msg("ID格式错误").Err(err).Build())
+		ginx.Fail(ctx, 400, "INVALID_REQUEST", "ID格式错误", "about:blank")
 		return
 	}
 	oauthClient, err := ctrl.oauthClientService.GetOAuthClient(ctx.Request.Context(), map[string]any{"id": idUint})
 	if err != nil {
-		response.Error(ctx, err)
+		ginx.Fail(ctx, 500, "INTERNAL_SERVER_ERROR", err.Error(), "about:blank")
 		return
 	}
-	response.Success(ctx, "获取OAuth客户端成功", oauthClient)
+	ginx.OK(ctx, oauthClient)
 }
 
 func (ctrl *OAuthClientController) UpdateOAuthClientHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	idUint, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		response.Error(ctx, errors.InvalidInput().Msg("ID格式错误").Err(err).Build())
+		ginx.Fail(ctx, 400, "INVALID_REQUEST", "ID格式错误", "about:blank")
 		return
 	}
 
 	var req dto.UpdateOAuthClientRequest
-	if result, err := vgin.BindAndValidate(ctrl.validatorManager, ctx, &req); err != nil {
-		response.Error(ctx, errors.InvalidInput().Msg("请求参数错误").Err(err).Field("request", req).Build())
+	if ctx.ShouldBindJSON(&req) != nil {
+		ginx.Fail(ctx, 400, "INVALID_REQUEST", "请求参数错误", "about:blank")
 		return
-	} else if !result.Valid {
-		response.Error(ctx, errors.InvalidInput().Msg(result.Message).Err(result.Err).Field("request", req).Build())
+	}
+	if result := ctrl.validatorManager.Validate(req); !result.Valid {
+		ginx.Fail(ctx, 400, "INVALID_REQUEST", result.Message, "about:blank")
 		return
 	}
 
 	if err := ctrl.oauthClientService.UpdateOAuthClient(ctx.Request.Context(), uint(idUint), &req); err != nil {
-		response.Error(ctx, err)
+		ginx.Fail(ctx, 500, "INTERNAL_SERVER_ERROR", err.Error(), "about:blank")
 		return
 	}
 
-	response.Success(ctx, "更新OAuth客户端成功", nil)
+	ginx.OK(ctx, nil)
 }
 
 func (ctrl *OAuthClientController) DeleteOAuthClientHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	idUint, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		response.Error(ctx, errors.InvalidInput().Msg("ID格式错误").Err(err).Build())
+		ginx.Fail(ctx, 400, "INVALID_REQUEST", "ID格式错误", "about:blank")
 		return
 	}
 	if err := ctrl.oauthClientService.DeleteOAuthClient(ctx.Request.Context(), uint(idUint)); err != nil {
-		response.Error(ctx, err)
+		ginx.Fail(ctx, 500, "INTERNAL_SERVER_ERROR", err.Error(), "about:blank")
 		return
 	}
-	
-	response.Success(ctx, "删除OAuth客户端成功", nil)
+
+	ginx.OK(ctx, nil)
 }

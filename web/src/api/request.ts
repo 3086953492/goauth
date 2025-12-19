@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus'
 import router from '@/router'
 import { emitAuthEvent } from '@/utils/authFeedbackBus'
 import { API_BASE_URL } from '@/constants'
+import type { ApiResponse, ProblemDetails } from '@/types/common'
 
 // 防抖标志，避免多个401请求重复重定向
 let isRedirecting = false
@@ -37,39 +38,73 @@ request.interceptors.request.use(
   }
 )
 
+/**
+ * 检测响应是否符合 ApiResponse 结构
+ */
+function isApiResponse(data: unknown): data is ApiResponse {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'code' in data &&
+    'message' in data &&
+    'data' in data &&
+    typeof (data as ApiResponse).code === 'number' &&
+    typeof (data as ApiResponse).message === 'string'
+  )
+}
+
+/**
+ * 从 Problem JSON 或其他格式中提取错误消息
+ * 按 RFC7807 优先读取 detail
+ */
+function extractErrorMessage(data: unknown): string {
+  if (typeof data === 'object' && data !== null) {
+    const problem = data as Partial<ProblemDetails>
+    if (typeof problem.detail === 'string' && problem.detail) {
+      return problem.detail
+    }
+    if (typeof problem.title === 'string' && problem.title) {
+      return problem.title
+    }
+  }
+  return ''
+}
+
 // 响应拦截器
 request.interceptors.response.use(
   (response: AxiosResponse) => {
     const res = response.data
-    
-    // 严格以业务 success 字段为准
-    if (res && res.success === true) {
-      return res
+
+    // 严格校验响应结构：必须是 { code, message, data }
+    if (!isApiResponse(res)) {
+      const errorMsg = '响应格式错误'
+      ElMessage.error(errorMsg)
+      return Promise.reject(new Error(errorMsg))
     }
-    
-    // 处理业务错误（即便 HTTP 200，只要 success !== true 就视为错误）
-    const message = res?.message || '请求失败'
-    ElMessage.error(message)
-    return Promise.reject(new Error(message))
+
+    // HTTP 2xx 且符合协议即视为成功，直接返回完整信封
+    // 使用 as any 绕过 AxiosResponse 类型检查，因为我们需要返回解包后的业务数据
+    return res as any
   },
   async (error: AxiosError) => {
     console.error('Response error:', error)
-    
+
     // 处理 HTTP 错误
     if (error.response) {
-      const { status, data } = error.response as any
-      
-      // 优先使用后端返回的错误消息
-      let errorMessage = data?.message || ''
-      
+      const { status, data } = error.response
+
+      // 从 Problem JSON 提取错误消息
+      let errorMessage = extractErrorMessage(data)
+
       switch (status) {
         case 400:
           errorMessage = errorMessage || '请求参数错误'
+          ElMessage.error(errorMessage)
           break
         case 401:
-          // 401 未授权/登录过期，优先使用后端返回的 message
+          // 401 未授权/登录过期
           errorMessage = errorMessage || '登录已过期，请重新登录'
-          
+
           // 通过事件总线发出登录失效事件，由 AuthFeedbackProvider 统一处理
           if (!isRedirecting) {
             isRedirecting = true
@@ -101,7 +136,7 @@ request.interceptors.response.use(
           break
         case 404:
           errorMessage = errorMessage || '请求的资源不存在'
-          // 404 错误仅提示，不跳转（通常是接口不存在，不是页面不存在）
+          // 404 错误仅提示，不跳转
           ElMessage.error(errorMessage)
           break
         case 500:
@@ -128,15 +163,7 @@ request.interceptors.response.use(
           errorMessage = errorMessage || '网络错误'
           ElMessage.error(errorMessage)
       }
-      
-      // 对于不跳转错误页的情况，显示消息提示
-      if (status !== 403 && status !== 500 && status !== 502 && status !== 503) {
-        // 404 等已经在上面处理过了，这里处理其他状态码
-        if (status !== 404 && status !== 401) {
-          ElMessage.error(errorMessage)
-        }
-      }
-      
+
       // 将错误消息附加到 error 对象上，方便业务层使用
       const errorWithMessage = new Error(errorMessage)
       Object.assign(errorWithMessage, { response: error.response, message: errorMessage })
@@ -146,7 +173,7 @@ request.interceptors.response.use(
     } else {
       ElMessage.error('请求配置错误')
     }
-    
+
     return Promise.reject(error)
   }
 )
