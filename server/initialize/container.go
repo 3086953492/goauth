@@ -18,7 +18,6 @@ import (
 )
 
 type Container struct {
-
 	JwtManager *jwt.Manager
 	LogManager *logger.Manager
 
@@ -63,7 +62,7 @@ func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager
 	c.JwtManager = jwtMgr
 	c.JwtManager.SetExtraResolver(c.UserService)
 
-	c.AuthService = services.NewAuthService(c.UserRepository, c.UserService, c.JwtManager, cfg)
+	c.AuthService = services.NewAuthService(c.UserRepository, c.UserService, c.LogManager, c.JwtManager, cfg)
 	c.AuthController = controllers.NewAuthController(c.AuthService, validatorManager)
 
 	c.OAuthClientRepository = repositories.NewOAuthClientRepository(db)
@@ -71,13 +70,13 @@ func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager
 	c.OAuthClientController = controllers.NewOAuthClientController(c.OAuthClientService, validatorManager)
 
 	c.OAuthAuthorizationCodeRepository = repositories.NewOAuthAuthorizationCodeRepository(db)
-	c.OAuthAuthorizationCodeService = services.NewOAuthAuthorizationCodeService(c.OAuthAuthorizationCodeRepository, c.OAuthClientService, cfg)
+	c.OAuthAuthorizationCodeService = services.NewOAuthAuthorizationCodeService(c.OAuthAuthorizationCodeRepository, c.OAuthClientService, cfg, c.LogManager)
 
 	c.OAuthRefreshTokenRepository = repositories.NewOAuthRefreshTokenRepository(db)
-	c.OAuthRefreshTokenService = services.NewOAuthRefreshTokenService(c.OAuthRefreshTokenRepository, c.JwtManager, cfg)
+	c.OAuthRefreshTokenService = services.NewOAuthRefreshTokenService(c.OAuthRefreshTokenRepository, c.JwtManager, cfg, c.LogManager)
 
 	c.OAuthAccessTokenRepository = repositories.NewOAuthAccessTokenRepository(db)
-	c.OAuthAccessTokenService = services.NewOAuthAccessTokenService(db, c.OAuthAccessTokenRepository, c.OAuthAuthorizationCodeService, c.UserService, c.OAuthClientService, c.OAuthRefreshTokenService, c.JwtManager)
+	c.OAuthAccessTokenService = services.NewOAuthAccessTokenService(db, c.OAuthAccessTokenRepository, c.OAuthAuthorizationCodeService, c.UserService, c.OAuthClientService, c.OAuthRefreshTokenService, c.JwtManager, c.LogManager, cfg)
 
 	c.OAuthController = controllers.NewOAuthController(c.OAuthAuthorizationCodeService, c.OAuthAccessTokenService, c.OAuthClientService, cfg)
 

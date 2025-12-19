@@ -1,13 +1,13 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"mime/multipart"
 	"path/filepath"
 	"slices"
 	"time"
 
-	"github.com/3086953492/gokit/errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -30,14 +30,14 @@ func ValidateFormFile(ctx *gin.Context, fieldName string, maxSize int64, allowed
 
 	// 校验文件大小
 	if fh.Size > maxSize {
-		return nil, errors.InvalidInput().Msg(fmt.Sprintf("文件大小不能超过 %dMB", maxSize/(1024*1024))).Build()
+		return nil, fmt.Errorf("文件大小不能超过 %dMB", maxSize/(1024*1024))
 	}
 
 	// 校验 Content-Type
 	contentType := fh.Header.Get("Content-Type")
 	allowed := slices.Contains(allowedTypes, contentType)
 	if !allowed {
-		return nil, errors.InvalidInput().Msg("文件格式错误").Build()
+		return nil, errors.New("文件格式错误")
 	}
 
 	return &FormFileResult{

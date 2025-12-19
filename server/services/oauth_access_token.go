@@ -2,12 +2,13 @@ package services
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"time"
 
 	"github.com/3086953492/gokit/config"
-	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/jwt"
+	"github.com/3086953492/gokit/logger"
 	"gorm.io/gorm"
 
 	"goauth/dto"
@@ -30,8 +31,8 @@ type OAuthAccessTokenService struct {
 	oauthRefreshTokenService *OAuthRefreshTokenService
 
 	jwtManager *jwt.Manager
-
-	cfg *config.Config
+	logMgr     *logger.Manager
+	cfg        *config.Config
 }
 
 func NewOAuthAccessTokenService(
@@ -42,6 +43,8 @@ func NewOAuthAccessTokenService(
 	oauthClientService *OAuthClientService,
 	oauthRefreshTokenService *OAuthRefreshTokenService,
 	jwtManager *jwt.Manager,
+	logMgr *logger.Manager,
+	cfg *config.Config,
 ) *OAuthAccessTokenService {
 	return &OAuthAccessTokenService{
 		db:                            db,
@@ -50,6 +53,9 @@ func NewOAuthAccessTokenService(
 		userService:                   userService,
 		oauthClientService:            oauthClientService,
 		oauthRefreshTokenService:      oauthRefreshTokenService,
+		jwtManager:                    jwtManager,
+		logMgr:                        logMgr,
+		cfg:                           cfg,
 	}
 }
 
@@ -61,7 +67,7 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 	}
 
 	if form.GrantType != "authorization_code" || !utils.IsGrantTypeValid("authorization_code", oauthClient.GrantTypes) {
-		return nil, errors.InvalidInput().Msg("授权类型不支持").Build()
+		return nil, errors.New("授权类型不支持")
 	}
 
 	oauthAuthorizationCode, err := s.oauthAuthorizationCodeService.GetOAuthAuthorizationCode(ctx, map[string]any{"code": form.Code})
@@ -70,19 +76,19 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 	}
 
 	if oauthAuthorizationCode.RedirectURI != form.RedirectURI {
-		return nil, errors.InvalidInput().Msg("授权码回调地址不匹配").Build()
+		return nil, errors.New("授权码回调地址不匹配")
 	}
 
 	if oauthAuthorizationCode.Used {
-		return nil, errors.InvalidInput().Msg("授权码已使用").Build()
+		return nil, errors.New("授权码已使用")
 	}
 
 	if oauthAuthorizationCode.ExpiresAt.Before(time.Now()) {
-		return nil, errors.InvalidInput().Msg("授权码已过期").Build()
+		return nil, errors.New("授权码已过期")
 	}
 
 	if oauthAuthorizationCode.ClientID != clientID {
-		return nil, errors.InvalidInput().Msg("授权码客户端ID不匹配").Build()
+		return nil, errors.New("授权码客户端ID不匹配")
 	}
 
 	user, err := s.userService.GetUser(ctx, map[string]any{"id": oauthAuthorizationCode.UserID})
@@ -92,7 +98,8 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 
 	accessTokenString, err := s.jwtManager.GenerateAccessToken(strconv.FormatUint(uint64(user.ID), 10), user.Username, map[string]any{"role": user.Role})
 	if err != nil {
-		return nil, errors.Internal().Msg("生成访问令牌失败").Err(err).Log()
+		s.logMgr.Error("生成访问令牌失败", "error", err)
+		return nil, errors.New("生成访问令牌失败")
 	}
 
 	accessToken := &models.OAuthAccessToken{
@@ -116,7 +123,8 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 
 		// 在事务中保存 access token，获取自增 ID
 		if err := s.oauthAccessTokenRepository.CreateWithTx(ctx, tx, accessToken); err != nil {
-			return errors.Database().Msg("创建OAuth访问令牌失败").Err(err).Field("accessToken", accessToken).Log()
+			s.logMgr.Error("创建OAuth访问令牌失败", "error", err)
+			return errors.New("创建OAuth访问令牌失败")
 		}
 
 		// 在事务中使用保存后的 accessToken.ID 生成 refresh token
@@ -196,7 +204,7 @@ func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *
 
 	// 校验客户端是否支持 refresh_token 授权类型
 	if !utils.IsGrantTypeValid("refresh_token", oauthClient.GrantTypes) {
-		return nil, errors.InvalidInput().Msg("客户端不支持refresh_token授权类型").Build()
+		return nil, errors.New("客户端不支持refresh_token授权类型")
 	}
 
 	// 查询刷新令牌
@@ -207,17 +215,17 @@ func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *
 
 	// 校验刷新令牌是否已撤销
 	if refreshToken.Revoked {
-		return nil, errors.InvalidInput().Msg("刷新令牌已撤销").Build()
+		return nil, errors.New("刷新令牌已撤销")
 	}
 
 	// 校验刷新令牌是否已过期
 	if refreshToken.ExpiresAt.Before(time.Now()) {
-		return nil, errors.InvalidInput().Msg("刷新令牌已过期").Build()
+		return nil, errors.New("刷新令牌已过期")
 	}
 
 	// 校验刷新令牌的客户端ID是否与当前客户端一致
 	if refreshToken.ClientID != clientID {
-		return nil, errors.InvalidInput().Msg("刷新令牌客户端ID不匹配").Build()
+		return nil, errors.New("刷新令牌客户端ID不匹配")
 	}
 
 	// 查询用户信息
@@ -229,7 +237,8 @@ func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *
 	// 生成新的访问令牌
 	accessTokenString, err := s.jwtManager.RefreshAccessToken(ctx, form.RefreshToken)
 	if err != nil {
-		return nil, errors.Internal().Msg("刷新访问令牌失败").Err(err).Log()
+		s.logMgr.Error("刷新访问令牌失败", "error", err)
+		return nil, errors.New("刷新访问令牌失败")
 	}
 
 	accessToken := &models.OAuthAccessToken{
@@ -248,7 +257,8 @@ func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *
 	txErr := s.db.Transaction(func(tx *gorm.DB) error {
 		// 在事务中保存新的 access token
 		if err := s.oauthAccessTokenRepository.CreateWithTx(ctx, tx, accessToken); err != nil {
-			return errors.Database().Msg("创建OAuth访问令牌失败").Err(err).Field("accessToken", accessToken).Log()
+			s.logMgr.Error("创建OAuth访问令牌失败", "error", err)
+			return errors.New("创建OAuth访问令牌失败")
 		}
 
 		// 在事务中撤销旧的 refresh token

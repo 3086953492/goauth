@@ -2,12 +2,14 @@ package services
 
 import (
 	"context"
+	"errors"
 	"strconv"
 
 	"github.com/3086953492/gokit/config"
 	"github.com/3086953492/gokit/crypto"
-	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/jwt"
+	"github.com/3086953492/gokit/logger"
+	"gorm.io/gorm"
 
 	"goauth/dto"
 	"goauth/repositories"
@@ -17,42 +19,46 @@ import (
 type AuthService struct {
 	userRepository *repositories.UserRepository
 	userService    *UserService
+	logMgr         *logger.Manager
 	jwtManager     *jwt.Manager
 	cfg            *config.Config
 }
 
 // NewAuthService 创建授权服务实例
-func NewAuthService(userRepository *repositories.UserRepository, userService *UserService, jwtManager *jwt.Manager, cfg *config.Config) *AuthService {
-	return &AuthService{userRepository: userRepository, userService: userService, jwtManager: jwtManager, cfg: cfg}
+func NewAuthService(userRepository *repositories.UserRepository, userService *UserService, logMgr *logger.Manager, jwtManager *jwt.Manager, cfg *config.Config) *AuthService {
+	return &AuthService{userRepository: userRepository, userService: userService, logMgr: logMgr, jwtManager: jwtManager, cfg: cfg}
 }
 
 func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (accessToken string, accessTokenExpire int, refreshToken string, refreshTokenExpire int, userResp *dto.UserResponse, err error) {
 
 	user, err := s.userRepository.Get(ctx, map[string]any{"username": req.Username})
 	if err != nil {
-		if errors.IsNotFoundError(err) {
-			return "", 0, "", 0, nil, errors.InvalidInput().Msg("账号或密码错误").Build()
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logMgr.Error("获取用户失败", "error", err)
+			return "", 0, "", 0, nil, errors.New("系统繁忙，请稍后再试")
 		}
-		return "", 0, "", 0, nil, errors.Database().Msg("系统繁忙，请稍后再试").Err(err).Field("username", req.Username).Log()
+		return "", 0, "", 0, nil, errors.New("账号或密码错误")
 	}
 
 	if user.Status == 0 {
-		return "", 0, "", 0, nil, errors.Forbidden().Msg("账号未激活或已禁用，请联系管理员").Build()
+		return "", 0, "", 0, nil, errors.New("账号未激活或已禁用，请联系管理员")
 	}
 
 	if !crypto.VerifyPassword(user.Password, req.Password) {
-		return "", 0, "", 0, nil, errors.InvalidInput().Msg("账号或密码错误").Build()
+		return "", 0, "", 0, nil, errors.New("账号或密码错误")
 	}
 
 	userID := strconv.FormatUint(uint64(user.ID), 10)
 	accessToken, err = s.jwtManager.GenerateAccessToken(userID, user.Username, map[string]any{"role": user.Role})
 	if err != nil {
-		return "", 0, "", 0, nil, errors.Internal().Msg("生成访问令牌失败").Err(err).Log()
+		s.logMgr.Error("生成访问令牌失败", "error", err)
+		return "", 0, "", 0, nil, errors.New("生成访问令牌失败")
 	}
 
 	refreshToken, err = s.jwtManager.GenerateRefreshToken(userID)
 	if err != nil {
-		return "", 0, "", 0, nil, errors.Internal().Msg("生成刷新令牌失败").Err(err).Log()
+		s.logMgr.Error("生成刷新令牌失败", "error", err)
+		return "", 0, "", 0, nil, errors.New("生成刷新令牌失败")
 	}
 
 	return accessToken, int(s.cfg.AuthToken.AccessExpire.Seconds()), refreshToken, int(s.cfg.AuthToken.RefreshExpire.Seconds()), &dto.UserResponse{
@@ -71,29 +77,31 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (ac
 
 	claims, err := s.jwtManager.ParseRefreshToken(refreshToken)
 	if err != nil {
-		return "", 0, errors.Unauthorized().Msg("刷新令牌验证失败").Err(err).Build()
+		return "", 0, errors.New("无效的刷新令牌")
 	}
 
 	if claims.TokenType != jwt.RefreshToken {
-		return "", 0, errors.Unauthorized().Msg("无效的刷新令牌").Build()
+		return "", 0, errors.New("无效的刷新令牌")
 	}
 
 	userID, err := strconv.ParseUint(claims.UserID, 10, 64)
 	if err != nil {
-		return "", 0, errors.Unauthorized().Msg("用户ID格式错误").Build()
+		return "", 0, errors.New("用户ID格式错误")
 	}
 
 	_, err = s.userRepository.Get(ctx, map[string]any{"id": userID})
 	if err != nil {
-		if errors.IsNotFoundError(err) {
-			return "", 0, errors.NotFound().Msg("用户不存在").Build()
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logMgr.Error("获取用户失败", "error", err)
+			return "", 0, errors.New("系统繁忙，请稍后再试")
 		}
-		return "", 0, errors.Database().Msg("系统繁忙，请稍后再试").Err(err).Field("user_id", userID).Log()
+		return "", 0, errors.New("用户不存在")
 	}
 
 	accessToken, err = s.jwtManager.RefreshAccessToken(ctx, refreshToken)
 	if err != nil {
-		return "", 0, errors.InvalidInput().Msg("刷新令牌验证失败").Err(err).Log()
+		s.logMgr.Error("刷新令牌失败", "error", err)
+		return "", 0, errors.New("系统繁忙，请稍后再试")
 	}
 
 	return accessToken, int(s.cfg.AuthToken.AccessExpire.Seconds()), nil

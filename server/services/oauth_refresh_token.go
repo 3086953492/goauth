@@ -2,12 +2,13 @@ package services
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"time"
 
 	"github.com/3086953492/gokit/config"
-	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/jwt"
+	"github.com/3086953492/gokit/logger"
 	"gorm.io/gorm"
 
 	"goauth/models"
@@ -16,18 +17,20 @@ import (
 
 type OAuthRefreshTokenService struct {
 	oauthRefreshTokenRepository *repositories.OAuthRefreshTokenRepository
-	jwtManager *jwt.Manager
-	cfg *config.Config
+	jwtManager                  *jwt.Manager
+	cfg                         *config.Config
+	logMgr                      *logger.Manager
 }
 
-func NewOAuthRefreshTokenService(oauthRefreshTokenRepository *repositories.OAuthRefreshTokenRepository, jwtManager *jwt.Manager, cfg *config.Config) *OAuthRefreshTokenService {
-	return &OAuthRefreshTokenService{oauthRefreshTokenRepository: oauthRefreshTokenRepository, jwtManager: jwtManager, cfg: cfg}
+func NewOAuthRefreshTokenService(oauthRefreshTokenRepository *repositories.OAuthRefreshTokenRepository, jwtManager *jwt.Manager, cfg *config.Config, logMgr *logger.Manager) *OAuthRefreshTokenService {
+	return &OAuthRefreshTokenService{oauthRefreshTokenRepository: oauthRefreshTokenRepository, jwtManager: jwtManager, cfg: cfg, logMgr: logMgr}
 }
 
 func (s *OAuthRefreshTokenService) GenerateRefreshToken(ctx context.Context, accessTokenID uint, clientID string, scope string, userID uint, username string, role string) (string, error) {
 	refreshTokenString, err := s.jwtManager.GenerateRefreshToken(strconv.FormatUint(uint64(userID), 10))
 	if err != nil {
-		return "", errors.Internal().Msg("生成刷新令牌失败").Err(err).Log()
+		s.logMgr.Error("生成刷新令牌失败", "error", err)
+		return "", errors.New("生成刷新令牌失败")
 	}
 
 	refreshToken := &models.OAuthRefreshToken{
@@ -40,7 +43,8 @@ func (s *OAuthRefreshTokenService) GenerateRefreshToken(ctx context.Context, acc
 	}
 
 	if err := s.oauthRefreshTokenRepository.Create(ctx, refreshToken); err != nil {
-		return "", errors.Database().Msg("创建OAuth刷新令牌失败").Err(err).Log()
+		s.logMgr.Error("创建OAuth刷新令牌失败", "error", err)
+		return "", errors.New("创建OAuth刷新令牌失败")
 	}
 
 	return refreshTokenString, nil
@@ -50,7 +54,8 @@ func (s *OAuthRefreshTokenService) GenerateRefreshToken(ctx context.Context, acc
 func (s *OAuthRefreshTokenService) GenerateRefreshTokenWithTx(ctx context.Context, tx *gorm.DB, accessTokenID uint, clientID string, scope string, userID uint, username string, role string) (string, error) {
 	refreshTokenString, err := s.jwtManager.GenerateRefreshToken(strconv.FormatUint(uint64(userID), 10))
 	if err != nil {
-		return "", errors.Internal().Msg("生成刷新令牌失败").Err(err).Log()
+		s.logMgr.Error("生成刷新令牌失败", "error", err)
+		return "", errors.New("生成刷新令牌失败")
 	}
 
 	refreshToken := &models.OAuthRefreshToken{
@@ -63,7 +68,8 @@ func (s *OAuthRefreshTokenService) GenerateRefreshTokenWithTx(ctx context.Contex
 	}
 
 	if err := s.oauthRefreshTokenRepository.CreateWithTx(ctx, tx, refreshToken); err != nil {
-		return "", errors.Database().Msg("创建OAuth刷新令牌失败").Err(err).Log()
+		s.logMgr.Error("创建OAuth刷新令牌失败", "error", err)
+		return "", errors.New("创建OAuth刷新令牌失败")
 	}
 
 	return refreshTokenString, nil
@@ -73,7 +79,11 @@ func (s *OAuthRefreshTokenService) GenerateRefreshTokenWithTx(ctx context.Contex
 func (s *OAuthRefreshTokenService) GetOAuthRefreshToken(ctx context.Context, conds map[string]any) (*models.OAuthRefreshToken, error) {
 	refreshToken, err := s.oauthRefreshTokenRepository.Get(ctx, conds)
 	if err != nil {
-		return nil, errors.NotFound().Msg("刷新令牌不存在").Err(err).Log()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("刷新令牌不存在")
+		}
+		s.logMgr.Error("获取刷新令牌失败", "error", err, "conds", conds)
+		return nil, errors.New("系统繁忙，请稍后再试")
 	}
 	return refreshToken, nil
 }
@@ -81,7 +91,8 @@ func (s *OAuthRefreshTokenService) GetOAuthRefreshToken(ctx context.Context, con
 // RevokeRefreshTokenWithTx 在事务中撤销刷新令牌
 func (s *OAuthRefreshTokenService) RevokeRefreshTokenWithTx(ctx context.Context, tx *gorm.DB, id uint) error {
 	if err := tx.WithContext(ctx).Model(&models.OAuthRefreshToken{}).Where("id = ?", id).Update("revoked", true).Error; err != nil {
-		return errors.Database().Msg("撤销刷新令牌失败").Err(err).Log()
+		s.logMgr.Error("撤销刷新令牌失败", "error", err, "id", id)
+		return errors.New("撤销刷新令牌失败")
 	}
 	return nil
 }

@@ -2,16 +2,17 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/3086953492/gokit/cache"
 	"github.com/3086953492/gokit/crypto"
-	"github.com/3086953492/gokit/errors"
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
 	"github.com/3086953492/gokit/storage"
+	"gorm.io/gorm"
 
 	"goauth/dto"
 	"goauth/models"
@@ -23,9 +24,9 @@ import (
 type UserService struct {
 	userRepository *repositories.UserRepository
 	storageManager *storage.Manager
-	redisMgr *redis.Manager
-	cacheMgr *cache.Manager
-	logMgr *logger.Manager
+	redisMgr       *redis.Manager
+	cacheMgr       *cache.Manager
+	logMgr         *logger.Manager
 }
 
 // NewUserService 创建用户服务实例
@@ -39,27 +40,30 @@ func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, a
 	lockKey := fmt.Sprintf("user:create:%s", req.Username)
 	lock := s.redisMgr.NewDistributedLock(lockKey, 10*time.Second)
 	if err := lock.Acquire(ctx); err != nil {
-		return errors.Internal().Msg("系统繁忙，请稍后再试").Err(err).Field("username", req.Username).Build()
+		return errors.New("系统繁忙，请稍后再试")
 	}
 	defer lock.Release(ctx)
 
 	hashedPassword, err := crypto.HashPassword(req.Password)
 	if err != nil {
-		return errors.Internal().Msg("密码哈希失败").Err(err).Log()
+		s.logMgr.Error("密码哈希失败", "error", err)
+		return errors.New("密码哈希失败")
 	}
 
 	var avatarURL string
 	if avatarFile != nil {
 		f, err := avatarFile.FileHeader.Open()
 		if err != nil {
-			return errors.Internal().Msg("文件读取失败").Err(err).Log()
+			s.logMgr.Error("文件读取失败", "error", err)
+			return errors.New("文件读取失败")
 		}
 		defer f.Close()
 
 		objectKey := time.Now().Format("2006/01/02") + "/" + avatarFile.Filename
 		meta, err := s.storageManager.Upload(ctx, objectKey, f, storage.WithContentType(avatarFile.ContentType))
 		if err != nil {
-			return errors.Internal().Msg("头像上传失败").Err(err).Log()
+			s.logMgr.Error("头像上传失败", "error", err)
+			return errors.New("头像上传失败")
 		}
 		avatarURL = meta.URL
 	}
@@ -72,7 +76,8 @@ func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, a
 		Role:     "user",
 	}
 	if err := s.userRepository.Create(ctx, user); err != nil {
-		return errors.Database().Err(err).Field("user", user).Log()
+		s.logMgr.Error("创建用户失败", "error", err, "user", user)
+		return errors.New("创建用户失败")
 	}
 	s.logMgr.Info("用户注册成功", "userID", user.ID)
 
@@ -83,17 +88,22 @@ func (s *UserService) GetUser(ctx context.Context, conds map[string]any) (*model
 	user, err := cache.NewBuilder[models.User](s.cacheMgr).KeyWithConds("user", conds).TTL(10*time.Minute).GetOrSet(ctx, func() (*models.User, error) {
 		user, err := s.userRepository.Get(ctx, conds)
 		if err != nil {
-			if errors.IsNotFoundError(err) {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, err
 			}
-			return nil, errors.Database().Msg("获取用户失败").Err(err).Field("conds", conds).Log()
+			s.logMgr.Error("获取用户失败", "error", err, "conds", conds)
+			return nil, errors.New("系统繁忙，请稍后再试")
 		}
 		return user, nil
 	})
 	if err != nil {
-		return nil, errors.NotFound().Msg("未找到用户").Err(err).Build()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("用户不存在")
+		}
+		s.logMgr.Error("获取用户失败", "error", err, "conds", conds)
+		return nil, errors.New("系统繁忙，请稍后再试")
 	}
-	return user, err
+	return user, nil
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.UpdateUserForm, avatarFile *utils.FormFileResult) error {
@@ -114,7 +124,8 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.Upd
 	if user.Password != "" {
 		hashedPassword, err := crypto.HashPassword(user.Password)
 		if err != nil {
-			return errors.Internal().Msg("密码哈希失败").Err(err).Log()
+			s.logMgr.Error("密码哈希失败", "error", err)
+			return errors.New("密码哈希失败")
 		}
 		updates["password"] = hashedPassword
 	}
@@ -122,17 +133,19 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.Upd
 	if avatarFile != nil {
 		f, err := avatarFile.FileHeader.Open()
 		if err != nil {
-			return errors.Internal().Msg("文件读取失败").Err(err).Log()
+			s.logMgr.Error("文件读取失败", "error", err)
+			return errors.New("文件读取失败")
 		}
 		defer f.Close()
 
 		objectKey := time.Now().Format("2006/01/02") + "/" + avatarFile.Filename
 		meta, err := s.storageManager.Upload(ctx, objectKey, f, storage.WithContentType(avatarFile.ContentType))
 		if err != nil {
-			return errors.Internal().Msg("头像上传失败").Err(err).Log()
+			s.logMgr.Error("头像上传失败", "error", err)
+			return errors.New("头像上传失败")
 		}
 		if err := s.storageManager.DeleteByURL(ctx, existingUser.Avatar); err != nil {
-			errors.Internal().Msg("旧头像清理失败").Err(err).Log()
+			s.logMgr.Warn("旧头像清理失败", "error", err)
 		}
 		updates["avatar"] = meta.URL
 	}
@@ -147,15 +160,16 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.Upd
 
 	// 执行更新
 	if err := s.userRepository.Update(ctx, userID, updates); err != nil {
-		return errors.Database().Msg("更新用户失败").Err(err).Field("user", user).Log()
+		s.logMgr.Error("更新用户失败", "error", err, "user", user)
+		return errors.New("更新用户失败")
 	}
 
 	// 删除相关缓存
 	if err := s.cacheMgr.DeleteByContainsList(ctx, "user", []map[string]any{{"id": userID}, {"nickname": existingUser.Nickname}, {"username": existingUser.Username}, {"nickname": user.Nickname}}); err != nil {
-		errors.Database().Msg("删除缓存失败").Err(err).Field("user_id", userID).Log() // 记录日志，但继续执行
+		s.logMgr.Warn("删除缓存失败", "error", err, "user_id", userID)
 	}
 	if err := s.cacheMgr.DeleteByPrefix(ctx, "list_users:"); err != nil {
-		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
+		s.logMgr.Warn("删除缓存失败", "error", err)
 	}
 
 	return nil
@@ -165,7 +179,8 @@ func (s *UserService) ListUsers(ctx context.Context, page, pageSize int, conds m
 	usersPagination, err := cache.NewBuilder[dto.PaginationResponse[dto.UserListResponse]](s.cacheMgr).Key(fmt.Sprintf("list_users:%v", conds)).TTL(10*time.Minute).GetOrSet(ctx, func() (*dto.PaginationResponse[dto.UserListResponse], error) {
 		users, total, err := s.userRepository.List(ctx, page, pageSize, conds)
 		if err != nil {
-			return nil, errors.Database().Msg("获取用户列表失败").Err(err).Field("conds", conds).Log()
+			s.logMgr.Error("获取用户列表失败", "error", err, "conds", conds)
+			return nil, errors.New("获取用户列表失败")
 		}
 		usersResponse := make([]dto.UserListResponse, len(users))
 		for i, user := range users {
@@ -186,7 +201,7 @@ func (s *UserService) ListUsers(ctx context.Context, page, pageSize int, conds m
 		}, nil
 	})
 	if err != nil {
-		return nil, errors.NotFound().Msg("未找到用户列表").Err(err).Build()
+		return nil, err
 	}
 	return usersPagination, nil
 }
@@ -195,7 +210,7 @@ func (s *UserService) DeleteUser(ctx context.Context, userID uint) error {
 	lockKey := fmt.Sprintf("user:delete:%v", userID)
 	lock := s.redisMgr.NewDistributedLock(lockKey, 10*time.Second)
 	if err := lock.Acquire(ctx); err != nil {
-		return errors.Internal().Msg("系统繁忙，请稍后再试").Err(err).Field("user_id", userID).Build()
+		return errors.New("系统繁忙，请稍后再试")
 	}
 	defer lock.Release(ctx)
 
@@ -205,14 +220,15 @@ func (s *UserService) DeleteUser(ctx context.Context, userID uint) error {
 	}
 
 	if err := s.userRepository.Delete(ctx, userID); err != nil {
-		return errors.Database().Msg("删除用户失败").Err(err).Field("user_id", userID).Log()
+		s.logMgr.Error("删除用户失败", "error", err, "user_id", userID)
+		return errors.New("删除用户失败")
 	}
 
 	if err := s.cacheMgr.DeleteByContainsList(ctx, "user", []map[string]any{{"id": userID}, {"nickname": user.Nickname}, {"username": user.Username}}); err != nil {
-		errors.Database().Msg("删除缓存失败").Err(err).Field("user_id", userID).Log() // 记录日志，但继续执行
+		s.logMgr.Warn("删除缓存失败", "error", err, "user_id", userID)
 	}
 	if err := s.cacheMgr.DeleteByPrefix(ctx, "list_users:"); err != nil {
-		errors.Database().Msg("删除缓存失败").Err(err).Log() // 记录日志，但继续执行
+		s.logMgr.Warn("删除缓存失败", "error", err)
 	}
 	s.logMgr.Info("用户删除成功", "userID", userID)
 	return nil
