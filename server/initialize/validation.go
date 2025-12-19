@@ -1,7 +1,8 @@
 package initialize
 
 import (
-	"github.com/3086953492/gokit/errors"
+	"errors"
+
 	"github.com/3086953492/gokit/validator"
 )
 
@@ -14,7 +15,7 @@ func RegisterValidations(container *Container) error {
 			Func:    container.UserValidator.UsernameUnique,
 		},
 	}); err != nil {
-		return errors.Internal().Msg("注册自定义规则失败").Err(err).Log()
+		return errors.New("注册自定义规则失败")
 	}
 
 	return nil
