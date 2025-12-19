@@ -40,6 +40,7 @@ request.interceptors.request.use(
 
 /**
  * 检测响应是否符合 ApiResponse 结构
+ * 注意：data 字段是可选的，后端在无数据时可能省略此字段
  */
 function isApiResponse(data: unknown): data is ApiResponse {
   return (
@@ -47,7 +48,6 @@ function isApiResponse(data: unknown): data is ApiResponse {
     data !== null &&
     'code' in data &&
     'message' in data &&
-    'data' in data &&
     typeof (data as ApiResponse).code === 'number' &&
     typeof (data as ApiResponse).message === 'string'
   )
@@ -75,7 +75,7 @@ request.interceptors.response.use(
   (response: AxiosResponse) => {
     const res = response.data
 
-    // 严格校验响应结构：必须是 { code, message, data }
+    // 严格校验响应结构：必须是 { code, message, data? }
     if (!isApiResponse(res)) {
       const errorMsg = '响应格式错误'
       ElMessage.error(errorMsg)
