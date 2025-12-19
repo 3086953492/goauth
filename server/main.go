@@ -53,7 +53,7 @@ func main() {
 	defer logMgr.Close()
 
 	// 初始化数据库
-	dsn := database.BuildMySQLDSN(cfg.Database)
+	dsn := database.BuildMySQLDSN(database.MySQLConfig(cfg.Database))
 	dbManager, err := database.NewManager(mysql.Open(dsn))
 	if err != nil {
 		logMgr.Error("初始化数据库失败", "dsn", dsn, "error", err)
