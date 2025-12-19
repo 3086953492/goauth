@@ -41,6 +41,22 @@ func (r *UserRepository) Get(ctx context.Context, conds map[string]any) (*models
 	return &user, nil
 }
 
+// GetWithDeleted 根据传入的条件查询用户（包含已软删除的记录）
+func (r *UserRepository) GetWithDeleted(ctx context.Context, conds map[string]any) (*models.User, error) {
+	var user models.User
+	query := r.db.WithContext(ctx).Unscoped().Model(&models.User{})
+
+	for key, value := range conds {
+		query = query.Where(key, value)
+	}
+
+	if err := query.First(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 // Update 更新用户信息
 func (r *UserRepository) Update(ctx context.Context, id uint, updates map[string]any) error {
 	return r.db.WithContext(ctx).Model(&models.User{}).Where("id = ?", id).Updates(updates).Error

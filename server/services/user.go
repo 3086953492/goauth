@@ -106,6 +106,19 @@ func (s *UserService) GetUser(ctx context.Context, conds map[string]any) (*model
 	return user, nil
 }
 
+// GetUserWithDeleted 获取用户（包含已软删除的记录），用于唯一性验证
+func (s *UserService) GetUserWithDeleted(ctx context.Context, conds map[string]any) (*models.User, error) {
+	user, err := s.userRepository.GetWithDeleted(ctx, conds)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("用户不存在")
+		}
+		s.logMgr.Error("获取用户失败", "error", err, "conds", conds)
+		return nil, errors.New("系统繁忙，请稍后再试")
+	}
+	return user, nil
+}
+
 func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.UpdateUserForm, avatarFile *utils.FormFileResult) error {
 
 	// 获取更新前的用户信息
