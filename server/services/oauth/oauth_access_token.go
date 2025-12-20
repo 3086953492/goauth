@@ -1,4 +1,4 @@
-package services
+package oauthservices
 
 import (
 	"context"
@@ -14,6 +14,7 @@ import (
 	"goauth/dto"
 	"goauth/models"
 	"goauth/repositories/oauth"
+	"goauth/services"
 	"goauth/utils"
 )
 
@@ -24,7 +25,7 @@ type OAuthAccessTokenService struct {
 
 	oauthAuthorizationCodeService *OAuthAuthorizationCodeService
 
-	userService *UserService
+	userService *services.UserService
 
 	oauthClientService *OAuthClientService
 
@@ -39,7 +40,7 @@ func NewOAuthAccessTokenService(
 	db *gorm.DB,
 	oauthAccessTokenRepository *oauthrepositories.OAuthAccessTokenRepository,
 	oauthAuthorizationCodeService *OAuthAuthorizationCodeService,
-	userService *UserService,
+	userService *services.UserService,
 	oauthClientService *OAuthClientService,
 	oauthRefreshTokenService *OAuthRefreshTokenService,
 	jwtManager *jwt.Manager,

@@ -9,15 +9,15 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"goauth/dto"
-	"goauth/services"
+	"goauth/services/oauth"
 )
 
 type OAuthClientController struct {
-	oauthClientService *services.OAuthClientService
+	oauthClientService *oauthservices.OAuthClientService
 	validatorManager   *validator.Manager
 }
 
-func NewOAuthClientController(oauthClientService *services.OAuthClientService, validatorManager *validator.Manager) *OAuthClientController {
+func NewOAuthClientController(oauthClientService *oauthservices.OAuthClientService, validatorManager *validator.Manager) *OAuthClientController {
 	return &OAuthClientController{oauthClientService: oauthClientService, validatorManager: validatorManager}
 }
 

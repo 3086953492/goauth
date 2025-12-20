@@ -8,21 +8,21 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"goauth/dto"
-	"goauth/services"
+	"goauth/services/oauth"
 	"goauth/utils"
 )
 
 type OAuthController struct {
-	oauthAuthorizationCodeService *services.OAuthAuthorizationCodeService
+	oauthAuthorizationCodeService *oauthservices.OAuthAuthorizationCodeService
 
-	oauthAccessTokenService *services.OAuthAccessTokenService
+	oauthAccessTokenService *oauthservices.OAuthAccessTokenService
 
-	oauthClientService *services.OAuthClientService
+	oauthClientService *oauthservices.OAuthClientService
 
 	cfg *config.Config
 }
 
-func NewOAuthController(oauthAuthorizationCodeService *services.OAuthAuthorizationCodeService, oauthAccessTokenService *services.OAuthAccessTokenService, oauthClientService *services.OAuthClientService, cfg *config.Config) *OAuthController {
+func NewOAuthController(oauthAuthorizationCodeService *oauthservices.OAuthAuthorizationCodeService, oauthAccessTokenService *oauthservices.OAuthAccessTokenService, oauthClientService *oauthservices.OAuthClientService, cfg *config.Config) *OAuthController {
 	return &OAuthController{oauthAuthorizationCodeService: oauthAuthorizationCodeService, oauthAccessTokenService: oauthAccessTokenService, oauthClientService: oauthClientService, cfg: cfg}
 }
 
