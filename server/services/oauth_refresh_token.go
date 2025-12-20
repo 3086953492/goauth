@@ -12,17 +12,17 @@ import (
 	"gorm.io/gorm"
 
 	"goauth/models"
-	"goauth/repositories"
+	"goauth/repositories/oauth"
 )
 
 type OAuthRefreshTokenService struct {
-	oauthRefreshTokenRepository *repositories.OAuthRefreshTokenRepository
+	oauthRefreshTokenRepository *oauthrepositories.OAuthRefreshTokenRepository
 	jwtManager                  *jwt.Manager
 	cfg                         *config.Config
 	logMgr                      *logger.Manager
 }
 
-func NewOAuthRefreshTokenService(oauthRefreshTokenRepository *repositories.OAuthRefreshTokenRepository, jwtManager *jwt.Manager, cfg *config.Config, logMgr *logger.Manager) *OAuthRefreshTokenService {
+func NewOAuthRefreshTokenService(oauthRefreshTokenRepository *oauthrepositories.OAuthRefreshTokenRepository, jwtManager *jwt.Manager, cfg *config.Config, logMgr *logger.Manager) *OAuthRefreshTokenService {
 	return &OAuthRefreshTokenService{oauthRefreshTokenRepository: oauthRefreshTokenRepository, jwtManager: jwtManager, cfg: cfg, logMgr: logMgr}
 }
 

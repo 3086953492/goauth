@@ -13,14 +13,14 @@ import (
 
 	"goauth/dto"
 	"goauth/models"
-	"goauth/repositories"
+	"goauth/repositories/oauth"
 	"goauth/utils"
 )
 
 type OAuthAccessTokenService struct {
 	db *gorm.DB
 
-	oauthAccessTokenRepository *repositories.OAuthAccessTokenRepository
+	oauthAccessTokenRepository *oauthrepositories.OAuthAccessTokenRepository
 
 	oauthAuthorizationCodeService *OAuthAuthorizationCodeService
 
@@ -37,7 +37,7 @@ type OAuthAccessTokenService struct {
 
 func NewOAuthAccessTokenService(
 	db *gorm.DB,
-	oauthAccessTokenRepository *repositories.OAuthAccessTokenRepository,
+	oauthAccessTokenRepository *oauthrepositories.OAuthAccessTokenRepository,
 	oauthAuthorizationCodeService *OAuthAuthorizationCodeService,
 	userService *UserService,
 	oauthClientService *OAuthClientService,

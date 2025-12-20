@@ -13,6 +13,7 @@ import (
 	"goauth/controllers"
 	"goauth/middleware"
 	"goauth/repositories"
+	"goauth/repositories/oauth"
 	"goauth/services"
 	"goauth/validations"
 )
@@ -29,17 +30,17 @@ type Container struct {
 	AuthService    *services.AuthService
 	AuthController *controllers.AuthController
 
-	OAuthClientRepository *repositories.OAuthClientRepository
+	OAuthClientRepository *oauthrepositories.OAuthClientRepository
 	OAuthClientService    *services.OAuthClientService
 	OAuthClientController *controllers.OAuthClientController
 
-	OAuthAuthorizationCodeRepository *repositories.OAuthAuthorizationCodeRepository
+	OAuthAuthorizationCodeRepository *oauthrepositories.OAuthAuthorizationCodeRepository
 	OAuthAuthorizationCodeService    *services.OAuthAuthorizationCodeService
 
-	OAuthRefreshTokenRepository *repositories.OAuthRefreshTokenRepository
+	OAuthRefreshTokenRepository *oauthrepositories.OAuthRefreshTokenRepository
 	OAuthRefreshTokenService    *services.OAuthRefreshTokenService
 
-	OAuthAccessTokenRepository *repositories.OAuthAccessTokenRepository
+	OAuthAccessTokenRepository *oauthrepositories.OAuthAccessTokenRepository
 	OAuthAccessTokenService    *services.OAuthAccessTokenService
 
 	OAuthController *controllers.OAuthController
@@ -65,17 +66,17 @@ func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager
 	c.AuthService = services.NewAuthService(c.UserRepository, c.UserService, c.LogManager, c.JwtManager, cfg)
 	c.AuthController = controllers.NewAuthController(c.AuthService, validatorManager)
 
-	c.OAuthClientRepository = repositories.NewOAuthClientRepository(db)
+	c.OAuthClientRepository = oauthrepositories.NewOAuthClientRepository(db)
 	c.OAuthClientService = services.NewOAuthClientService(c.OAuthClientRepository, cacheMgr, c.LogManager)
 	c.OAuthClientController = controllers.NewOAuthClientController(c.OAuthClientService, validatorManager)
 
-	c.OAuthAuthorizationCodeRepository = repositories.NewOAuthAuthorizationCodeRepository(db)
+	c.OAuthAuthorizationCodeRepository = oauthrepositories.NewOAuthAuthorizationCodeRepository(db)
 	c.OAuthAuthorizationCodeService = services.NewOAuthAuthorizationCodeService(c.OAuthAuthorizationCodeRepository, c.OAuthClientService, cfg, c.LogManager)
 
-	c.OAuthRefreshTokenRepository = repositories.NewOAuthRefreshTokenRepository(db)
+	c.OAuthRefreshTokenRepository = oauthrepositories.NewOAuthRefreshTokenRepository(db)
 	c.OAuthRefreshTokenService = services.NewOAuthRefreshTokenService(c.OAuthRefreshTokenRepository, c.JwtManager, cfg, c.LogManager)
 
-	c.OAuthAccessTokenRepository = repositories.NewOAuthAccessTokenRepository(db)
+	c.OAuthAccessTokenRepository = oauthrepositories.NewOAuthAccessTokenRepository(db)
 	c.OAuthAccessTokenService = services.NewOAuthAccessTokenService(db, c.OAuthAccessTokenRepository, c.OAuthAuthorizationCodeService, c.UserService, c.OAuthClientService, c.OAuthRefreshTokenService, c.JwtManager, c.LogManager, cfg)
 
 	c.OAuthController = controllers.NewOAuthController(c.OAuthAuthorizationCodeService, c.OAuthAccessTokenService, c.OAuthClientService, cfg)

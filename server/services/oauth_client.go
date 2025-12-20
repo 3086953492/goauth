@@ -11,16 +11,16 @@ import (
 
 	"goauth/dto"
 	"goauth/models"
-	"goauth/repositories"
+	"goauth/repositories/oauth"
 )
 
 type OAuthClientService struct {
-	oauthClientRepository *repositories.OAuthClientRepository
+	oauthClientRepository *oauthrepositories.OAuthClientRepository
 	cacheMgr              *cache.Manager
 	logMgr                *logger.Manager
 }
 
-func NewOAuthClientService(oauthClientRepository *repositories.OAuthClientRepository, cacheMgr *cache.Manager, logMgr *logger.Manager) *OAuthClientService {
+func NewOAuthClientService(oauthClientRepository *oauthrepositories.OAuthClientRepository, cacheMgr *cache.Manager, logMgr *logger.Manager) *OAuthClientService {
 	return &OAuthClientService{oauthClientRepository: oauthClientRepository, cacheMgr: cacheMgr, logMgr: logMgr}
 }
 

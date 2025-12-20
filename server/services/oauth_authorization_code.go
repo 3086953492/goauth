@@ -11,17 +11,17 @@ import (
 	"gorm.io/gorm"
 
 	"goauth/models"
-	"goauth/repositories"
+	"goauth/repositories/oauth"
 )
 
 type OAuthAuthorizationCodeService struct {
-	oauthAuthorizationCodeRepository *repositories.OAuthAuthorizationCodeRepository
+	oauthAuthorizationCodeRepository *oauthrepositories.OAuthAuthorizationCodeRepository
 	oauthClientService               *OAuthClientService
 	cfg                              *config.Config
 	logMgr                           *logger.Manager
 }
 
-func NewOAuthAuthorizationCodeService(oauthAuthorizationCodeRepository *repositories.OAuthAuthorizationCodeRepository, oauthClientService *OAuthClientService, cfg *config.Config, logMgr *logger.Manager) *OAuthAuthorizationCodeService {
+func NewOAuthAuthorizationCodeService(oauthAuthorizationCodeRepository *oauthrepositories.OAuthAuthorizationCodeRepository, oauthClientService *OAuthClientService, cfg *config.Config, logMgr *logger.Manager) *OAuthAuthorizationCodeService {
 	return &OAuthAuthorizationCodeService{oauthAuthorizationCodeRepository: oauthAuthorizationCodeRepository, oauthClientService: oauthClientService, cfg: cfg, logMgr: logMgr}
 }
 
