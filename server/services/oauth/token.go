@@ -25,7 +25,7 @@ type OAuthTokenService struct {
 	oauthRefreshTokenRepository *oauthrepositories.OAuthRefreshTokenRepository
 
 	oauthAuthorizeService *OAuthAuthorizeService
-
+	oauthRevokeService *OAuthRevokeService
 	userService *services.UserService
 
 	oauthClientService *OAuthClientService
@@ -40,6 +40,7 @@ func NewOAuthTokenService(
 	oauthAccessTokenRepository *oauthrepositories.OAuthAccessTokenRepository,
 	oauthRefreshTokenRepository *oauthrepositories.OAuthRefreshTokenRepository,
 	oauthAuthorizeService *OAuthAuthorizeService,
+	oauthRevokeService *OAuthRevokeService,
 	userService *services.UserService,
 	oauthClientService *OAuthClientService,
 	jwtManager *jwt.Manager,
@@ -51,6 +52,7 @@ func NewOAuthTokenService(
 		oauthAccessTokenRepository:  oauthAccessTokenRepository,
 		oauthRefreshTokenRepository: oauthRefreshTokenRepository,
 		oauthAuthorizeService:       oauthAuthorizeService,
+		oauthRevokeService:          oauthRevokeService,
 		userService:                 userService,
 		oauthClientService:          oauthClientService,
 		jwtManager:                  jwtManager,
@@ -222,7 +224,7 @@ func (s *OAuthTokenService) RefreshAccessToken(ctx context.Context, form *oauthd
 		}
 
 		// 在事务中撤销旧的 refresh token
-		if err := s.RevokeRefreshTokenWithTx(ctx, tx, refreshToken.ID); err != nil {
+		if err := s.oauthRevokeService.RevokeToken(ctx, refreshToken.RefreshToken, "refresh_token", refreshToken.ClientID); err != nil {
 			return err
 		}
 
@@ -314,13 +316,4 @@ func (s *OAuthTokenService) GetOAuthRefreshToken(ctx context.Context, conds map[
 		return nil, errors.New("系统繁忙，请稍后再试")
 	}
 	return refreshToken, nil
-}
-
-// RevokeRefreshTokenWithTx 在事务中撤销刷新令牌
-func (s *OAuthTokenService) RevokeRefreshTokenWithTx(ctx context.Context, tx *gorm.DB, id uint) error {
-	if err := tx.WithContext(ctx).Model(&oauthmodels.OAuthRefreshToken{}).Where("id = ?", id).Update("revoked", true).Error; err != nil {
-		s.logMgr.Error("撤销刷新令牌失败", "error", err, "id", id)
-		return errors.New("撤销刷新令牌失败")
-	}
-	return nil
 }

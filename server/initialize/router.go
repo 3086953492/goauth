@@ -15,11 +15,12 @@ func InitRouters(container *Container) *gin.Engine {
 	// 注册路由
 	routers.LoadAuthRoutes(router, container.AuthController, container.MiddlewareManager)
 	routers.LoadUserRoutes(router, container.UserController, container.MiddlewareManager)
-	
+
 	oauthrouters.LoadOAuthClientRoutes(router, container.OAuthClientController, container.MiddlewareManager)
 	oauthrouters.LoadOAuthAuthorizeRoutes(router, container.OAuthAuthorizeController, container.MiddlewareManager)
 	oauthrouters.LoadOAuthIntrospectRoutes(router, container.OAuthIntrospectController, container.MiddlewareManager)
 	oauthrouters.LoadOAuthTokenRoutes(router, container.OAuthTokenController, container.MiddlewareManager)
+	oauthrouters.LoadOAuthRevokeRoutes(router, container.OAuthRevokeController)
 
 	return router
 }
