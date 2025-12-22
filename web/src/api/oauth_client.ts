@@ -12,7 +12,7 @@ export const listOAuthClients = (params?: {
   status?: number | string
 }): Promise<ApiResponse<PaginationResponse<OAuthClientListResponse>>> => {
   return request({
-    url: '/api/v1/oauth_clients',
+    url: '/api/v1/oauth/clients',
     method: 'get',
     params
   })
@@ -23,7 +23,7 @@ export const listOAuthClients = (params?: {
  */
 export const createOAuthClient = (data: CreateOAuthClientRequest): Promise<ApiResponse<null>> => {
   return request({
-    url: '/api/v1/oauth_clients',
+    url: '/api/v1/oauth/clients',
     method: 'post',
     data
   })
@@ -34,7 +34,7 @@ export const createOAuthClient = (data: CreateOAuthClientRequest): Promise<ApiRe
  */
 export const getOAuthClient = (id: number): Promise<ApiResponse<OAuthClientDetailResponse>> => {
   return request({
-    url: `/api/v1/oauth_clients/${id}`,
+    url: `/api/v1/oauth/clients/${id}`,
     method: 'get'
   })
 }
@@ -44,7 +44,7 @@ export const getOAuthClient = (id: number): Promise<ApiResponse<OAuthClientDetai
  */
 export const updateOAuthClient = (id: number, data: UpdateOAuthClientRequest): Promise<ApiResponse<null>> => {
   return request({
-    url: `/api/v1/oauth_clients/${id}`,
+    url: `/api/v1/oauth/clients/${id}`,
     method: 'patch',
     data
   })
@@ -55,7 +55,7 @@ export const updateOAuthClient = (id: number, data: UpdateOAuthClientRequest): P
  */
 export const deleteOAuthClient = (id: number): Promise<ApiResponse<null>> => {
   return request({
-    url: `/api/v1/oauth_clients/${id}`,
+    url: `/api/v1/oauth/clients/${id}`,
     method: 'delete'
   })
 }

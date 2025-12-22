@@ -15,7 +15,7 @@ export interface OAuthAuthorizationParams {
  * 用于直接跳转到后端授权接口，由后端完成重定向
  */
 export const buildAuthorizationUrl = (params: OAuthAuthorizationParams): string => {
-  const url = new URL(`${API_BASE_URL}/api/v1/oauth/authorization`, window.location.origin)
+  const url = new URL(`${API_BASE_URL}/api/v1/oauth/authorize`, window.location.origin)
   
   url.searchParams.set('response_type', params.response_type)
   url.searchParams.set('client_id', params.client_id)
