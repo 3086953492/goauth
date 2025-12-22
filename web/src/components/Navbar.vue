@@ -60,7 +60,7 @@ const goToUsers = () => {
 }
 
 const goToOAuthClients = () => {
-  router.push('/oauth-clients')
+  router.push('/oauth/clients')
 }
 
 const handleLogout = async () => {
