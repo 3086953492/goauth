@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"goauth/routers"
+	"goauth/routers/oauth"
 )
 
 func InitRouters(container *Container) *gin.Engine {
@@ -14,8 +15,11 @@ func InitRouters(container *Container) *gin.Engine {
 	// 注册路由
 	routers.LoadAuthRoutes(router, container.AuthController, container.MiddlewareManager)
 	routers.LoadUserRoutes(router, container.UserController, container.MiddlewareManager)
-	routers.LoadOAuthClientRoutes(router, container.OAuthClientController, container.MiddlewareManager)
-	routers.LoadOAuthRoutes(router, container.OAuthAuthorizationController, container.OAuthTokenController, container.MiddlewareManager)
+	
+	oauthrouters.LoadOAuthClientRoutes(router, container.OAuthClientController, container.MiddlewareManager)
+	oauthrouters.LoadOAuthAuthorizeRoutes(router, container.OAuthAuthorizationController, container.MiddlewareManager)
+	oauthrouters.LoadOAuthIntrospectRoutes(router, container.OAuthTokenController, container.MiddlewareManager)
+	oauthrouters.LoadOAuthTokenRoutes(router, container.OAuthTokenController, container.MiddlewareManager)
 
 	return router
 }
