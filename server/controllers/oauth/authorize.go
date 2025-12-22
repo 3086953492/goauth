@@ -9,7 +9,7 @@ import (
 	"goauth/utils"
 )
 
-type OAuthAuthorizationController struct {
+type OAuthAuthorizeController struct {
 	oauthAuthorizeService *oauthservices.OAuthAuthorizeService
 
 	oauthClientService *oauthservices.OAuthClientService
@@ -17,11 +17,11 @@ type OAuthAuthorizationController struct {
 	cfg *config.Config
 }
 
-func NewOAuthAuthorizationController(oauthAuthorizeService *oauthservices.OAuthAuthorizeService, oauthClientService *oauthservices.OAuthClientService, cfg *config.Config) *OAuthAuthorizationController {
-	return &OAuthAuthorizationController{oauthAuthorizeService: oauthAuthorizeService, oauthClientService: oauthClientService, cfg: cfg}
+func NewOAuthAuthorizeController(oauthAuthorizeService *oauthservices.OAuthAuthorizeService, oauthClientService *oauthservices.OAuthClientService, cfg *config.Config) *OAuthAuthorizeController {
+	return &OAuthAuthorizeController{oauthAuthorizeService: oauthAuthorizeService, oauthClientService: oauthClientService, cfg: cfg}
 }
 
-func (ctrl *OAuthAuthorizationController) AuthorizationCodeHandler(ctx *gin.Context) {
+func (ctrl *OAuthAuthorizeController) AuthorizationCodeHandler(ctx *gin.Context) {
 
 	frontendErrorPageURL := ctrl.cfg.Server.FrontendURL + "/error"
 

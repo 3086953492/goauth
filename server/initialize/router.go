@@ -17,7 +17,7 @@ func InitRouters(container *Container) *gin.Engine {
 	routers.LoadUserRoutes(router, container.UserController, container.MiddlewareManager)
 	
 	oauthrouters.LoadOAuthClientRoutes(router, container.OAuthClientController, container.MiddlewareManager)
-	oauthrouters.LoadOAuthAuthorizeRoutes(router, container.OAuthAuthorizationController, container.MiddlewareManager)
+	oauthrouters.LoadOAuthAuthorizeRoutes(router, container.OAuthAuthorizeController, container.MiddlewareManager)
 	oauthrouters.LoadOAuthIntrospectRoutes(router, container.OAuthIntrospectController, container.MiddlewareManager)
 	oauthrouters.LoadOAuthTokenRoutes(router, container.OAuthTokenController, container.MiddlewareManager)
 

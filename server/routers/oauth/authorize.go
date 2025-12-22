@@ -7,7 +7,7 @@ import (
 	"goauth/middleware"
 )
 
-func LoadOAuthAuthorizeRoutes(router *gin.Engine, oauthAuthorizationController *oauthcontrollers.OAuthAuthorizationController, m *middleware.Manager) {
+func LoadOAuthAuthorizeRoutes(router *gin.Engine, oauthAuthorizeController *oauthcontrollers.OAuthAuthorizeController, m *middleware.Manager) {
 	oauthAuthorizeRouter := router.Group("/api/v1/oauth/authorize")
-	oauthAuthorizeRouter.GET("", m.Auth(), oauthAuthorizationController.AuthorizationCodeHandler)
+	oauthAuthorizeRouter.GET("", m.Auth(), oauthAuthorizeController.AuthorizationCodeHandler)
 }
