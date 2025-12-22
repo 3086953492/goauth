@@ -38,6 +38,7 @@ type OAuthTokenService struct {
 func NewOAuthTokenService(
 	db *gorm.DB,
 	oauthAccessTokenRepository *oauthrepositories.OAuthAccessTokenRepository,
+	oauthRefreshTokenRepository *oauthrepositories.OAuthRefreshTokenRepository,
 	oauthAuthorizeService *OAuthAuthorizeService,
 	userService *services.UserService,
 	oauthClientService *OAuthClientService,
@@ -46,14 +47,15 @@ func NewOAuthTokenService(
 	cfg *config.Config,
 ) *OAuthTokenService {
 	return &OAuthTokenService{
-		db:                            db,
-		oauthAccessTokenRepository:    oauthAccessTokenRepository,
-		oauthAuthorizeService:         oauthAuthorizeService,
-		userService:                   userService,
-		oauthClientService:            oauthClientService,
-		jwtManager:                    jwtManager,
-		logMgr:                        logMgr,
-		cfg:                           cfg,
+		db:                          db,
+		oauthAccessTokenRepository:  oauthAccessTokenRepository,
+		oauthRefreshTokenRepository: oauthRefreshTokenRepository,
+		oauthAuthorizeService:       oauthAuthorizeService,
+		userService:                 userService,
+		oauthClientService:          oauthClientService,
+		jwtManager:                  jwtManager,
+		logMgr:                      logMgr,
+		cfg:                         cfg,
 	}
 }
 
@@ -125,9 +127,9 @@ func (s *OAuthTokenService) ExchangeAccessToken(ctx context.Context, form *oauth
 			return errors.New("创建OAuth访问令牌失败")
 		}
 
-		// 在事务中使用保存后的 accessToken.ID 生成 refresh token
+		// 在事务中生成并保存 refresh token
 		var genErr error
-		refreshTokenString, genErr = s.jwtManager.GenerateRefreshToken(strconv.FormatUint(uint64(user.ID), 10))
+		refreshTokenString, genErr = s.GenerateRefreshTokenWithTx(ctx, tx, accessToken.ID, accessToken.ClientID, accessToken.Scope, oauthAuthorizationCode.UserID, user.Username, user.Role)
 		if genErr != nil {
 			return genErr
 		}
