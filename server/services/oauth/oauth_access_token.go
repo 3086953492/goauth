@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 
 	"goauth/dto"
-	"goauth/models"
+	"goauth/models/oauth"
 	"goauth/repositories/oauth"
 	"goauth/services"
 	"goauth/utils"
@@ -103,7 +103,7 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 		return nil, errors.New("生成访问令牌失败")
 	}
 
-	accessToken := &models.OAuthAccessToken{
+	accessToken := &oauthmodels.OAuthAccessToken{
 		AccessToken: accessTokenString,
 		TokenType:   "Bearer",
 		ExpiresAt:   time.Now().Add(s.cfg.OAuth.AccessTokenExpire),
@@ -242,7 +242,7 @@ func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *
 		return nil, errors.New("刷新访问令牌失败")
 	}
 
-	accessToken := &models.OAuthAccessToken{
+	accessToken := &oauthmodels.OAuthAccessToken{
 		AccessToken: accessTokenString,
 		TokenType:   "Bearer",
 		ExpiresAt:   time.Now().Add(s.cfg.OAuth.AccessTokenExpire),

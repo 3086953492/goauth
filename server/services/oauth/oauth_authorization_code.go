@@ -10,7 +10,7 @@ import (
 	"github.com/3086953492/gokit/logger"
 	"gorm.io/gorm"
 
-	"goauth/models"
+	"goauth/models/oauth"
 	"goauth/repositories/oauth"
 )
 
@@ -33,7 +33,7 @@ func (s *OAuthAuthorizationCodeService) GenerateAuthorizationCode(ctx context.Co
 		return "", errors.New("生成授权码失败")
 	}
 
-	code := &models.OAuthAuthorizationCode{
+	code := &oauthmodels.OAuthAuthorizationCode{
 		Code:        codeString,
 		UserID:      userID,
 		ClientID:    clientID,
@@ -49,7 +49,7 @@ func (s *OAuthAuthorizationCodeService) GenerateAuthorizationCode(ctx context.Co
 	return codeString, nil
 }
 
-func (s *OAuthAuthorizationCodeService) GetOAuthAuthorizationCode(ctx context.Context, conds map[string]any) (*models.OAuthAuthorizationCode, error) {
+func (s *OAuthAuthorizationCodeService) GetOAuthAuthorizationCode(ctx context.Context, conds map[string]any) (*oauthmodels.OAuthAuthorizationCode, error) {
 	oauthAuthorizationCode, err := s.oauthAuthorizationCodeRepository.Get(ctx, conds)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {

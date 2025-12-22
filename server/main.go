@@ -22,6 +22,7 @@ import (
 
 	"goauth/initialize"
 	"goauth/models"
+	"goauth/models/oauth"
 )
 
 func main() {
@@ -63,10 +64,10 @@ func main() {
 
 	models := []any{
 		models.User{},
-		models.OAuthClient{},
-		models.OAuthAuthorizationCode{},
-		models.OAuthAccessToken{},
-		models.OAuthRefreshToken{},
+		oauthmodels.OAuthClient{},
+		oauthmodels.OAuthAuthorizationCode{},
+		oauthmodels.OAuthAccessToken{},
+		oauthmodels.OAuthRefreshToken{},
 	}
 
 	if err := dbManager.AutoMigrate(models...); err != nil {

@@ -11,7 +11,7 @@ import (
 	"github.com/3086953492/gokit/logger"
 	"gorm.io/gorm"
 
-	"goauth/models"
+	"goauth/models/oauth"
 	"goauth/repositories/oauth"
 )
 
@@ -33,7 +33,7 @@ func (s *OAuthRefreshTokenService) GenerateRefreshToken(ctx context.Context, acc
 		return "", errors.New("生成刷新令牌失败")
 	}
 
-	refreshToken := &models.OAuthRefreshToken{
+	refreshToken := &oauthmodels.OAuthRefreshToken{
 		RefreshToken:  refreshTokenString,
 		AccessTokenID: accessTokenID,
 		ClientID:      clientID,
@@ -58,7 +58,7 @@ func (s *OAuthRefreshTokenService) GenerateRefreshTokenWithTx(ctx context.Contex
 		return "", errors.New("生成刷新令牌失败")
 	}
 
-	refreshToken := &models.OAuthRefreshToken{
+	refreshToken := &oauthmodels.OAuthRefreshToken{
 		RefreshToken:  refreshTokenString,
 		AccessTokenID: accessTokenID,
 		ClientID:      clientID,
@@ -76,7 +76,7 @@ func (s *OAuthRefreshTokenService) GenerateRefreshTokenWithTx(ctx context.Contex
 }
 
 // GetOAuthRefreshToken 根据条件查询刷新令牌
-func (s *OAuthRefreshTokenService) GetOAuthRefreshToken(ctx context.Context, conds map[string]any) (*models.OAuthRefreshToken, error) {
+func (s *OAuthRefreshTokenService) GetOAuthRefreshToken(ctx context.Context, conds map[string]any) (*oauthmodels.OAuthRefreshToken, error) {
 	refreshToken, err := s.oauthRefreshTokenRepository.Get(ctx, conds)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -90,7 +90,7 @@ func (s *OAuthRefreshTokenService) GetOAuthRefreshToken(ctx context.Context, con
 
 // RevokeRefreshTokenWithTx 在事务中撤销刷新令牌
 func (s *OAuthRefreshTokenService) RevokeRefreshTokenWithTx(ctx context.Context, tx *gorm.DB, id uint) error {
-	if err := tx.WithContext(ctx).Model(&models.OAuthRefreshToken{}).Where("id = ?", id).Update("revoked", true).Error; err != nil {
+	if err := tx.WithContext(ctx).Model(&oauthmodels.OAuthRefreshToken{}).Where("id = ?", id).Update("revoked", true).Error; err != nil {
 		s.logMgr.Error("撤销刷新令牌失败", "error", err, "id", id)
 		return errors.New("撤销刷新令牌失败")
 	}

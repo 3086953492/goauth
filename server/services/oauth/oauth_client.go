@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"goauth/dto"
-	"goauth/models"
+	"goauth/models/oauth"
 	"goauth/repositories/oauth"
 )
 
@@ -25,7 +25,7 @@ func NewOAuthClientService(oauthClientRepository *oauthrepositories.OAuthClientR
 }
 
 func (s *OAuthClientService) CreateOAuthClient(ctx context.Context, req *dto.CreateOAuthClientRequest) error {
-	client := &models.OAuthClient{
+	client := &oauthmodels.OAuthClient{
 		ClientSecret: req.ClientSecret,
 		Name:         req.Name,
 		Description:  req.Description,

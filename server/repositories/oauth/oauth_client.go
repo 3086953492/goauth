@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"goauth/models"
+	"goauth/models/oauth"
 )
 
 // OAuthClientRepository OAuth客户端仓库实现
@@ -21,14 +21,14 @@ func NewOAuthClientRepository(db *gorm.DB) *OAuthClientRepository {
 }
 
 // Create 创建OAuth客户端
-func (r *OAuthClientRepository) Create(ctx context.Context, client *models.OAuthClient) error {
+func (r *OAuthClientRepository) Create(ctx context.Context, client *oauthmodels.OAuthClient) error {
 	return r.db.WithContext(ctx).Create(client).Error
 }
 
 // Get 根据传入的条件查询OAuth客户端
-func (r *OAuthClientRepository) Get(ctx context.Context, conds map[string]any) (*models.OAuthClient, error) {
-	var client models.OAuthClient
-	query := r.db.WithContext(ctx).Model(&models.OAuthClient{})
+func (r *OAuthClientRepository) Get(ctx context.Context, conds map[string]any) (*oauthmodels.OAuthClient, error) {
+	var client oauthmodels.OAuthClient
+	query := r.db.WithContext(ctx).Model(&oauthmodels.OAuthClient{})
 
 	for key, value := range conds {
 		query = query.Where(key, value)
@@ -43,21 +43,21 @@ func (r *OAuthClientRepository) Get(ctx context.Context, conds map[string]any) (
 
 // Update 更新OAuth客户端信息
 func (r *OAuthClientRepository) Update(ctx context.Context, id uint, updates map[string]any) error {
-	return r.db.WithContext(ctx).Model(&models.OAuthClient{}).Where("id = ?", id).Updates(updates).Error
+	return r.db.WithContext(ctx).Model(&oauthmodels.OAuthClient{}).Where("id = ?", id).Updates(updates).Error
 }
 
 // Delete 软删除OAuth客户端
 func (r *OAuthClientRepository) Delete(ctx context.Context, id uint) error {
-	return r.db.WithContext(ctx).Delete(&models.OAuthClient{}, id).Error
+	return r.db.WithContext(ctx).Delete(&oauthmodels.OAuthClient{}, id).Error
 }
 
 // List 分页查询OAuth客户端列表
-func (r *OAuthClientRepository) List(ctx context.Context, page, pageSize int, conds map[string]any) ([]models.OAuthClient, int64, error) {
-	var clients []models.OAuthClient
+func (r *OAuthClientRepository) List(ctx context.Context, page, pageSize int, conds map[string]any) ([]oauthmodels.OAuthClient, int64, error) {
+	var clients []oauthmodels.OAuthClient
 	var total int64
 
 	// 计算总数
-	query := r.db.WithContext(ctx).Model(&models.OAuthClient{})
+	query := r.db.WithContext(ctx).Model(&oauthmodels.OAuthClient{})
 	for key, value := range conds {
 		query = query.Where(key, value)
 	}

@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"goauth/models"
+	"goauth/models/oauth"
 )
 
 // OAuthAccessTokenRepository OAuth访问令牌仓库实现
@@ -21,19 +21,19 @@ func NewOAuthAccessTokenRepository(db *gorm.DB) *OAuthAccessTokenRepository {
 }
 
 // Create 创建OAuth访问令牌
-func (r *OAuthAccessTokenRepository) Create(ctx context.Context, token *models.OAuthAccessToken) error {
+func (r *OAuthAccessTokenRepository) Create(ctx context.Context, token *oauthmodels.OAuthAccessToken) error {
 	return r.db.WithContext(ctx).Create(token).Error
 }
 
 // CreateWithTx 在事务中创建OAuth访问令牌
-func (r *OAuthAccessTokenRepository) CreateWithTx(ctx context.Context, tx *gorm.DB, token *models.OAuthAccessToken) error {
+func (r *OAuthAccessTokenRepository) CreateWithTx(ctx context.Context, tx *gorm.DB, token *oauthmodels.OAuthAccessToken) error {
 	return tx.WithContext(ctx).Create(token).Error
 }
 
 // Get 根据传入的条件查询OAuth访问令牌
-func (r *OAuthAccessTokenRepository) Get(ctx context.Context, conds map[string]any) (*models.OAuthAccessToken, error) {
-	var token models.OAuthAccessToken
-	query := r.db.WithContext(ctx).Model(&models.OAuthAccessToken{})
+func (r *OAuthAccessTokenRepository) Get(ctx context.Context, conds map[string]any) (*oauthmodels.OAuthAccessToken, error) {
+	var token oauthmodels.OAuthAccessToken
+	query := r.db.WithContext(ctx).Model(&oauthmodels.OAuthAccessToken{})
 
 	for key, value := range conds {
 		query = query.Where(key, value)
@@ -48,21 +48,21 @@ func (r *OAuthAccessTokenRepository) Get(ctx context.Context, conds map[string]a
 
 // Update 更新OAuth访问令牌信息
 func (r *OAuthAccessTokenRepository) Update(ctx context.Context, id uint, updates map[string]any) error {
-	return r.db.WithContext(ctx).Model(&models.OAuthAccessToken{}).Where("id = ?", id).Updates(updates).Error
+	return r.db.WithContext(ctx).Model(&oauthmodels.OAuthAccessToken{}).Where("id = ?", id).Updates(updates).Error
 }
 
 // Delete 软删除OAuth访问令牌
 func (r *OAuthAccessTokenRepository) Delete(ctx context.Context, id uint) error {
-	return r.db.WithContext(ctx).Delete(&models.OAuthAccessToken{}, id).Error
+	return r.db.WithContext(ctx).Delete(&oauthmodels.OAuthAccessToken{}, id).Error
 }
 
 // List 分页查询OAuth访问令牌列表
-func (r *OAuthAccessTokenRepository) List(ctx context.Context, page, pageSize int, conds map[string]any) ([]models.OAuthAccessToken, int64, error) {
-	var tokens []models.OAuthAccessToken
+func (r *OAuthAccessTokenRepository) List(ctx context.Context, page, pageSize int, conds map[string]any) ([]oauthmodels.OAuthAccessToken, int64, error) {
+	var tokens []oauthmodels.OAuthAccessToken
 	var total int64
 
 	// 计算总数
-	query := r.db.WithContext(ctx).Model(&models.OAuthAccessToken{})
+	query := r.db.WithContext(ctx).Model(&oauthmodels.OAuthAccessToken{})
 	for key, value := range conds {
 		query = query.Where(key, value)
 	}

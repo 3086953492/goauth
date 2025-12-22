@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"goauth/models"
+	"goauth/models/oauth"
 )
 
 // OAuthRefreshTokenRepository OAuth刷新令牌仓库实现
@@ -21,19 +21,19 @@ func NewOAuthRefreshTokenRepository(db *gorm.DB) *OAuthRefreshTokenRepository {
 }
 
 // Create 创建OAuth刷新令牌
-func (r *OAuthRefreshTokenRepository) Create(ctx context.Context, token *models.OAuthRefreshToken) error {
+func (r *OAuthRefreshTokenRepository) Create(ctx context.Context, token *oauthmodels.OAuthRefreshToken) error {
 	return r.db.WithContext(ctx).Create(token).Error
 }
 
 // CreateWithTx 在事务中创建OAuth刷新令牌
-func (r *OAuthRefreshTokenRepository) CreateWithTx(ctx context.Context, tx *gorm.DB, token *models.OAuthRefreshToken) error {
+func (r *OAuthRefreshTokenRepository) CreateWithTx(ctx context.Context, tx *gorm.DB, token *oauthmodels.OAuthRefreshToken) error {
 	return tx.WithContext(ctx).Create(token).Error
 }
 
 // Get 根据传入的条件查询OAuth刷新令牌
-func (r *OAuthRefreshTokenRepository) Get(ctx context.Context, conds map[string]any) (*models.OAuthRefreshToken, error) {
-	var token models.OAuthRefreshToken
-	query := r.db.WithContext(ctx).Model(&models.OAuthRefreshToken{})
+func (r *OAuthRefreshTokenRepository) Get(ctx context.Context, conds map[string]any) (*oauthmodels.OAuthRefreshToken, error) {
+	var token oauthmodels.OAuthRefreshToken
+	query := r.db.WithContext(ctx).Model(&oauthmodels.OAuthRefreshToken{})
 
 	for key, value := range conds {
 		query = query.Where(key, value)
@@ -48,21 +48,21 @@ func (r *OAuthRefreshTokenRepository) Get(ctx context.Context, conds map[string]
 
 // Update 更新OAuth刷新令牌信息
 func (r *OAuthRefreshTokenRepository) Update(ctx context.Context, id uint, updates map[string]any) error {
-	return r.db.WithContext(ctx).Model(&models.OAuthRefreshToken{}).Where("id = ?", id).Updates(updates).Error
+	return r.db.WithContext(ctx).Model(&oauthmodels.OAuthRefreshToken{}).Where("id = ?", id).Updates(updates).Error
 }
 
 // Delete 软删除OAuth刷新令牌
 func (r *OAuthRefreshTokenRepository) Delete(ctx context.Context, id uint) error {
-	return r.db.WithContext(ctx).Delete(&models.OAuthRefreshToken{}, id).Error
+	return r.db.WithContext(ctx).Delete(&oauthmodels.OAuthRefreshToken{}, id).Error
 }
 
 // List 分页查询OAuth刷新令牌列表
-func (r *OAuthRefreshTokenRepository) List(ctx context.Context, page, pageSize int, conds map[string]any) ([]models.OAuthRefreshToken, int64, error) {
-	var tokens []models.OAuthRefreshToken
+func (r *OAuthRefreshTokenRepository) List(ctx context.Context, page, pageSize int, conds map[string]any) ([]oauthmodels.OAuthRefreshToken, int64, error) {
+	var tokens []oauthmodels.OAuthRefreshToken
 	var total int64
 
 	// 计算总数
-	query := r.db.WithContext(ctx).Model(&models.OAuthRefreshToken{})
+	query := r.db.WithContext(ctx).Model(&oauthmodels.OAuthRefreshToken{})
 	for key, value := range conds {
 		query = query.Where(key, value)
 	}

@@ -1,4 +1,4 @@
-package models
+package oauthmodels
 
 import (
 	"time"
