@@ -11,12 +11,12 @@ import (
 	"gorm.io/gorm"
 
 	"goauth/controllers"
-	oauthcontrollers "goauth/controllers/oauth"
+	"goauth/controllers/oauth"
 	"goauth/middleware"
 	"goauth/repositories"
-	oauthrepositories "goauth/repositories/oauth"
+	"goauth/repositories/oauth"
 	"goauth/services"
-	oauthservices "goauth/services/oauth"
+	"goauth/services/oauth"
 	"goauth/validations"
 )
 
@@ -37,7 +37,7 @@ type Container struct {
 	OAuthClientController *oauthcontrollers.OAuthClientController
 
 	OAuthAuthorizationCodeRepository *oauthrepositories.OAuthAuthorizationCodeRepository
-	OAuthAuthorizeService    *oauthservices.OAuthAuthorizeService
+	OAuthAuthorizeService            *oauthservices.OAuthAuthorizeService
 
 	OAuthRefreshTokenRepository *oauthrepositories.OAuthRefreshTokenRepository
 	OAuthAccessTokenRepository  *oauthrepositories.OAuthAccessTokenRepository
