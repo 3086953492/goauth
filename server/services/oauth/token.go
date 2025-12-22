@@ -18,10 +18,11 @@ import (
 	"goauth/utils"
 )
 
-type OAuthAccessTokenService struct {
+type OAuthTokenService struct {
 	db *gorm.DB
 
-	oauthAccessTokenRepository *oauthrepositories.OAuthAccessTokenRepository
+	oauthAccessTokenRepository  *oauthrepositories.OAuthAccessTokenRepository
+	oauthRefreshTokenRepository *oauthrepositories.OAuthRefreshTokenRepository
 
 	oauthAuthorizationCodeService *OAuthAuthorizationCodeService
 
@@ -29,38 +30,34 @@ type OAuthAccessTokenService struct {
 
 	oauthClientService *OAuthClientService
 
-	oauthRefreshTokenService *OAuthRefreshTokenService
-
 	jwtManager *jwt.Manager
 	logMgr     *logger.Manager
 	cfg        *config.Config
 }
 
-func NewOAuthAccessTokenService(
+func NewOAuthTokenService(
 	db *gorm.DB,
 	oauthAccessTokenRepository *oauthrepositories.OAuthAccessTokenRepository,
 	oauthAuthorizationCodeService *OAuthAuthorizationCodeService,
 	userService *services.UserService,
 	oauthClientService *OAuthClientService,
-	oauthRefreshTokenService *OAuthRefreshTokenService,
 	jwtManager *jwt.Manager,
 	logMgr *logger.Manager,
 	cfg *config.Config,
-) *OAuthAccessTokenService {
-	return &OAuthAccessTokenService{
+) *OAuthTokenService {
+	return &OAuthTokenService{
 		db:                            db,
 		oauthAccessTokenRepository:    oauthAccessTokenRepository,
 		oauthAuthorizationCodeService: oauthAuthorizationCodeService,
 		userService:                   userService,
 		oauthClientService:            oauthClientService,
-		oauthRefreshTokenService:      oauthRefreshTokenService,
 		jwtManager:                    jwtManager,
 		logMgr:                        logMgr,
 		cfg:                           cfg,
 	}
 }
 
-func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form *oauthdto.ExchangeAccessTokenForm, clientID, clientSecret string) (*oauthdto.ExchangeAccessTokenResponse, error) {
+func (s *OAuthTokenService) ExchangeAccessToken(ctx context.Context, form *oauthdto.ExchangeAccessTokenForm, clientID, clientSecret string) (*oauthdto.ExchangeAccessTokenResponse, error) {
 
 	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"id": clientID, "client_secret": clientSecret})
 	if err != nil {
@@ -130,7 +127,7 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 
 		// 在事务中使用保存后的 accessToken.ID 生成 refresh token
 		var genErr error
-		refreshTokenString, genErr = s.oauthRefreshTokenService.GenerateRefreshTokenWithTx(ctx, tx, accessToken.ID, oauthAuthorizationCode.ClientID, oauthAuthorizationCode.Scope, oauthAuthorizationCode.UserID, user.Username, user.Role)
+		refreshTokenString, genErr = s.jwtManager.GenerateRefreshToken(strconv.FormatUint(uint64(user.ID), 10))
 		if genErr != nil {
 			return genErr
 		}
@@ -156,7 +153,7 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 	}, nil
 }
 
-func (s *OAuthAccessTokenService) IntrospectAccessToken(ctx context.Context, accessTokenString string) *oauthdto.IntrospectionResponse {
+func (s *OAuthTokenService) IntrospectAccessToken(ctx context.Context, accessTokenString string) *oauthdto.IntrospectionResponse {
 	// 查询访问令牌
 	token, err := s.oauthAccessTokenRepository.Get(ctx, map[string]any{"access_token": accessTokenString})
 	if err != nil {
@@ -196,7 +193,7 @@ func (s *OAuthAccessTokenService) IntrospectAccessToken(ctx context.Context, acc
 	return resp
 }
 
-func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *oauthdto.RefreshAccessTokenForm, clientID, clientSecret string) (*oauthdto.ExchangeAccessTokenResponse, error) {
+func (s *OAuthTokenService) RefreshAccessToken(ctx context.Context, form *oauthdto.RefreshAccessTokenForm, clientID, clientSecret string) (*oauthdto.ExchangeAccessTokenResponse, error) {
 	// 校验客户端合法性
 	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"id": clientID, "client_secret": clientSecret})
 	if err != nil {
@@ -209,7 +206,7 @@ func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *
 	}
 
 	// 查询刷新令牌
-	refreshToken, err := s.oauthRefreshTokenService.GetOAuthRefreshToken(ctx, map[string]any{"refresh_token": form.RefreshToken})
+	refreshToken, err := s.oauthRefreshTokenRepository.Get(ctx, map[string]any{"refresh_token": form.RefreshToken})
 	if err != nil {
 		return nil, err
 	}
@@ -263,13 +260,13 @@ func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *
 		}
 
 		// 在事务中撤销旧的 refresh token
-		if err := s.oauthRefreshTokenService.RevokeRefreshTokenWithTx(ctx, tx, refreshToken.ID); err != nil {
+		if err := s.RevokeRefreshTokenWithTx(ctx, tx, refreshToken.ID); err != nil {
 			return err
 		}
 
 		// 在事务中生成新的 refresh token
 		var genErr error
-		newRefreshTokenString, genErr = s.oauthRefreshTokenService.GenerateRefreshTokenWithTx(ctx, tx, accessToken.ID, refreshToken.ClientID, refreshToken.Scope, refreshToken.UserID, user.Username, user.Role)
+		newRefreshTokenString, genErr = s.GenerateRefreshTokenWithTx(ctx, tx, accessToken.ID, refreshToken.ClientID, refreshToken.Scope, refreshToken.UserID, user.Username, user.Role)
 		if genErr != nil {
 			return genErr
 		}
@@ -293,4 +290,75 @@ func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *
 		Scope:     accessToken.Scope,
 		TokenType: "Bearer",
 	}, nil
+}
+
+func (s *OAuthTokenService) GenerateRefreshToken(ctx context.Context, accessTokenID uint, clientID string, scope string, userID uint, username string, role string) (string, error) {
+	refreshTokenString, err := s.jwtManager.GenerateRefreshToken(strconv.FormatUint(uint64(userID), 10))
+	if err != nil {
+		s.logMgr.Error("生成刷新令牌失败", "error", err)
+		return "", errors.New("生成刷新令牌失败")
+	}
+
+	refreshToken := &oauthmodels.OAuthRefreshToken{
+		RefreshToken:  refreshTokenString,
+		AccessTokenID: accessTokenID,
+		ClientID:      clientID,
+		Scope:         scope,
+		UserID:        userID,
+		ExpiresAt:     time.Now().Add(s.cfg.OAuth.RefreshTokenExpire),
+	}
+
+	if err := s.oauthRefreshTokenRepository.Create(ctx, refreshToken); err != nil {
+		s.logMgr.Error("创建OAuth刷新令牌失败", "error", err)
+		return "", errors.New("创建OAuth刷新令牌失败")
+	}
+
+	return refreshTokenString, nil
+}
+
+// GenerateRefreshTokenWithTx 在事务中生成并保存刷新令牌
+func (s *OAuthTokenService) GenerateRefreshTokenWithTx(ctx context.Context, tx *gorm.DB, accessTokenID uint, clientID string, scope string, userID uint, username string, role string) (string, error) {
+	refreshTokenString, err := s.jwtManager.GenerateRefreshToken(strconv.FormatUint(uint64(userID), 10))
+	if err != nil {
+		s.logMgr.Error("生成刷新令牌失败", "error", err)
+		return "", errors.New("生成刷新令牌失败")
+	}
+
+	refreshToken := &oauthmodels.OAuthRefreshToken{
+		RefreshToken:  refreshTokenString,
+		AccessTokenID: accessTokenID,
+		ClientID:      clientID,
+		Scope:         scope,
+		UserID:        userID,
+		ExpiresAt:     time.Now().Add(s.cfg.OAuth.RefreshTokenExpire),
+	}
+
+	if err := s.oauthRefreshTokenRepository.CreateWithTx(ctx, tx, refreshToken); err != nil {
+		s.logMgr.Error("创建OAuth刷新令牌失败", "error", err)
+		return "", errors.New("创建OAuth刷新令牌失败")
+	}
+
+	return refreshTokenString, nil
+}
+
+// GetOAuthRefreshToken 根据条件查询刷新令牌
+func (s *OAuthTokenService) GetOAuthRefreshToken(ctx context.Context, conds map[string]any) (*oauthmodels.OAuthRefreshToken, error) {
+	refreshToken, err := s.oauthRefreshTokenRepository.Get(ctx, conds)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("刷新令牌不存在")
+		}
+		s.logMgr.Error("获取刷新令牌失败", "error", err, "conds", conds)
+		return nil, errors.New("系统繁忙，请稍后再试")
+	}
+	return refreshToken, nil
+}
+
+// RevokeRefreshTokenWithTx 在事务中撤销刷新令牌
+func (s *OAuthTokenService) RevokeRefreshTokenWithTx(ctx context.Context, tx *gorm.DB, id uint) error {
+	if err := tx.WithContext(ctx).Model(&oauthmodels.OAuthRefreshToken{}).Where("id = ?", id).Update("revoked", true).Error; err != nil {
+		s.logMgr.Error("撤销刷新令牌失败", "error", err, "id", id)
+		return errors.New("撤销刷新令牌失败")
+	}
+	return nil
 }

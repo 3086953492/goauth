@@ -10,13 +10,13 @@ import (
 )
 
 type OAuthTokenController struct {
-	oauthAccessTokenService *oauthservices.OAuthAccessTokenService
+	oauthTokenService *oauthservices.OAuthTokenService
 
 	oauthClientService *oauthservices.OAuthClientService
 }
 
-func NewOAuthTokenController(oauthAccessTokenService *oauthservices.OAuthAccessTokenService, oauthClientService *oauthservices.OAuthClientService) *OAuthTokenController {
-	return &OAuthTokenController{oauthAccessTokenService: oauthAccessTokenService, oauthClientService: oauthClientService}
+func NewOAuthTokenController(oauthTokenService *oauthservices.OAuthTokenService, oauthClientService *oauthservices.OAuthClientService) *OAuthTokenController {
+	return &OAuthTokenController{oauthTokenService: oauthTokenService, oauthClientService: oauthClientService}
 }
 
 func (ctrl *OAuthTokenController) ExchangeAccessTokenHandler(ctx *gin.Context) {
@@ -37,7 +37,7 @@ func (ctrl *OAuthTokenController) ExchangeAccessTokenHandler(ctx *gin.Context) {
 			return
 		}
 
-		accessToken, err := ctrl.oauthAccessTokenService.ExchangeAccessToken(ctx.Request.Context(), &form, clientID, clientSecret)
+		accessToken, err := ctrl.oauthTokenService.ExchangeAccessToken(ctx.Request.Context(), &form, clientID, clientSecret)
 		if err != nil {
 			problem.Fail(ctx, 500, "INTERNAL_SERVER_ERROR", err.Error(), "about:blank")
 			return
@@ -52,7 +52,7 @@ func (ctrl *OAuthTokenController) ExchangeAccessTokenHandler(ctx *gin.Context) {
 			return
 		}
 
-		accessToken, err := ctrl.oauthAccessTokenService.RefreshAccessToken(ctx.Request.Context(), &form, clientID, clientSecret)
+		accessToken, err := ctrl.oauthTokenService.RefreshAccessToken(ctx.Request.Context(), &form, clientID, clientSecret)
 		if err != nil {
 			problem.Fail(ctx, 500, "INTERNAL_SERVER_ERROR", err.Error(), "about:blank")
 			return
@@ -64,8 +64,6 @@ func (ctrl *OAuthTokenController) ExchangeAccessTokenHandler(ctx *gin.Context) {
 		problem.Fail(ctx, 400, "INVALID_REQUEST", "授权类型不支持", "about:blank")
 	}
 }
-
-
 
 func (ctrl *OAuthTokenController) IntrospectAccessTokenHandler(ctx *gin.Context) {
 	// 绑定请求参数
@@ -90,7 +88,7 @@ func (ctrl *OAuthTokenController) IntrospectAccessTokenHandler(ctx *gin.Context)
 	}
 
 	// 调用服务层内省访问令牌
-	resp := ctrl.oauthAccessTokenService.IntrospectAccessToken(ctx.Request.Context(), form.Token)
+	resp := ctrl.oauthTokenService.IntrospectAccessToken(ctx.Request.Context(), form.Token)
 
 	response.OK(ctx, resp, response.WithMessage("内省访问令牌成功"))
 }

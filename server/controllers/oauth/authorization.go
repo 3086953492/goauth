@@ -12,15 +12,13 @@ import (
 type OAuthAuthorizationController struct {
 	oauthAuthorizationCodeService *oauthservices.OAuthAuthorizationCodeService
 
-	oauthAccessTokenService *oauthservices.OAuthAccessTokenService
-
 	oauthClientService *oauthservices.OAuthClientService
 
 	cfg *config.Config
 }
 
-func NewOAuthAuthorizationController(oauthAuthorizationCodeService *oauthservices.OAuthAuthorizationCodeService, oauthAccessTokenService *oauthservices.OAuthAccessTokenService, oauthClientService *oauthservices.OAuthClientService, cfg *config.Config) *OAuthAuthorizationController {
-	return &OAuthAuthorizationController{oauthAuthorizationCodeService: oauthAuthorizationCodeService, oauthAccessTokenService: oauthAccessTokenService, oauthClientService: oauthClientService, cfg: cfg}
+func NewOAuthAuthorizationController(oauthAuthorizationCodeService *oauthservices.OAuthAuthorizationCodeService, oauthClientService *oauthservices.OAuthClientService, cfg *config.Config) *OAuthAuthorizationController {
+	return &OAuthAuthorizationController{oauthAuthorizationCodeService: oauthAuthorizationCodeService, oauthClientService: oauthClientService, cfg: cfg}
 }
 
 func (ctrl *OAuthAuthorizationController) AuthorizationCodeHandler(ctx *gin.Context) {
