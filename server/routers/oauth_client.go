@@ -3,11 +3,11 @@ package routers
 import (
 	"github.com/gin-gonic/gin"
 
-	"goauth/controllers"
+	"goauth/controllers/oauth"
 	"goauth/middleware"
 )
 
-func LoadOAuthClientRoutes(router *gin.Engine, ctrl *controllers.OAuthClientController, m *middleware.Manager) {
+func LoadOAuthClientRoutes(router *gin.Engine, ctrl *oauthcontrollers.OAuthClientController, m *middleware.Manager) {
 	oauthClientRouter := router.Group("/api/v1/oauth_clients")
 	oauthClientRouter.POST("", m.Auth(), m.Role("admin"), ctrl.CreateOAuthClientHandler)
 	oauthClientRouter.GET("", m.Auth(), m.Role("admin"), ctrl.ListOAuthClientsHandler)

@@ -1,4 +1,4 @@
-package controllers
+package oauthcontrollers
 
 import (
 	"strconv"
