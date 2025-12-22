@@ -44,6 +44,9 @@ type Container struct {
 	OAuthTokenService           *oauthservices.OAuthTokenService
 	OAuthTokenController        *oauthcontrollers.OAuthTokenController
 
+	OAuthIntrospectService    *oauthservices.OAuthIntrospectService
+	OAuthIntrospectController *oauthcontrollers.OAuthIntrospectController
+
 	OAuthAuthorizationController *oauthcontrollers.OAuthAuthorizationController
 
 	ValidatorManager *validator.Manager
@@ -78,6 +81,9 @@ func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager
 	c.OAuthRefreshTokenRepository = oauthrepositories.NewOAuthRefreshTokenRepository(db)
 	c.OAuthTokenService = oauthservices.NewOAuthTokenService(db, c.OAuthAccessTokenRepository, c.OAuthAuthorizeService, c.UserService, c.OAuthClientService, c.JwtManager, c.LogManager, cfg)
 	c.OAuthTokenController = oauthcontrollers.NewOAuthTokenController(c.OAuthTokenService, c.OAuthClientService)
+
+	c.OAuthIntrospectService = oauthservices.NewOAuthIntrospectService(c.OAuthAccessTokenRepository, c.UserService)
+	c.OAuthIntrospectController = oauthcontrollers.NewOAuthIntrospectController(c.OAuthIntrospectService, c.OAuthClientService)
 
 	c.OAuthAuthorizationController = oauthcontrollers.NewOAuthAuthorizationController(c.OAuthAuthorizeService, c.OAuthClientService, cfg)
 

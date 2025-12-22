@@ -7,7 +7,7 @@ import (
 	"goauth/middleware"
 )
 
-func LoadOAuthIntrospectRoutes(router *gin.Engine, oauthTokenController *oauthcontrollers.OAuthTokenController, m *middleware.Manager) {
+func LoadOAuthIntrospectRoutes(router *gin.Engine, oauthIntrospectController *oauthcontrollers.OAuthIntrospectController, m *middleware.Manager) {
 	oauthIntrospectRouter := router.Group("/api/v1/oauth/introspect")
-	oauthIntrospectRouter.POST("", m.Auth(), oauthTokenController.IntrospectAccessTokenHandler)
+	oauthIntrospectRouter.POST("", m.Auth(), oauthIntrospectController.IntrospectAccessTokenHandler)
 }
