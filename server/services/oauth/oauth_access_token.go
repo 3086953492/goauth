@@ -11,7 +11,7 @@ import (
 	"github.com/3086953492/gokit/logger"
 	"gorm.io/gorm"
 
-	"goauth/dto"
+	"goauth/dto/oauth"
 	"goauth/models/oauth"
 	"goauth/repositories/oauth"
 	"goauth/services"
@@ -60,7 +60,7 @@ func NewOAuthAccessTokenService(
 	}
 }
 
-func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form *dto.ExchangeAccessTokenForm, clientID, clientSecret string) (*dto.ExchangeAccessTokenResponse, error) {
+func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form *oauthdto.ExchangeAccessTokenForm, clientID, clientSecret string) (*oauthdto.ExchangeAccessTokenResponse, error) {
 
 	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"id": clientID, "client_secret": clientSecret})
 	if err != nil {
@@ -142,12 +142,12 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 		return nil, txErr
 	}
 
-	return &dto.ExchangeAccessTokenResponse{
-		AccessToken: dto.OAuthAccessTokenResponse{
+	return &oauthdto.ExchangeAccessTokenResponse{
+		AccessToken: oauthdto.OAuthAccessTokenResponse{
 			AccessToken: accessTokenString,
 			ExpiresIn:   int(s.cfg.OAuth.AccessTokenExpire.Seconds()),
 		},
-		RefreshToken: dto.OAuthRefreshTokenResponse{
+		RefreshToken: oauthdto.OAuthRefreshTokenResponse{
 			RefreshToken: refreshTokenString,
 			ExpiresIn:    int(s.cfg.OAuth.RefreshTokenExpire.Seconds()),
 		},
@@ -156,26 +156,26 @@ func (s *OAuthAccessTokenService) ExchangeAccessToken(ctx context.Context, form 
 	}, nil
 }
 
-func (s *OAuthAccessTokenService) IntrospectAccessToken(ctx context.Context, accessTokenString string) *dto.IntrospectionResponse {
+func (s *OAuthAccessTokenService) IntrospectAccessToken(ctx context.Context, accessTokenString string) *oauthdto.IntrospectionResponse {
 	// 查询访问令牌
 	token, err := s.oauthAccessTokenRepository.Get(ctx, map[string]any{"access_token": accessTokenString})
 	if err != nil {
 		// 令牌不存在或查询错误，统一返回 active=false（RFC 7662 约定）
-		return &dto.IntrospectionResponse{Active: false}
+		return &oauthdto.IntrospectionResponse{Active: false}
 	}
 
 	// 检查令牌是否已撤销
 	if token.Revoked {
-		return &dto.IntrospectionResponse{Active: false}
+		return &oauthdto.IntrospectionResponse{Active: false}
 	}
 
 	// 检查令牌是否已过期
 	if token.ExpiresAt.Before(time.Now()) {
-		return &dto.IntrospectionResponse{Active: false}
+		return &oauthdto.IntrospectionResponse{Active: false}
 	}
 
 	// 构造有效令牌的响应
-	resp := &dto.IntrospectionResponse{
+	resp := &oauthdto.IntrospectionResponse{
 		Active:    true,
 		Scope:     token.Scope,
 		ClientID:  token.ClientID,
@@ -196,7 +196,7 @@ func (s *OAuthAccessTokenService) IntrospectAccessToken(ctx context.Context, acc
 	return resp
 }
 
-func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *dto.RefreshAccessTokenForm, clientID, clientSecret string) (*dto.ExchangeAccessTokenResponse, error) {
+func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *oauthdto.RefreshAccessTokenForm, clientID, clientSecret string) (*oauthdto.ExchangeAccessTokenResponse, error) {
 	// 校验客户端合法性
 	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"id": clientID, "client_secret": clientSecret})
 	if err != nil {
@@ -281,12 +281,12 @@ func (s *OAuthAccessTokenService) RefreshAccessToken(ctx context.Context, form *
 		return nil, txErr
 	}
 
-	return &dto.ExchangeAccessTokenResponse{
-		AccessToken: dto.OAuthAccessTokenResponse{
+	return &oauthdto.ExchangeAccessTokenResponse{
+		AccessToken: oauthdto.OAuthAccessTokenResponse{
 			AccessToken: accessTokenString,
 			ExpiresIn:   int(s.cfg.OAuth.AccessTokenExpire.Seconds()),
 		},
-		RefreshToken: dto.OAuthRefreshTokenResponse{
+		RefreshToken: oauthdto.OAuthRefreshTokenResponse{
 			RefreshToken: newRefreshTokenString,
 			ExpiresIn:    int(s.cfg.OAuth.RefreshTokenExpire.Seconds()),
 		},

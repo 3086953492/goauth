@@ -8,7 +8,7 @@ import (
 	"github.com/3086953492/gokit/validator"
 	"github.com/gin-gonic/gin"
 
-	"goauth/dto"
+	"goauth/dto/oauth"
 	"goauth/services/oauth"
 )
 
@@ -22,7 +22,7 @@ func NewOAuthClientController(oauthClientService *oauthservices.OAuthClientServi
 }
 
 func (ctrl *OAuthClientController) CreateOAuthClientHandler(ctx *gin.Context) {
-	var req dto.CreateOAuthClientRequest
+	var req oauthdto.CreateOAuthClientRequest
 	if ctx.ShouldBindJSON(&req) != nil {
 		problem.Fail(ctx, 400, "INVALID_REQUEST", "请求参数错误", "about:blank")
 		return
@@ -90,7 +90,7 @@ func (ctrl *OAuthClientController) UpdateOAuthClientHandler(ctx *gin.Context) {
 		return
 	}
 
-	var req dto.UpdateOAuthClientRequest
+	var req oauthdto.UpdateOAuthClientRequest
 	if ctx.ShouldBindJSON(&req) != nil {
 		problem.Fail(ctx, 400, "INVALID_REQUEST", "请求参数错误", "about:blank")
 		return

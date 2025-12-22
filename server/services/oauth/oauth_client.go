@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"goauth/dto"
+	"goauth/dto/oauth"
 	"goauth/models/oauth"
 	"goauth/repositories/oauth"
 )
@@ -24,7 +25,7 @@ func NewOAuthClientService(oauthClientRepository *oauthrepositories.OAuthClientR
 	return &OAuthClientService{oauthClientRepository: oauthClientRepository, cacheMgr: cacheMgr, logMgr: logMgr}
 }
 
-func (s *OAuthClientService) CreateOAuthClient(ctx context.Context, req *dto.CreateOAuthClientRequest) error {
+func (s *OAuthClientService) CreateOAuthClient(ctx context.Context, req *oauthdto.CreateOAuthClientRequest) error {
 	client := &oauthmodels.OAuthClient{
 		ClientSecret: req.ClientSecret,
 		Name:         req.Name,
@@ -46,23 +47,23 @@ func (s *OAuthClientService) CreateOAuthClient(ctx context.Context, req *dto.Cre
 	return nil
 }
 
-func (s *OAuthClientService) ListOAuthClients(ctx context.Context, page, pageSize int, conds map[string]any) (*dto.PaginationResponse[dto.OAuthClientListResponse], error) {
-	oauthClientsPagination, err := cache.NewBuilder[dto.PaginationResponse[dto.OAuthClientListResponse]](s.cacheMgr).KeyWithConds("list_oauth_clients", conds).TTL(10*time.Minute).GetOrSet(ctx, func() (*dto.PaginationResponse[dto.OAuthClientListResponse], error) {
+func (s *OAuthClientService) ListOAuthClients(ctx context.Context, page, pageSize int, conds map[string]any) (*dto.PaginationResponse[oauthdto.OAuthClientListResponse], error) {
+	oauthClientsPagination, err := cache.NewBuilder[dto.PaginationResponse[oauthdto.OAuthClientListResponse]](s.cacheMgr).KeyWithConds("list_oauth_clients", conds).TTL(10*time.Minute).GetOrSet(ctx, func() (*dto.PaginationResponse[oauthdto.OAuthClientListResponse], error) {
 		oauthClients, total, err := s.oauthClientRepository.List(ctx, page, pageSize, conds)
 		if err != nil {
 			s.logMgr.Error("获取OAuth客户端列表失败", "error", err, "conds", conds)
 			return nil, errors.New("获取OAuth客户端列表失败")
 		}
-		oauthClientsResponse := make([]dto.OAuthClientListResponse, len(oauthClients))
+		oauthClientsResponse := make([]oauthdto.OAuthClientListResponse, len(oauthClients))
 		for i, oauthClient := range oauthClients {
-			oauthClientsResponse[i] = dto.OAuthClientListResponse{
+			oauthClientsResponse[i] = oauthdto.OAuthClientListResponse{
 				ID:     oauthClient.ID,
 				Name:   oauthClient.Name,
 				Logo:   oauthClient.Logo,
 				Status: oauthClient.Status,
 			}
 		}
-		return &dto.PaginationResponse[dto.OAuthClientListResponse]{
+		return &dto.PaginationResponse[oauthdto.OAuthClientListResponse]{
 			Items:      oauthClientsResponse,
 			Total:      total,
 			Page:       page,
@@ -76,8 +77,8 @@ func (s *OAuthClientService) ListOAuthClients(ctx context.Context, page, pageSiz
 	return oauthClientsPagination, nil
 }
 
-func (s *OAuthClientService) GetOAuthClient(ctx context.Context, conds map[string]any) (*dto.OAuthClientDetailResponse, error) {
-	oauthClient, err := cache.NewBuilder[dto.OAuthClientDetailResponse](s.cacheMgr).KeyWithConds("oauth_client", conds).TTL(10*time.Minute).GetOrSet(ctx, func() (*dto.OAuthClientDetailResponse, error) {
+func (s *OAuthClientService) GetOAuthClient(ctx context.Context, conds map[string]any) (*oauthdto.OAuthClientDetailResponse, error) {
+	oauthClient, err := cache.NewBuilder[oauthdto.OAuthClientDetailResponse](s.cacheMgr).KeyWithConds("oauth_client", conds).TTL(10*time.Minute).GetOrSet(ctx, func() (*oauthdto.OAuthClientDetailResponse, error) {
 		oauthClient, err := s.oauthClientRepository.Get(ctx, conds)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -86,7 +87,7 @@ func (s *OAuthClientService) GetOAuthClient(ctx context.Context, conds map[strin
 			s.logMgr.Error("获取OAuth客户端失败", "error", err, "conds", conds)
 			return nil, errors.New("系统繁忙，请稍后再试")
 		}
-		return &dto.OAuthClientDetailResponse{
+		return &oauthdto.OAuthClientDetailResponse{
 			ID:           oauthClient.ID,
 			Name:         oauthClient.Name,
 			Description:  oauthClient.Description,
@@ -108,7 +109,7 @@ func (s *OAuthClientService) GetOAuthClient(ctx context.Context, conds map[strin
 	return oauthClient, nil
 }
 
-func (s *OAuthClientService) UpdateOAuthClient(ctx context.Context, id uint, req *dto.UpdateOAuthClientRequest) error {
+func (s *OAuthClientService) UpdateOAuthClient(ctx context.Context, id uint, req *oauthdto.UpdateOAuthClientRequest) error {
 	updates := make(map[string]any)
 	if req.Name != "" {
 		updates["name"] = req.Name

@@ -1,10 +1,4 @@
-package dto
-
-type AuthorizationCodeResponse struct {
-	Code        string `json:"code"`
-	RedirectURI string `json:"redirect_uri"`
-	State       string `json:"state"`
-}
+package oauthdto
 
 type ExchangeAccessTokenResponse struct {
 	AccessToken  OAuthAccessTokenResponse  `json:"access_token"`
@@ -32,21 +26,4 @@ type ExchangeAccessTokenForm struct {
 type RefreshAccessTokenForm struct {
 	GrantType    string `form:"grant_type" binding:"required,oneof=refresh_token"`
 	RefreshToken string `form:"refresh_token" binding:"required"`
-}
-
-// IntrospectionRequest 内省请求结构体
-type IntrospectionRequest struct {
-	Token         string `form:"token" binding:"required"`
-	TokenTypeHint string `form:"token_type_hint"` // "access_token", "refresh_token"
-}
-
-// IntrospectionResponse 内省响应结构体 (RFC 7662)
-type IntrospectionResponse struct {
-	Active    bool   `json:"active"`
-	Scope     string `json:"scope,omitempty"`
-	ClientID  string `json:"client_id,omitempty"`
-	Username  string `json:"username,omitempty"`
-	TokenType string `json:"token_type,omitempty"`
-	Exp       int64  `json:"exp,omitempty"`
-	Sub       string `json:"sub,omitempty"`
 }

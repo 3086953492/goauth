@@ -5,7 +5,7 @@ import (
 	"github.com/3086953492/gokit/ginx/response"
 	"github.com/gin-gonic/gin"
 
-	"goauth/dto"
+	"goauth/dto/oauth"
 	"goauth/services/oauth"
 )
 
@@ -31,7 +31,7 @@ func (ctrl *OAuthTokenController) ExchangeAccessTokenHandler(ctx *gin.Context) {
 	grantType := ctx.PostForm("grant_type")
 	switch grantType {
 	case "authorization_code":
-		var form dto.ExchangeAccessTokenForm
+		var form oauthdto.ExchangeAccessTokenForm
 		if err := ctx.ShouldBind(&form); err != nil {
 			problem.Fail(ctx, 400, "INVALID_REQUEST", "请求参数错误", "about:blank")
 			return
@@ -46,7 +46,7 @@ func (ctrl *OAuthTokenController) ExchangeAccessTokenHandler(ctx *gin.Context) {
 		response.OK(ctx, accessToken, response.WithMessage("交换访问令牌成功"))
 
 	case "refresh_token":
-		var form dto.RefreshAccessTokenForm
+		var form oauthdto.RefreshAccessTokenForm
 		if err := ctx.ShouldBind(&form); err != nil {
 			problem.Fail(ctx, 400, "INVALID_REQUEST", "请求参数错误", "about:blank")
 			return
@@ -69,7 +69,7 @@ func (ctrl *OAuthTokenController) ExchangeAccessTokenHandler(ctx *gin.Context) {
 
 func (ctrl *OAuthTokenController) IntrospectAccessTokenHandler(ctx *gin.Context) {
 	// 绑定请求参数
-	var form dto.IntrospectionRequest
+	var form oauthdto.IntrospectionRequest
 	if err := ctx.ShouldBind(&form); err != nil {
 		problem.Fail(ctx, 400, "INVALID_REQUEST", "请求参数错误", "about:blank")
 		return
