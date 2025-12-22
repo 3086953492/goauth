@@ -10,15 +10,15 @@ import (
 )
 
 type OAuthAuthorizationController struct {
-	oauthAuthorizationCodeService *oauthservices.OAuthAuthorizationCodeService
+	oauthAuthorizeService *oauthservices.OAuthAuthorizeService
 
 	oauthClientService *oauthservices.OAuthClientService
 
 	cfg *config.Config
 }
 
-func NewOAuthAuthorizationController(oauthAuthorizationCodeService *oauthservices.OAuthAuthorizationCodeService, oauthClientService *oauthservices.OAuthClientService, cfg *config.Config) *OAuthAuthorizationController {
-	return &OAuthAuthorizationController{oauthAuthorizationCodeService: oauthAuthorizationCodeService, oauthClientService: oauthClientService, cfg: cfg}
+func NewOAuthAuthorizationController(oauthAuthorizeService *oauthservices.OAuthAuthorizeService, oauthClientService *oauthservices.OAuthClientService, cfg *config.Config) *OAuthAuthorizationController {
+	return &OAuthAuthorizationController{oauthAuthorizeService: oauthAuthorizeService, oauthClientService: oauthClientService, cfg: cfg}
 }
 
 func (ctrl *OAuthAuthorizationController) AuthorizationCodeHandler(ctx *gin.Context) {
@@ -58,7 +58,7 @@ func (ctrl *OAuthAuthorizationController) AuthorizationCodeHandler(ctx *gin.Cont
 
 	userID := uint(ctx.GetUint64("user_id"))
 
-	authorizationCode, err := ctrl.oauthAuthorizationCodeService.GenerateAuthorizationCode(ctx.Request.Context(), userID, clientID, redirectURI, scope)
+	authorizationCode, err := ctrl.oauthAuthorizeService.GenerateAuthorizationCode(ctx.Request.Context(), userID, clientID, redirectURI, scope)
 	if err != nil {
 		redirect.Redirect(ctx, redirectURI, redirect.WithQuery(map[string]string{"error": "invalid_request", "error_description": err.Error()}))
 		return

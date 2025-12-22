@@ -37,7 +37,7 @@ type Container struct {
 	OAuthClientController *oauthcontrollers.OAuthClientController
 
 	OAuthAuthorizationCodeRepository *oauthrepositories.OAuthAuthorizationCodeRepository
-	OAuthAuthorizationCodeService    *oauthservices.OAuthAuthorizationCodeService
+	OAuthAuthorizeService    *oauthservices.OAuthAuthorizeService
 
 	OAuthRefreshTokenRepository *oauthrepositories.OAuthRefreshTokenRepository
 	OAuthAccessTokenRepository  *oauthrepositories.OAuthAccessTokenRepository
@@ -72,14 +72,14 @@ func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager
 	c.OAuthClientController = oauthcontrollers.NewOAuthClientController(c.OAuthClientService, validatorManager)
 
 	c.OAuthAuthorizationCodeRepository = oauthrepositories.NewOAuthAuthorizationCodeRepository(db)
-	c.OAuthAuthorizationCodeService = oauthservices.NewOAuthAuthorizationCodeService(c.OAuthAuthorizationCodeRepository, c.OAuthClientService, cfg, c.LogManager)
+	c.OAuthAuthorizeService = oauthservices.NewOAuthAuthorizeService(c.OAuthAuthorizationCodeRepository, c.OAuthClientService, cfg, c.LogManager)
 
 	c.OAuthAccessTokenRepository = oauthrepositories.NewOAuthAccessTokenRepository(db)
 	c.OAuthRefreshTokenRepository = oauthrepositories.NewOAuthRefreshTokenRepository(db)
-	c.OAuthTokenService = oauthservices.NewOAuthTokenService(db, c.OAuthAccessTokenRepository, c.OAuthAuthorizationCodeService, c.UserService, c.OAuthClientService, c.JwtManager, c.LogManager, cfg)
+	c.OAuthTokenService = oauthservices.NewOAuthTokenService(db, c.OAuthAccessTokenRepository, c.OAuthAuthorizeService, c.UserService, c.OAuthClientService, c.JwtManager, c.LogManager, cfg)
 	c.OAuthTokenController = oauthcontrollers.NewOAuthTokenController(c.OAuthTokenService, c.OAuthClientService)
 
-	c.OAuthAuthorizationController = oauthcontrollers.NewOAuthAuthorizationController(c.OAuthAuthorizationCodeService, c.OAuthClientService, cfg)
+	c.OAuthAuthorizationController = oauthcontrollers.NewOAuthAuthorizationController(c.OAuthAuthorizeService, c.OAuthClientService, cfg)
 
 	c.ValidatorManager = validatorManager
 

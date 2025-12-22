@@ -14,18 +14,18 @@ import (
 	"goauth/repositories/oauth"
 )
 
-type OAuthAuthorizationCodeService struct {
+type OAuthAuthorizeService struct {
 	oauthAuthorizationCodeRepository *oauthrepositories.OAuthAuthorizationCodeRepository
 	oauthClientService               *OAuthClientService
 	cfg                              *config.Config
 	logMgr                           *logger.Manager
 }
 
-func NewOAuthAuthorizationCodeService(oauthAuthorizationCodeRepository *oauthrepositories.OAuthAuthorizationCodeRepository, oauthClientService *OAuthClientService, cfg *config.Config, logMgr *logger.Manager) *OAuthAuthorizationCodeService {
-	return &OAuthAuthorizationCodeService{oauthAuthorizationCodeRepository: oauthAuthorizationCodeRepository, oauthClientService: oauthClientService, cfg: cfg, logMgr: logMgr}
+func NewOAuthAuthorizeService(oauthAuthorizationCodeRepository *oauthrepositories.OAuthAuthorizationCodeRepository, oauthClientService *OAuthClientService, cfg *config.Config, logMgr *logger.Manager) *OAuthAuthorizeService {
+	return &OAuthAuthorizeService{oauthAuthorizationCodeRepository: oauthAuthorizationCodeRepository, oauthClientService: oauthClientService, cfg: cfg, logMgr: logMgr}
 }
 
-func (s *OAuthAuthorizationCodeService) GenerateAuthorizationCode(ctx context.Context, userID uint, clientID string, redirectURI string, scope string) (string, error) {
+func (s *OAuthAuthorizeService) GenerateAuthorizationCode(ctx context.Context, userID uint, clientID string, redirectURI string, scope string) (string, error) {
 
 	codeString, err := crypto.GenerateAuthorizationCode(32)
 	if err != nil {
@@ -49,7 +49,7 @@ func (s *OAuthAuthorizationCodeService) GenerateAuthorizationCode(ctx context.Co
 	return codeString, nil
 }
 
-func (s *OAuthAuthorizationCodeService) GetOAuthAuthorizationCode(ctx context.Context, conds map[string]any) (*oauthmodels.OAuthAuthorizationCode, error) {
+func (s *OAuthAuthorizeService) GetOAuthAuthorizationCode(ctx context.Context, conds map[string]any) (*oauthmodels.OAuthAuthorizationCode, error) {
 	oauthAuthorizationCode, err := s.oauthAuthorizationCodeRepository.Get(ctx, conds)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -60,7 +60,7 @@ func (s *OAuthAuthorizationCodeService) GetOAuthAuthorizationCode(ctx context.Co
 	return oauthAuthorizationCode, nil
 }
 
-func (s *OAuthAuthorizationCodeService) MarkAsUsed(ctx context.Context, id uint) error {
+func (s *OAuthAuthorizeService) MarkCodeAsUsed(ctx context.Context, id uint) error {
 	if err := s.oauthAuthorizationCodeRepository.MarkAsUsed(ctx, id); err != nil {
 		s.logMgr.Error("标记授权码为已使用失败", "error", err)
 		return errors.New("标记授权码为已使用失败")
@@ -69,7 +69,7 @@ func (s *OAuthAuthorizationCodeService) MarkAsUsed(ctx context.Context, id uint)
 }
 
 // MarkAsUsedWithTx 在事务中标记授权码为已使用
-func (s *OAuthAuthorizationCodeService) MarkAsUsedWithTx(ctx context.Context, tx *gorm.DB, id uint) error {
+func (s *OAuthAuthorizeService) MarkCodeAsUsedWithTx(ctx context.Context, tx *gorm.DB, id uint) error {
 	if err := s.oauthAuthorizationCodeRepository.MarkAsUsedWithTx(ctx, tx, id); err != nil {
 		s.logMgr.Error("标记授权码为已使用失败", "error", err)
 		return errors.New("标记授权码为已使用失败")

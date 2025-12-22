@@ -24,7 +24,7 @@ type OAuthTokenService struct {
 	oauthAccessTokenRepository  *oauthrepositories.OAuthAccessTokenRepository
 	oauthRefreshTokenRepository *oauthrepositories.OAuthRefreshTokenRepository
 
-	oauthAuthorizationCodeService *OAuthAuthorizationCodeService
+	oauthAuthorizeService *OAuthAuthorizeService
 
 	userService *services.UserService
 
@@ -38,7 +38,7 @@ type OAuthTokenService struct {
 func NewOAuthTokenService(
 	db *gorm.DB,
 	oauthAccessTokenRepository *oauthrepositories.OAuthAccessTokenRepository,
-	oauthAuthorizationCodeService *OAuthAuthorizationCodeService,
+	oauthAuthorizeService *OAuthAuthorizeService,
 	userService *services.UserService,
 	oauthClientService *OAuthClientService,
 	jwtManager *jwt.Manager,
@@ -48,7 +48,7 @@ func NewOAuthTokenService(
 	return &OAuthTokenService{
 		db:                            db,
 		oauthAccessTokenRepository:    oauthAccessTokenRepository,
-		oauthAuthorizationCodeService: oauthAuthorizationCodeService,
+		oauthAuthorizeService:         oauthAuthorizeService,
 		userService:                   userService,
 		oauthClientService:            oauthClientService,
 		jwtManager:                    jwtManager,
@@ -68,7 +68,7 @@ func (s *OAuthTokenService) ExchangeAccessToken(ctx context.Context, form *oauth
 		return nil, errors.New("授权类型不支持")
 	}
 
-	oauthAuthorizationCode, err := s.oauthAuthorizationCodeService.GetOAuthAuthorizationCode(ctx, map[string]any{"code": form.Code})
+	oauthAuthorizationCode, err := s.oauthAuthorizeService.GetOAuthAuthorizationCode(ctx, map[string]any{"code": form.Code})
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (s *OAuthTokenService) ExchangeAccessToken(ctx context.Context, form *oauth
 	// 使用数据库事务确保授权码、访问令牌和刷新令牌的一致性，当任一步失败时整体回滚
 	txErr := s.db.Transaction(func(tx *gorm.DB) error {
 		// 在事务中标记授权码为已使用
-		if err := s.oauthAuthorizationCodeService.MarkAsUsedWithTx(ctx, tx, oauthAuthorizationCode.ID); err != nil {
+		if err := s.oauthAuthorizeService.MarkCodeAsUsedWithTx(ctx, tx, oauthAuthorizationCode.ID); err != nil {
 			return err
 		}
 
