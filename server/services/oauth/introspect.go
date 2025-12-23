@@ -2,7 +2,6 @@ package oauthservices
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"goauth/dto/oauth"
@@ -48,11 +47,11 @@ func (s *OAuthIntrospectService) IntrospectAccessToken(ctx context.Context, acce
 
 	// 如果存在用户ID，填充 sub 和 username
 	if token.UserID != nil {
-		resp.Sub = strconv.FormatUint(uint64(*token.UserID), 10)
 		// 查询用户名
 		user, err := s.userService.GetUser(ctx, map[string]any{"id": *token.UserID})
 		if err == nil {
 			resp.Username = user.Username
+			resp.Sub = user.Subject
 		}
 	}
 

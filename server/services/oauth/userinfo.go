@@ -2,7 +2,6 @@ package oauthservices
 
 import (
 	"context"
-	"strconv"
 
 	"goauth/dto/oauth"
 	"goauth/services"
@@ -23,7 +22,7 @@ func (s *OAuthUserInfoService) GetUserInfo(ctx context.Context, username string)
 	}
 
 	return &oauthdto.UserInfoResponse{
-		Sub:       strconv.FormatUint(uint64(user.ID), 10),
+		Sub:       user.Subject,
 		Nickname:  user.Nickname,
 		Picture:   user.Avatar,
 		UpdatedAt: user.UpdatedAt.Unix(),
