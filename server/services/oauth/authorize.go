@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/3086953492/gokit/config"
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/security/random"
 	"gorm.io/gorm"
@@ -17,12 +16,11 @@ import (
 type OAuthAuthorizeService struct {
 	oauthAuthorizationCodeRepository *oauthrepositories.OAuthAuthorizationCodeRepository
 	oauthClientService               *OAuthClientService
-	cfg                              *config.Config
 	logMgr                           *logger.Manager
 }
 
-func NewOAuthAuthorizeService(oauthAuthorizationCodeRepository *oauthrepositories.OAuthAuthorizationCodeRepository, oauthClientService *OAuthClientService, cfg *config.Config, logMgr *logger.Manager) *OAuthAuthorizeService {
-	return &OAuthAuthorizeService{oauthAuthorizationCodeRepository: oauthAuthorizationCodeRepository, oauthClientService: oauthClientService, cfg: cfg, logMgr: logMgr}
+func NewOAuthAuthorizeService(oauthAuthorizationCodeRepository *oauthrepositories.OAuthAuthorizationCodeRepository, oauthClientService *OAuthClientService, logMgr *logger.Manager) *OAuthAuthorizeService {
+	return &OAuthAuthorizeService{oauthAuthorizationCodeRepository: oauthAuthorizationCodeRepository, oauthClientService: oauthClientService, logMgr: logMgr}
 }
 
 func (s *OAuthAuthorizeService) GenerateAuthorizationCode(ctx context.Context, userID uint, clientID string, redirectURI string, scope string) (string, error) {
@@ -33,13 +31,20 @@ func (s *OAuthAuthorizeService) GenerateAuthorizationCode(ctx context.Context, u
 		return "", errors.New("生成授权码失败")
 	}
 
+	client, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"id": clientID})
+	if err != nil {
+		s.logMgr.Error("获取OAuth客户端失败", "error", err)
+		return "", errors.New("系统繁忙，请稍后再试")
+	}
+	
+
 	code := &oauthmodels.OAuthAuthorizationCode{
 		Code:        codeString,
 		UserID:      userID,
 		ClientID:    clientID,
 		RedirectURI: redirectURI,
 		Scope:       scope,
-		ExpiresAt:   time.Now().Add(s.cfg.OAuth.AuthCodeExpire),
+		ExpiresAt:   time.Now().Add(time.Duration(client.AuthCodeExpire) * time.Second),
 	}
 	if err := s.oauthAuthorizationCodeRepository.Create(ctx, code); err != nil {
 		s.logMgr.Error("创建OAuth授权码失败", "error", err)

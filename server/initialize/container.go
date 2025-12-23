@@ -85,7 +85,7 @@ func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager
 	c.OAuthClientController = oauthcontrollers.NewOAuthClientController(c.OAuthClientService, validatorManager)
 
 	c.OAuthAuthorizationCodeRepository = oauthrepositories.NewOAuthAuthorizationCodeRepository(db)
-	c.OAuthAuthorizeService = oauthservices.NewOAuthAuthorizeService(c.OAuthAuthorizationCodeRepository, c.OAuthClientService, cfg, c.LogManager)
+	c.OAuthAuthorizeService = oauthservices.NewOAuthAuthorizeService(c.OAuthAuthorizationCodeRepository, c.OAuthClientService, c.LogManager)
 	c.OAuthAuthorizeController = oauthcontrollers.NewOAuthAuthorizeController(c.OAuthAuthorizeService, c.OAuthClientService, cfg)
 
 	c.OAuthAccessTokenRepository = oauthrepositories.NewOAuthAccessTokenRepository(db)
