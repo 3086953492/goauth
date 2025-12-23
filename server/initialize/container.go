@@ -6,6 +6,7 @@ import (
 	"github.com/3086953492/gokit/jwt"
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
+	"github.com/3086953492/gokit/security/password"
 	"github.com/3086953492/gokit/storage"
 	"github.com/3086953492/gokit/validator"
 	"gorm.io/gorm"
@@ -59,20 +60,20 @@ type Container struct {
 	MiddlewareManager *middleware.Manager
 }
 
-func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager *validator.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager, jwtMgr *jwt.Manager, logMgr *logger.Manager, cfg *config.Config) *Container {
+func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager *validator.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager, jwtMgr *jwt.Manager, logMgr *logger.Manager, passwordMgr *password.Manager, cfg *config.Config) *Container {
 	c := &Container{}
 
 	c.LogManager = logMgr
 
 	c.UserRepository = repositories.NewUserRepository(db)
-	c.UserService = services.NewUserService(c.UserRepository, storageManager, redisMgr, cacheMgr, c.LogManager)
+	c.UserService = services.NewUserService(c.UserRepository, storageManager, redisMgr, cacheMgr, c.LogManager, passwordMgr)
 	c.UserController = controllers.NewUserController(c.UserService, validatorManager)
 	c.UserValidator = validations.NewUserValidators(c.UserService)
 
 	c.JwtManager = jwtMgr
 	c.JwtManager.SetExtraResolver(c.UserService)
 
-	c.AuthService = services.NewAuthService(c.UserRepository, c.UserService, c.LogManager, c.JwtManager, cfg)
+	c.AuthService = services.NewAuthService(c.UserRepository, c.UserService, c.LogManager, c.JwtManager, passwordMgr, cfg)
 	c.AuthController = controllers.NewAuthController(c.AuthService, validatorManager)
 
 	c.OAuthClientRepository = oauthrepositories.NewOAuthClientRepository(db)

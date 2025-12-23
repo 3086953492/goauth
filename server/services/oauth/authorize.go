@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/3086953492/gokit/config"
-	"github.com/3086953492/gokit/crypto"
 	"github.com/3086953492/gokit/logger"
+	"github.com/3086953492/gokit/security/random"
 	"gorm.io/gorm"
 
 	"goauth/models/oauth"
@@ -27,7 +27,7 @@ func NewOAuthAuthorizeService(oauthAuthorizationCodeRepository *oauthrepositorie
 
 func (s *OAuthAuthorizeService) GenerateAuthorizationCode(ctx context.Context, userID uint, clientID string, redirectURI string, scope string) (string, error) {
 
-	codeString, err := crypto.GenerateAuthorizationCode(32)
+	codeString, err := random.URLSafe(32)
 	if err != nil {
 		s.logMgr.Error("生成授权码失败", "error", err)
 		return "", errors.New("生成授权码失败")

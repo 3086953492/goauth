@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/3086953492/gokit/cache"
-	"github.com/3086953492/gokit/crypto"
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
+	"github.com/3086953492/gokit/security/password"
 	"github.com/3086953492/gokit/storage"
 	"gorm.io/gorm"
 
@@ -27,11 +27,12 @@ type UserService struct {
 	redisMgr       *redis.Manager
 	cacheMgr       *cache.Manager
 	logMgr         *logger.Manager
+	passwordMgr    *password.Manager
 }
 
 // NewUserService 创建用户服务实例
-func NewUserService(userRepository *repositories.UserRepository, storageManager *storage.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager, logMgr *logger.Manager) *UserService {
-	return &UserService{userRepository: userRepository, storageManager: storageManager, redisMgr: redisMgr, cacheMgr: cacheMgr, logMgr: logMgr}
+func NewUserService(userRepository *repositories.UserRepository, storageManager *storage.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager, logMgr *logger.Manager, passwordMgr *password.Manager) *UserService {
+	return &UserService{userRepository: userRepository, storageManager: storageManager, redisMgr: redisMgr, cacheMgr: cacheMgr, logMgr: logMgr, passwordMgr: passwordMgr}
 }
 
 func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, avatarFile *utils.FormFileResult) error {
@@ -44,7 +45,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, a
 	}
 	defer lock.Release(ctx)
 
-	hashedPassword, err := crypto.HashPassword(req.Password)
+	hashedPassword, err := s.passwordMgr.Hash(req.Password)
 	if err != nil {
 		s.logMgr.Error("密码哈希失败", "error", err)
 		return errors.New("密码哈希失败")
@@ -135,7 +136,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.Upd
 	}
 
 	if user.Password != "" {
-		hashedPassword, err := crypto.HashPassword(user.Password)
+		hashedPassword, err := s.passwordMgr.Hash(user.Password)
 		if err != nil {
 			s.logMgr.Error("密码哈希失败", "error", err)
 			return errors.New("密码哈希失败")

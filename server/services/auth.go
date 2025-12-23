@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/3086953492/gokit/config"
-	"github.com/3086953492/gokit/crypto"
 	"github.com/3086953492/gokit/jwt"
 	"github.com/3086953492/gokit/logger"
+	"github.com/3086953492/gokit/security/password"
 	"gorm.io/gorm"
 
 	"goauth/dto"
@@ -21,12 +21,13 @@ type AuthService struct {
 	userService    *UserService
 	logMgr         *logger.Manager
 	jwtManager     *jwt.Manager
+	passwordMgr    *password.Manager
 	cfg            *config.Config
 }
 
 // NewAuthService 创建授权服务实例
-func NewAuthService(userRepository *repositories.UserRepository, userService *UserService, logMgr *logger.Manager, jwtManager *jwt.Manager, cfg *config.Config) *AuthService {
-	return &AuthService{userRepository: userRepository, userService: userService, logMgr: logMgr, jwtManager: jwtManager, cfg: cfg}
+func NewAuthService(userRepository *repositories.UserRepository, userService *UserService, logMgr *logger.Manager, jwtManager *jwt.Manager, passwordMgr *password.Manager, cfg *config.Config) *AuthService {
+	return &AuthService{userRepository: userRepository, userService: userService, logMgr: logMgr, jwtManager: jwtManager, passwordMgr: passwordMgr, cfg: cfg}
 }
 
 func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (accessToken string, accessTokenExpire int, refreshToken string, refreshTokenExpire int, userResp *dto.UserResponse, err error) {
@@ -44,8 +45,12 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (accessT
 		return "", 0, "", 0, nil, errors.New("账号未激活或已禁用，请联系管理员")
 	}
 
-	if !crypto.VerifyPassword(user.Password, req.Password) {
-		return "", 0, "", 0, nil, errors.New("账号或密码错误")
+	if err := s.passwordMgr.Compare(user.Password, req.Password); err != nil {
+		if errors.Is(err, password.ErrMismatch) {
+			return "", 0, "", 0, nil, errors.New("账号或密码错误")
+		}
+		s.logMgr.Error("密码验证失败", "error", err)
+		return "", 0, "", 0, nil, errors.New("系统繁忙，请稍后再试")
 	}
 
 	userID := strconv.FormatUint(uint64(user.ID), 10)
