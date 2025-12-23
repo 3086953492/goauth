@@ -16,6 +16,7 @@ import (
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
 	"github.com/3086953492/gokit/security/password"
+	"github.com/3086953492/gokit/security/subject"
 	"github.com/3086953492/gokit/storage"
 	"github.com/3086953492/gokit/storage/provider_aliyunoss"
 	"github.com/3086953492/gokit/validator"
@@ -139,7 +140,17 @@ func main() {
 		return
 	}
 
-	container := initialize.NewContainer(dbManager.DB(), storageManager, validatorManager, redisMgr, cacheMgr, jwtMgr, logMgr, passwordMgr, &cfg)
+	subjectMgr, err := subject.NewManager(
+		subject.WithSecretString(cfg.OAuth.Subject.Secret),
+		subject.WithLength(cfg.OAuth.Subject.Length),
+		subject.WithPrefix(cfg.OAuth.Subject.Prefix),
+	)
+	if err != nil {
+		logMgr.Error("初始化 subject 管理器失败", "error", err)
+		return
+	}
+
+	container := initialize.NewContainer(dbManager.DB(), storageManager, validatorManager, redisMgr, cacheMgr, jwtMgr, logMgr, passwordMgr, subjectMgr, &cfg)
 
 	if err := initialize.RegisterValidations(container); err != nil {
 		logMgr.Error("注册自定义验证规则失败", "error", err)

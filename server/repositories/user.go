@@ -25,6 +25,10 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 	return r.db.WithContext(ctx).Create(user).Error
 }
 
+func (r *UserRepository) CreateWithTx(ctx context.Context, tx *gorm.DB, user *models.User) error {
+	return tx.WithContext(ctx).Create(user).Error
+}
+
 // Get 根据传入的条件查询用户
 func (r *UserRepository) Get(ctx context.Context, conds map[string]any) (*models.User, error) {
 	var user models.User
@@ -60,6 +64,15 @@ func (r *UserRepository) GetWithDeleted(ctx context.Context, conds map[string]an
 // Update 更新用户信息
 func (r *UserRepository) Update(ctx context.Context, id uint, updates map[string]any) error {
 	return r.db.WithContext(ctx).Model(&models.User{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (r *UserRepository) UpdateWithTx(ctx context.Context, tx *gorm.DB, id uint, updates map[string]any) error {
+	return tx.WithContext(ctx).Model(&models.User{}).Where("id = ?", id).Updates(updates).Error
+}
+
+// DB 返回数据库连接实例
+func (r *UserRepository) DB() *gorm.DB {
+	return r.db
 }
 
 // Delete 软删除用户

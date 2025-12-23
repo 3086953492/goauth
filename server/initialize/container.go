@@ -7,6 +7,7 @@ import (
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
 	"github.com/3086953492/gokit/security/password"
+	"github.com/3086953492/gokit/security/subject"
 	"github.com/3086953492/gokit/storage"
 	"github.com/3086953492/gokit/validator"
 	"gorm.io/gorm"
@@ -24,6 +25,7 @@ import (
 type Container struct {
 	JwtManager *jwt.Manager
 	LogManager *logger.Manager
+	SubjectManager *subject.Manager
 
 	UserRepository *repositories.UserRepository
 	UserService    *services.UserService
@@ -60,13 +62,15 @@ type Container struct {
 	MiddlewareManager *middleware.Manager
 }
 
-func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager *validator.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager, jwtMgr *jwt.Manager, logMgr *logger.Manager, passwordMgr *password.Manager, cfg *config.Config) *Container {
+func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager *validator.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager, jwtMgr *jwt.Manager, logMgr *logger.Manager, passwordMgr *password.Manager, subjectMgr *subject.Manager, cfg *config.Config) *Container {
 	c := &Container{}
 
 	c.LogManager = logMgr
 
+	c.SubjectManager = subjectMgr
+
 	c.UserRepository = repositories.NewUserRepository(db)
-	c.UserService = services.NewUserService(c.UserRepository, storageManager, redisMgr, cacheMgr, c.LogManager, passwordMgr)
+	c.UserService = services.NewUserService(c.UserRepository, storageManager, redisMgr, cacheMgr, c.LogManager, passwordMgr, subjectMgr)
 	c.UserController = controllers.NewUserController(c.UserService, validatorManager)
 	c.UserValidator = validations.NewUserValidators(c.UserService)
 

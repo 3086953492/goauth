@@ -11,6 +11,7 @@ import (
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
 	"github.com/3086953492/gokit/security/password"
+	"github.com/3086953492/gokit/security/subject"
 	"github.com/3086953492/gokit/storage"
 	"gorm.io/gorm"
 
@@ -28,11 +29,12 @@ type UserService struct {
 	cacheMgr       *cache.Manager
 	logMgr         *logger.Manager
 	passwordMgr    *password.Manager
+	subjectMgr     *subject.Manager
 }
 
 // NewUserService 创建用户服务实例
-func NewUserService(userRepository *repositories.UserRepository, storageManager *storage.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager, logMgr *logger.Manager, passwordMgr *password.Manager) *UserService {
-	return &UserService{userRepository: userRepository, storageManager: storageManager, redisMgr: redisMgr, cacheMgr: cacheMgr, logMgr: logMgr, passwordMgr: passwordMgr}
+func NewUserService(userRepository *repositories.UserRepository, storageManager *storage.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager, logMgr *logger.Manager, passwordMgr *password.Manager, subjectMgr *subject.Manager) *UserService {
+	return &UserService{userRepository: userRepository, storageManager: storageManager, redisMgr: redisMgr, cacheMgr: cacheMgr, logMgr: logMgr, passwordMgr: passwordMgr, subjectMgr: subjectMgr}
 }
 
 func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, avatarFile *utils.FormFileResult) error {
@@ -76,10 +78,32 @@ func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, a
 		Avatar:   avatarURL,
 		Role:     "user",
 	}
-	if err := s.userRepository.Create(ctx, user); err != nil {
-		s.logMgr.Error("创建用户失败", "error", err, "user", user)
-		return errors.New("创建用户失败")
+
+	// 使用事务创建用户并更新 subject
+	err = s.userRepository.DB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := s.userRepository.CreateWithTx(ctx, tx, user); err != nil {
+			s.logMgr.Error("创建用户失败", "error", err, "user", user)
+			return errors.New("创建用户失败")
+		}
+
+		subject, err := s.subjectMgr.Sub(strconv.FormatUint(uint64(user.ID), 10))
+		if err != nil {
+			s.logMgr.Error("生成用户标识失败", "error", err)
+			return errors.New("生成用户标识失败")
+		}
+
+		if err := s.userRepository.UpdateWithTx(ctx, tx, user.ID, map[string]any{"subject": subject}); err != nil {
+			s.logMgr.Error("更新用户标识失败", "error", err)
+			return errors.New("更新用户标识失败")
+		}
+
+		user.Subject = subject
+		return nil
+	})
+	if err != nil {
+		return err
 	}
+
 	s.logMgr.Info("用户注册成功", "userID", user.ID)
 
 	return nil
