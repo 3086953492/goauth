@@ -66,7 +66,7 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (accessT
 		return "", 0, "", 0, nil, errors.New("生成刷新令牌失败")
 	}
 
-	return accessToken, int(s.cfg.AuthToken.AccessExpire.Seconds()), refreshToken, int(s.cfg.AuthToken.RefreshExpire.Seconds()), &dto.UserResponse{
+	return accessToken, int(s.cfg.AuthToken.AccessTokenExpire.Seconds()), refreshToken, int(s.cfg.AuthToken.RefreshTokenExpire.Seconds()), &dto.UserResponse{
 		ID:        user.ID,
 		Username:  user.Username,
 		Nickname:  user.Nickname,
@@ -109,5 +109,5 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (ac
 		return "", 0, errors.New("系统繁忙，请稍后再试")
 	}
 
-	return accessToken, int(s.cfg.AuthToken.AccessExpire.Seconds()), nil
+	return accessToken, int(s.cfg.AuthToken.AccessTokenExpire.Seconds()), nil
 }
