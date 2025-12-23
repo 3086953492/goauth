@@ -350,6 +350,13 @@ onMounted(() => {
     justify-content: flex-end;
 }
 
+/* 弹窗内容滚动 */
+.oauth-clients-page :deep(.el-dialog__body) {
+    max-height: 65vh;
+    overflow-y: auto;
+    padding-right: var(--spacing-lg);
+}
+
 /* 响应式设计 */
 /* 平板端：对应 --breakpoint-tablet (768px) */
 @media (max-width: 768px) {
