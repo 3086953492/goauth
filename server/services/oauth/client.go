@@ -146,10 +146,13 @@ func (s *OAuthClientService) GetOAuthClient(ctx context.Context, conds map[strin
 			Scopes:       oauthClient.Scopes,
 			Status:       oauthClient.Status,
 
-			// 配置字段（不暴露密钥）
+			// 配置字段（不暴露密钥，结构体没有设置json tag）
 			AuthCodeExpire:     oauthClient.AuthCodeExpire,
+			AccessTokenSecret:  oauthClient.AccessTokenSecret,
 			AccessTokenExpire:  oauthClient.AccessTokenExpire,
+			RefreshTokenSecret: oauthClient.RefreshTokenSecret,
 			RefreshTokenExpire: oauthClient.RefreshTokenExpire,
+			SubjectSecret:      oauthClient.SubjectSecret,
 			SubjectLength:      oauthClient.SubjectLength,
 			SubjectPrefix:      oauthClient.SubjectPrefix,
 

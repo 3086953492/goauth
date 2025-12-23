@@ -51,8 +51,11 @@ type OAuthClientDetailResponse struct {
 
 	// 配置字段（不暴露密钥，单位：秒）
 	AuthCodeExpire     int    `json:"auth_code_expire"`
+	AccessTokenSecret  string `json:"-"`
 	AccessTokenExpire  int    `json:"access_token_expire"`
+	RefreshTokenSecret string `json:"-"`
 	RefreshTokenExpire int    `json:"refresh_token_expire"`
+	SubjectSecret      string `json:"-"`
 	SubjectLength      int    `json:"subject_length"`
 	SubjectPrefix      string `json:"subject_prefix"`
 

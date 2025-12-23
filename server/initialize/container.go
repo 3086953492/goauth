@@ -94,7 +94,7 @@ func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager
 	c.OAuthRevokeService = oauthservices.NewOAuthRevokeService(db, c.OAuthAccessTokenRepository, c.OAuthRefreshTokenRepository, c.LogManager)
 	c.OAuthRevokeController = oauthcontrollers.NewOAuthRevokeController(c.OAuthRevokeService, c.OAuthClientService)
 
-	c.OAuthTokenService = oauthservices.NewOAuthTokenService(db, c.OAuthAccessTokenRepository, c.OAuthRefreshTokenRepository, c.OAuthAuthorizeService, c.OAuthRevokeService, c.UserService, c.OAuthClientService, c.JwtManager, c.LogManager, cfg)
+	c.OAuthTokenService = oauthservices.NewOAuthTokenService(db, c.OAuthAccessTokenRepository, c.OAuthRefreshTokenRepository, c.OAuthAuthorizeService, c.OAuthRevokeService, c.UserService, c.OAuthClientService, c.LogManager)
 	c.OAuthTokenController = oauthcontrollers.NewOAuthTokenController(c.OAuthTokenService, c.OAuthClientService)
 
 	c.OAuthIntrospectService = oauthservices.NewOAuthIntrospectService(c.OAuthAccessTokenRepository, c.UserService)

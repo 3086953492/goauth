@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/3086953492/gokit/config"
 	"github.com/3086953492/gokit/jwt"
 	"github.com/3086953492/gokit/logger"
 	"gorm.io/gorm"
@@ -25,14 +24,12 @@ type OAuthTokenService struct {
 	oauthRefreshTokenRepository *oauthrepositories.OAuthRefreshTokenRepository
 
 	oauthAuthorizeService *OAuthAuthorizeService
-	oauthRevokeService *OAuthRevokeService
-	userService *services.UserService
+	oauthRevokeService    *OAuthRevokeService
+	userService           *services.UserService
 
 	oauthClientService *OAuthClientService
 
-	jwtManager *jwt.Manager
-	logMgr     *logger.Manager
-	cfg        *config.Config
+	logMgr *logger.Manager
 }
 
 func NewOAuthTokenService(
@@ -43,9 +40,7 @@ func NewOAuthTokenService(
 	oauthRevokeService *OAuthRevokeService,
 	userService *services.UserService,
 	oauthClientService *OAuthClientService,
-	jwtManager *jwt.Manager,
 	logMgr *logger.Manager,
-	cfg *config.Config,
 ) *OAuthTokenService {
 	return &OAuthTokenService{
 		db:                          db,
@@ -55,10 +50,40 @@ func NewOAuthTokenService(
 		oauthRevokeService:          oauthRevokeService,
 		userService:                 userService,
 		oauthClientService:          oauthClientService,
-		jwtManager:                  jwtManager,
 		logMgr:                      logMgr,
-		cfg:                         cfg,
 	}
+}
+
+func (s *OAuthTokenService) accessTokenJwtManager(ctx context.Context, clientID string) *jwt.Manager {
+	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"id": clientID})
+	if err != nil {
+		s.logMgr.Error("获取OAuth客户端失败", "error", err)
+		return nil
+	}
+	jwtManager, err := jwt.NewManager(jwt.WithSecret(oauthClient.AccessTokenSecret),
+		jwt.WithIssuer(oauthClient.Name),
+		jwt.WithAccessTTL(time.Duration(oauthClient.AccessTokenExpire)*time.Second))
+	if err != nil {
+		s.logMgr.Error("新建JWT管理器失败", "error", err)
+		return nil
+	}
+	return jwtManager
+}
+
+func (s *OAuthTokenService) refreshTokenJwtManager(ctx context.Context, clientID string) *jwt.Manager {
+	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"id": clientID})
+	if err != nil {
+		s.logMgr.Error("获取OAuth客户端失败", "error", err)
+		return nil
+	}
+	jwtManager, err := jwt.NewManager(jwt.WithSecret(oauthClient.RefreshTokenSecret),
+		jwt.WithIssuer(oauthClient.Name),
+		jwt.WithRefreshTTL(time.Duration(oauthClient.RefreshTokenExpire)*time.Second))
+	if err != nil {
+		s.logMgr.Error("新建JWT管理器失败", "error", err)
+		return nil
+	}
+	return jwtManager
 }
 
 func (s *OAuthTokenService) ExchangeAccessToken(ctx context.Context, form *oauthdto.ExchangeAccessTokenForm, clientID, clientSecret string) (*oauthdto.ExchangeAccessTokenResponse, error) {
@@ -98,7 +123,12 @@ func (s *OAuthTokenService) ExchangeAccessToken(ctx context.Context, form *oauth
 		return nil, err
 	}
 
-	accessTokenString, err := s.jwtManager.GenerateAccessToken(strconv.FormatUint(uint64(user.ID), 10), user.Username, map[string]any{"role": user.Role})
+	jwtManager := s.accessTokenJwtManager(ctx, clientID)
+	if jwtManager == nil {
+		return nil, errors.New("系统繁忙，请稍后再试")
+	}
+
+	accessTokenString, err := jwtManager.GenerateAccessToken(strconv.FormatUint(uint64(user.ID), 10), user.Username, map[string]any{"role": user.Role})
 	if err != nil {
 		s.logMgr.Error("生成访问令牌失败", "error", err)
 		return nil, errors.New("生成访问令牌失败")
@@ -107,7 +137,7 @@ func (s *OAuthTokenService) ExchangeAccessToken(ctx context.Context, form *oauth
 	accessToken := &oauthmodels.OAuthAccessToken{
 		AccessToken: accessTokenString,
 		TokenType:   "Bearer",
-		ExpiresAt:   time.Now().Add(s.cfg.OAuth.AccessTokenExpire),
+		ExpiresAt:   time.Now().Add(time.Duration(oauthClient.AccessTokenExpire) * time.Second),
 		ClientID:    oauthAuthorizationCode.ClientID,
 		Scope:       oauthAuthorizationCode.Scope,
 		UserID:      &oauthAuthorizationCode.UserID,
@@ -146,11 +176,11 @@ func (s *OAuthTokenService) ExchangeAccessToken(ctx context.Context, form *oauth
 	return &oauthdto.ExchangeAccessTokenResponse{
 		AccessToken: oauthdto.OAuthAccessTokenResponse{
 			AccessToken: accessTokenString,
-			ExpiresIn:   int(s.cfg.OAuth.AccessTokenExpire.Seconds()),
+			ExpiresIn:   int(oauthClient.AccessTokenExpire),
 		},
 		RefreshToken: oauthdto.OAuthRefreshTokenResponse{
 			RefreshToken: refreshTokenString,
-			ExpiresIn:    int(s.cfg.OAuth.RefreshTokenExpire.Seconds()),
+			ExpiresIn:    int(oauthClient.RefreshTokenExpire),
 		},
 		Scope:     accessToken.Scope,
 		TokenType: "Bearer",
@@ -196,8 +226,13 @@ func (s *OAuthTokenService) RefreshAccessToken(ctx context.Context, form *oauthd
 		return nil, err
 	}
 
+	jwtManager := s.refreshTokenJwtManager(ctx, clientID)
+	if jwtManager == nil {
+		return nil, errors.New("系统繁忙，请稍后再试")
+	}
+
 	// 生成新的访问令牌
-	accessTokenString, err := s.jwtManager.RefreshAccessToken(ctx, form.RefreshToken)
+	accessTokenString, err := jwtManager.RefreshAccessToken(ctx, form.RefreshToken)
 	if err != nil {
 		s.logMgr.Error("刷新访问令牌失败", "error", err)
 		return nil, errors.New("刷新访问令牌失败")
@@ -206,7 +241,7 @@ func (s *OAuthTokenService) RefreshAccessToken(ctx context.Context, form *oauthd
 	accessToken := &oauthmodels.OAuthAccessToken{
 		AccessToken: accessTokenString,
 		TokenType:   "Bearer",
-		ExpiresAt:   time.Now().Add(s.cfg.OAuth.AccessTokenExpire),
+		ExpiresAt:   time.Now().Add(time.Duration(oauthClient.AccessTokenExpire) * time.Second),
 		ClientID:    refreshToken.ClientID,
 		Scope:       refreshToken.Scope,
 		UserID:      &refreshToken.UserID,
@@ -245,11 +280,11 @@ func (s *OAuthTokenService) RefreshAccessToken(ctx context.Context, form *oauthd
 	return &oauthdto.ExchangeAccessTokenResponse{
 		AccessToken: oauthdto.OAuthAccessTokenResponse{
 			AccessToken: accessTokenString,
-			ExpiresIn:   int(s.cfg.OAuth.AccessTokenExpire.Seconds()),
+			ExpiresIn:   int(oauthClient.AccessTokenExpire),
 		},
 		RefreshToken: oauthdto.OAuthRefreshTokenResponse{
 			RefreshToken: newRefreshTokenString,
-			ExpiresIn:    int(s.cfg.OAuth.RefreshTokenExpire.Seconds()),
+			ExpiresIn:    int(oauthClient.RefreshTokenExpire),
 		},
 		Scope:     accessToken.Scope,
 		TokenType: "Bearer",
@@ -257,10 +292,20 @@ func (s *OAuthTokenService) RefreshAccessToken(ctx context.Context, form *oauthd
 }
 
 func (s *OAuthTokenService) GenerateRefreshToken(ctx context.Context, accessTokenID uint, clientID string, scope string, userID uint, username string, role string) (string, error) {
-	refreshTokenString, err := s.jwtManager.GenerateRefreshToken(strconv.FormatUint(uint64(userID), 10))
+	jwtManager := s.refreshTokenJwtManager(ctx, clientID)
+	if jwtManager == nil {
+		return "", errors.New("系统繁忙，请稍后再试")
+	}
+	refreshTokenString, err := jwtManager.GenerateRefreshToken(strconv.FormatUint(uint64(userID), 10))
 	if err != nil {
 		s.logMgr.Error("生成刷新令牌失败", "error", err)
 		return "", errors.New("生成刷新令牌失败")
+	}
+
+	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"id": clientID})
+	if err != nil {
+		s.logMgr.Error("获取OAuth客户端失败", "error", err)
+		return "", errors.New("系统繁忙，请稍后再试")
 	}
 
 	refreshToken := &oauthmodels.OAuthRefreshToken{
@@ -269,7 +314,7 @@ func (s *OAuthTokenService) GenerateRefreshToken(ctx context.Context, accessToke
 		ClientID:      clientID,
 		Scope:         scope,
 		UserID:        userID,
-		ExpiresAt:     time.Now().Add(s.cfg.OAuth.RefreshTokenExpire),
+		ExpiresAt:     time.Now().Add(time.Duration(oauthClient.RefreshTokenExpire) * time.Second),
 	}
 
 	if err := s.oauthRefreshTokenRepository.Create(ctx, refreshToken); err != nil {
@@ -282,10 +327,20 @@ func (s *OAuthTokenService) GenerateRefreshToken(ctx context.Context, accessToke
 
 // GenerateRefreshTokenWithTx 在事务中生成并保存刷新令牌
 func (s *OAuthTokenService) GenerateRefreshTokenWithTx(ctx context.Context, tx *gorm.DB, accessTokenID uint, clientID string, scope string, userID uint, username string, role string) (string, error) {
-	refreshTokenString, err := s.jwtManager.GenerateRefreshToken(strconv.FormatUint(uint64(userID), 10))
+	jwtManager := s.refreshTokenJwtManager(ctx, clientID)
+	if jwtManager == nil {
+		return "", errors.New("系统繁忙，请稍后再试")
+	}
+	refreshTokenString, err := jwtManager.GenerateRefreshToken(strconv.FormatUint(uint64(userID), 10))
 	if err != nil {
 		s.logMgr.Error("生成刷新令牌失败", "error", err)
 		return "", errors.New("生成刷新令牌失败")
+	}
+
+	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"id": clientID})
+	if err != nil {
+		s.logMgr.Error("获取OAuth客户端失败", "error", err)
+		return "", errors.New("系统繁忙，请稍后再试")
 	}
 
 	refreshToken := &oauthmodels.OAuthRefreshToken{
@@ -294,7 +349,7 @@ func (s *OAuthTokenService) GenerateRefreshTokenWithTx(ctx context.Context, tx *
 		ClientID:      clientID,
 		Scope:         scope,
 		UserID:        userID,
-		ExpiresAt:     time.Now().Add(s.cfg.OAuth.RefreshTokenExpire),
+		ExpiresAt:     time.Now().Add(time.Duration(oauthClient.RefreshTokenExpire) * time.Second),
 	}
 
 	if err := s.oauthRefreshTokenRepository.CreateWithTx(ctx, tx, refreshToken); err != nil {
