@@ -140,10 +140,10 @@ func main() {
 		return
 	}
 
-	subjectMgr, err := subject.NewManager(
-		subject.WithSecretString(cfg.OAuth.Subject.Secret),
-		subject.WithLength(cfg.OAuth.Subject.Length),
-		subject.WithPrefix(cfg.OAuth.Subject.Prefix),
+	subjectMgr, err := subject.NewManager(	// 暂时先硬编码，后续再优化
+		subject.WithSecretString("secret"),
+		subject.WithLength(16),
+		subject.WithPrefix("usr_"),
 	)
 	if err != nil {
 		logMgr.Error("初始化 subject 管理器失败", "error", err)
