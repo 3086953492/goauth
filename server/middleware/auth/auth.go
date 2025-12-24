@@ -29,7 +29,7 @@ func AuthTokenMiddleware(jwtManager *jwt.Manager) gin.HandlerFunc {
 			return
 		}
 
-		userID, err := strconv.ParseUint(claims.UserID, 10, 64)
+		userID, err := strconv.ParseUint(claims.Subject, 10, 64)
 		if err != nil {
 			problem.Fail(c, 401, "UNAUTHORIZED", "用户ID格式错误", "about:blank")
 			c.Abort()

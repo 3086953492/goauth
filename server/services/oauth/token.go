@@ -128,7 +128,7 @@ func (s *OAuthTokenService) ExchangeAccessToken(ctx context.Context, form *oauth
 		return nil, errors.New("系统繁忙，请稍后再试")
 	}
 
-	accessTokenString, err := jwtManager.GenerateAccessToken(strconv.FormatUint(uint64(user.ID), 10), user.Username, map[string]any{"role": user.Role})
+	accessTokenString, err := jwtManager.GenerateAccessToken(user.Subject, map[string]any{})
 	if err != nil {
 		s.logMgr.Error("生成访问令牌失败", "error", err)
 		return nil, errors.New("生成访问令牌失败")

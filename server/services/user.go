@@ -272,16 +272,16 @@ func (s *UserService) DeleteUser(ctx context.Context, userID uint) error {
 	return nil
 }
 
-func (s *UserService) ResolveExtra(ctx context.Context, userIDStr string) (string, map[string]any, error) {
+func (s *UserService) ResolveExtra(ctx context.Context, userIDStr string) ( map[string]any, error) {
 	userID, err := strconv.ParseUint(userIDStr, 10, 64)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
 	user, err := s.GetUser(ctx, map[string]any{"id": userID})
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
-	return user.Username, map[string]any{"role": user.Role}, nil
+	return map[string]any{"role": user.Role}, nil
 }

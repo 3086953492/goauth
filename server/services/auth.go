@@ -54,7 +54,7 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (accessT
 	}
 
 	userID := strconv.FormatUint(uint64(user.ID), 10)
-	accessToken, err = s.jwtManager.GenerateAccessToken(userID, user.Username, map[string]any{"role": user.Role})
+	accessToken, err = s.jwtManager.GenerateAccessToken(userID, map[string]any{"role": user.Role})
 	if err != nil {
 		s.logMgr.Error("生成访问令牌失败", "error", err)
 		return "", 0, "", 0, nil, errors.New("生成访问令牌失败")
@@ -89,7 +89,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (ac
 		return "", 0, errors.New("无效的刷新令牌")
 	}
 
-	userID, err := strconv.ParseUint(claims.UserID, 10, 64)
+	userID, err := strconv.ParseUint(claims.Subject, 10, 64)
 	if err != nil {
 		return "", 0, errors.New("用户ID格式错误")
 	}
