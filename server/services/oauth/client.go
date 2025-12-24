@@ -210,6 +210,9 @@ func (s *OAuthClientService) UpdateOAuthClient(ctx context.Context, id uint, req
 	if err := s.cacheMgr.DeleteByConds(ctx, "oauth_client", map[string]any{"id": id}); err != nil {
 		s.logMgr.Warn("删除缓存失败", "error", err)
 	}
+	if err := s.cacheMgr.DeleteByConds(ctx, "oauth_client_model", map[string]any{"id": id}); err != nil {
+		s.logMgr.Warn("删除缓存失败", "error", err)
+	}
 
 	return nil
 }
@@ -225,6 +228,28 @@ func (s *OAuthClientService) DeleteOAuthClient(ctx context.Context, id uint) err
 	if err := s.cacheMgr.DeleteByConds(ctx, "oauth_client", map[string]any{"id": id}); err != nil {
 		s.logMgr.Warn("删除缓存失败", "error", err)
 	}
+	if err := s.cacheMgr.DeleteByConds(ctx, "oauth_client_model", map[string]any{"id": id}); err != nil {
+		s.logMgr.Warn("删除缓存失败", "error", err)
+	}
 	s.logMgr.Info("删除OAuth客户端成功", "id", id)
 	return nil
+}
+
+// 获取OAuth客户端在数据库中的完整记录，用于将密钥字段暴露给jwt管理器
+func (s *OAuthClientService) GetOAuthClientModel(ctx context.Context, id uint) (*oauthmodels.OAuthClient, error) {
+	oauthClient, err := cache.NewBuilder[oauthmodels.OAuthClient](s.cacheMgr).KeyWithConds("oauth_client_model", map[string]any{"id": id}).TTL(10*time.Minute).GetOrSet(ctx, func() (*oauthmodels.OAuthClient, error) {
+		oauthClient, err := s.oauthClientRepository.Get(ctx, map[string]any{"id": id})
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, err
+			}
+			s.logMgr.Error("获取OAuth客户端失败", "error", err, "id", id)
+			return nil, errors.New("系统繁忙，请稍后再试")
+		}
+		return oauthClient, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return oauthClient, nil
 }

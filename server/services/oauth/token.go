@@ -3,6 +3,7 @@ package oauthservices
 import (
 	"context"
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/3086953492/gokit/jwt"
@@ -54,7 +55,12 @@ func NewOAuthTokenService(
 }
 
 func (s *OAuthTokenService) accessTokenJwtManager(ctx context.Context, clientID string) *jwt.Manager {
-	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"id": clientID})
+	uid, err := strconv.ParseUint(clientID, 10, 64)
+	if err != nil {
+		s.logMgr.Error("解析OAuth客户端ID失败", "error", err)
+		return nil
+	}
+	oauthClient, err := s.oauthClientService.GetOAuthClientModel(ctx, uint(uid))
 	if err != nil {
 		s.logMgr.Error("获取OAuth客户端失败", "error", err)
 		return nil
@@ -70,7 +76,12 @@ func (s *OAuthTokenService) accessTokenJwtManager(ctx context.Context, clientID 
 }
 
 func (s *OAuthTokenService) refreshTokenJwtManager(ctx context.Context, clientID string) *jwt.Manager {
-	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"id": clientID})
+	uid, err := strconv.ParseUint(clientID, 10, 64)
+	if err != nil {
+		s.logMgr.Error("解析OAuth客户端ID失败", "error", err)
+		return nil
+	}
+	oauthClient, err := s.oauthClientService.GetOAuthClientModel(ctx, uint(uid))
 	if err != nil {
 		s.logMgr.Error("获取OAuth客户端失败", "error", err)
 		return nil
