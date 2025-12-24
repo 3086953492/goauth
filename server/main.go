@@ -108,8 +108,8 @@ func main() {
 	jwtMgr, err := jwt.NewManager(jwt.WithAccessSecret(cfg.AuthToken.AccessTokenSecret),
 		jwt.WithRefreshSecret(cfg.AuthToken.RefreshTokenSecret),
 		jwt.WithIssuer(cfg.AuthToken.Issuer),
-		jwt.WithAccessTTL(time.Duration(cfg.AuthToken.AccessTokenExpire)*time.Second),
-		jwt.WithRefreshTTL(time.Duration(cfg.AuthToken.RefreshTokenExpire)*time.Second))
+		jwt.WithAccessTTL(cfg.AuthToken.AccessTokenExpire),
+		jwt.WithRefreshTTL(cfg.AuthToken.RefreshTokenExpire))
 	if err != nil {
 		logMgr.Error("初始化 JWT 失败", "error", err)
 		return
