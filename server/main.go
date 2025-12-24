@@ -142,9 +142,9 @@ func main() {
 	}
 
 	subjectMgr, err := subject.NewManager(	// 暂时先硬编码，后续再优化
-		subject.WithSecretString("secret"),
-		subject.WithLength(16),
-		subject.WithPrefix("usr_"),
+		subject.WithSecretString(cfg.Subject.Secret),
+		subject.WithLength(cfg.Subject.Length),
+		subject.WithPrefix(cfg.Subject.Prefix),
 	)
 	if err != nil {
 		logMgr.Error("初始化 subject 管理器失败", "error", err)

@@ -11,7 +11,6 @@ type CreateOAuthClientRequest struct {
 	ClientSecret       string `json:"client_secret" validate:"required"`
 	AccessTokenSecret  string `json:"access_token_secret" validate:"required"`
 	RefreshTokenSecret string `json:"refresh_token_secret" validate:"required"`
-	SubjectSecret      string `json:"subject_secret" validate:"required"`
 
 	// 必填基本字段
 	Name         string         `json:"name" validate:"required,min=3,max=20"`
@@ -25,11 +24,9 @@ type CreateOAuthClientRequest struct {
 	Logo        string `json:"logo" validate:"omitempty,url"`
 
 	// 可选配置字段（不传则后端用默认值，单位：秒）
-	AuthCodeExpire     *int    `json:"auth_code_expire" validate:"omitempty,min=60,max=600"`
-	AccessTokenExpire  *int    `json:"access_token_expire" validate:"omitempty,min=300,max=86400"`
-	RefreshTokenExpire *int    `json:"refresh_token_expire" validate:"omitempty,min=3600,max=31536000"`
-	SubjectLength      *int    `json:"subject_length" validate:"omitempty,min=8,max=64"`
-	SubjectPrefix      *string `json:"subject_prefix" validate:"omitempty,max=20"`
+	AuthCodeExpire     *int `json:"auth_code_expire" validate:"omitempty,min=60,max=600"`
+	AccessTokenExpire  *int `json:"access_token_expire" validate:"omitempty,min=300,max=86400"`
+	RefreshTokenExpire *int `json:"refresh_token_expire" validate:"omitempty,min=3600,max=31536000"`
 }
 
 type OAuthClientListResponse struct {
@@ -55,9 +52,6 @@ type OAuthClientDetailResponse struct {
 	AccessTokenExpire  int    `json:"access_token_expire"`
 	RefreshTokenSecret string `json:"-"`
 	RefreshTokenExpire int    `json:"refresh_token_expire"`
-	SubjectSecret      string `json:"-"`
-	SubjectLength      int    `json:"subject_length"`
-	SubjectPrefix      string `json:"subject_prefix"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -79,12 +73,9 @@ type UpdateOAuthClientRequest struct {
 	ClientSecret       *string `json:"client_secret" validate:"omitempty"`
 	AccessTokenSecret  *string `json:"access_token_secret" validate:"omitempty"`
 	RefreshTokenSecret *string `json:"refresh_token_secret" validate:"omitempty"`
-	SubjectSecret      *string `json:"subject_secret" validate:"omitempty"`
 
 	// 可选配置字段（单位：秒）
-	AuthCodeExpire     *int    `json:"auth_code_expire" validate:"omitempty,min=60,max=600"`
-	AccessTokenExpire  *int    `json:"access_token_expire" validate:"omitempty,min=300,max=86400"`
-	RefreshTokenExpire *int    `json:"refresh_token_expire" validate:"omitempty,min=3600,max=31536000"`
-	SubjectLength      *int    `json:"subject_length" validate:"omitempty,min=8,max=64"`
-	SubjectPrefix      *string `json:"subject_prefix" validate:"omitempty,max=20"`
+	AuthCodeExpire     *int `json:"auth_code_expire" validate:"omitempty,min=60,max=600"`
+	AccessTokenExpire  *int `json:"access_token_expire" validate:"omitempty,min=300,max=86400"`
+	RefreshTokenExpire *int `json:"refresh_token_expire" validate:"omitempty,min=3600,max=31536000"`
 }

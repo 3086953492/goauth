@@ -20,8 +20,6 @@ const (
 	DefaultAuthCodeExpire     = 300     // 授权码过期时间：5分钟
 	DefaultAccessTokenExpire  = 3600    // 访问令牌过期时间：1小时
 	DefaultRefreshTokenExpire = 2592000 // 刷新令牌过期时间：30天
-	DefaultSubjectLength      = 16      // 用户标识长度
-	DefaultSubjectPrefix      = "usr_"  // 用户标识前缀
 )
 
 type OAuthClientService struct {
@@ -51,22 +49,11 @@ func (s *OAuthClientService) CreateOAuthClient(ctx context.Context, req *oauthdt
 		refreshTokenExpire = *req.RefreshTokenExpire
 	}
 
-	subjectLength := DefaultSubjectLength
-	if req.SubjectLength != nil {
-		subjectLength = *req.SubjectLength
-	}
-
-	subjectPrefix := DefaultSubjectPrefix
-	if req.SubjectPrefix != nil {
-		subjectPrefix = *req.SubjectPrefix
-	}
-
 	client := &oauthmodels.OAuthClient{
 		// 密钥字段（必填）
 		ClientSecret:       req.ClientSecret,
 		AccessTokenSecret:  req.AccessTokenSecret,
 		RefreshTokenSecret: req.RefreshTokenSecret,
-		SubjectSecret:      req.SubjectSecret,
 
 		// 基本字段
 		Name:         req.Name,
@@ -81,8 +68,6 @@ func (s *OAuthClientService) CreateOAuthClient(ctx context.Context, req *oauthdt
 		AuthCodeExpire:     authCodeExpire,
 		AccessTokenExpire:  accessTokenExpire,
 		RefreshTokenExpire: refreshTokenExpire,
-		SubjectLength:      subjectLength,
-		SubjectPrefix:      subjectPrefix,
 	}
 
 	if err := s.oauthClientRepository.Create(ctx, client); err != nil {
@@ -152,9 +137,6 @@ func (s *OAuthClientService) GetOAuthClient(ctx context.Context, conds map[strin
 			AccessTokenExpire:  oauthClient.AccessTokenExpire,
 			RefreshTokenSecret: oauthClient.RefreshTokenSecret,
 			RefreshTokenExpire: oauthClient.RefreshTokenExpire,
-			SubjectSecret:      oauthClient.SubjectSecret,
-			SubjectLength:      oauthClient.SubjectLength,
-			SubjectPrefix:      oauthClient.SubjectPrefix,
 
 			CreatedAt: oauthClient.CreatedAt,
 			UpdatedAt: oauthClient.UpdatedAt,
@@ -205,9 +187,6 @@ func (s *OAuthClientService) UpdateOAuthClient(ctx context.Context, id uint, req
 	if req.RefreshTokenSecret != nil && *req.RefreshTokenSecret != "" {
 		updates["refresh_token_secret"] = *req.RefreshTokenSecret
 	}
-	if req.SubjectSecret != nil && *req.SubjectSecret != "" {
-		updates["subject_secret"] = *req.SubjectSecret
-	}
 
 	// 配置字段
 	if req.AuthCodeExpire != nil {
@@ -218,12 +197,6 @@ func (s *OAuthClientService) UpdateOAuthClient(ctx context.Context, id uint, req
 	}
 	if req.RefreshTokenExpire != nil {
 		updates["refresh_token_expire"] = *req.RefreshTokenExpire
-	}
-	if req.SubjectLength != nil {
-		updates["subject_length"] = *req.SubjectLength
-	}
-	if req.SubjectPrefix != nil {
-		updates["subject_prefix"] = *req.SubjectPrefix
 	}
 
 	if err := s.oauthClientRepository.Update(ctx, id, updates); err != nil {

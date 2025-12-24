@@ -18,9 +18,6 @@ type OAuthClient struct {
 	AccessTokenExpire  int            `gorm:"type:int;comment:访问令牌过期时间;not null" json:"access_token_expires_at"`
 	RefreshTokenSecret string         `gorm:"type:text;comment:刷新令牌密钥;not null" json:"refresh_token_secret"`
 	RefreshTokenExpire int            `gorm:"type:int;comment:刷新令牌过期时间;not null" json:"refresh_token_expires_at"`
-	SubjectSecret      string         `gorm:"type:text;comment:用户标识密钥;not null" json:"subject_secret"`
-	SubjectLength      int            `gorm:"type:int;comment:用户标识长度;not null" json:"subject_length"`
-	SubjectPrefix      string         `gorm:"type:varchar(100);comment:用户标识前缀;not null" json:"subject_prefix"`
 	Name               string         `gorm:"type:varchar(100);comment:应用名称;not null" json:"name"`
 	Description        string         `gorm:"type:text;comment:应用描述" json:"description"`
 	Logo               string         `gorm:"type:varchar(500);comment:应用Logo URL" json:"logo"`

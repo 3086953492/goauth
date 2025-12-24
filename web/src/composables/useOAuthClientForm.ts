@@ -7,8 +7,6 @@ import type { CreateOAuthClientRequest } from '@/types/oauth_client'
 export const DEFAULT_AUTH_CODE_EXPIRE = 300       // 授权码过期时间：5分钟
 export const DEFAULT_ACCESS_TOKEN_EXPIRE = 3600   // 访问令牌过期时间：1小时
 export const DEFAULT_REFRESH_TOKEN_EXPIRE = 2592000 // 刷新令牌过期时间：30天
-export const DEFAULT_SUBJECT_LENGTH = 16          // 用户标识长度
-export const DEFAULT_SUBJECT_PREFIX = 'usr_'      // 用户标识前缀
 
 /**
  * OAuth 客户端表单管理相关的组合式函数
@@ -21,13 +19,11 @@ export function useOAuthClientForm() {
     new_client_secret?: string
     new_access_token_secret?: string
     new_refresh_token_secret?: string
-    new_subject_secret?: string
   }>({
     // 必填密钥字段
     client_secret: '',
     access_token_secret: '',
     refresh_token_secret: '',
-    subject_secret: '',
 
     // 必填基本字段
     name: '',
@@ -43,9 +39,7 @@ export function useOAuthClientForm() {
     // 可选配置字段（带默认值）
     auth_code_expire: DEFAULT_AUTH_CODE_EXPIRE,
     access_token_expire: DEFAULT_ACCESS_TOKEN_EXPIRE,
-    refresh_token_expire: DEFAULT_REFRESH_TOKEN_EXPIRE,
-    subject_length: DEFAULT_SUBJECT_LENGTH,
-    subject_prefix: DEFAULT_SUBJECT_PREFIX
+    refresh_token_expire: DEFAULT_REFRESH_TOKEN_EXPIRE
   })
 
   /**
@@ -67,7 +61,6 @@ export function useOAuthClientForm() {
     formData.client_secret = generateSecret()
     formData.access_token_secret = generateSecret()
     formData.refresh_token_secret = generateSecret()
-    formData.subject_secret = generateSecret()
   }
 
   /**
@@ -80,7 +73,7 @@ export function useOAuthClientForm() {
   /**
    * 重新生成指定密钥
    */
-  const regenerateSecret = (field: 'client_secret' | 'access_token_secret' | 'refresh_token_secret' | 'subject_secret') => {
+  const regenerateSecret = (field: 'client_secret' | 'access_token_secret' | 'refresh_token_secret') => {
     formData[field] = generateSecret()
     ElMessage.success('密钥已重新生成')
   }
@@ -128,7 +121,6 @@ export function useOAuthClientForm() {
         client_secret: formData.client_secret,
         access_token_secret: formData.access_token_secret,
         refresh_token_secret: formData.refresh_token_secret,
-        subject_secret: formData.subject_secret,
         name: formData.name,
         redirect_uris: filteredRedirectUris,
         grant_types: formData.grant_types,
@@ -138,9 +130,7 @@ export function useOAuthClientForm() {
         logo: formData.logo,
         auth_code_expire: formData.auth_code_expire,
         access_token_expire: formData.access_token_expire,
-        refresh_token_expire: formData.refresh_token_expire,
-        subject_length: formData.subject_length,
-        subject_prefix: formData.subject_prefix
+        refresh_token_expire: formData.refresh_token_expire
       }
 
       await createOAuthClient(requestData)
@@ -162,7 +152,6 @@ export function useOAuthClientForm() {
     formData.client_secret = generateSecret()
     formData.access_token_secret = generateSecret()
     formData.refresh_token_secret = generateSecret()
-    formData.subject_secret = generateSecret()
     formData.description = ''
     formData.logo = ''
     formData.redirect_uris = ['']
@@ -172,8 +161,6 @@ export function useOAuthClientForm() {
     formData.auth_code_expire = DEFAULT_AUTH_CODE_EXPIRE
     formData.access_token_expire = DEFAULT_ACCESS_TOKEN_EXPIRE
     formData.refresh_token_expire = DEFAULT_REFRESH_TOKEN_EXPIRE
-    formData.subject_length = DEFAULT_SUBJECT_LENGTH
-    formData.subject_prefix = DEFAULT_SUBJECT_PREFIX
   }
 
   return {
@@ -191,8 +178,6 @@ export function useOAuthClientForm() {
     // 导出默认值供组件使用
     DEFAULT_AUTH_CODE_EXPIRE,
     DEFAULT_ACCESS_TOKEN_EXPIRE,
-    DEFAULT_REFRESH_TOKEN_EXPIRE,
-    DEFAULT_SUBJECT_LENGTH,
-    DEFAULT_SUBJECT_PREFIX
+    DEFAULT_REFRESH_TOKEN_EXPIRE
   }
 }

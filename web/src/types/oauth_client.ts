@@ -22,7 +22,6 @@ export interface CreateOAuthClientRequest {
   client_secret: string
   access_token_secret: string
   refresh_token_secret: string
-  subject_secret: string
 
   // 必填基本字段
   name: string
@@ -39,8 +38,6 @@ export interface CreateOAuthClientRequest {
   auth_code_expire?: number
   access_token_expire?: number
   refresh_token_expire?: number
-  subject_length?: number
-  subject_prefix?: string
 }
 
 export interface UpdateOAuthClientRequest {
@@ -59,14 +56,11 @@ export interface UpdateOAuthClientRequest {
   client_secret?: string
   access_token_secret?: string
   refresh_token_secret?: string
-  subject_secret?: string
 
   // 可选配置字段（单位：秒）
   auth_code_expire?: number
   access_token_expire?: number
   refresh_token_expire?: number
-  subject_length?: number
-  subject_prefix?: string
 }
 
 export interface OAuthClientDetailResponse {
@@ -83,8 +77,6 @@ export interface OAuthClientDetailResponse {
   auth_code_expire: number
   access_token_expire: number
   refresh_token_expire: number
-  subject_length: number
-  subject_prefix: string
 
   created_at: string
   updated_at: string
