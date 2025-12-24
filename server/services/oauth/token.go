@@ -3,16 +3,15 @@ package oauthservices
 import (
 	"context"
 	"errors"
-	"strconv"
 	"time"
 
 	"github.com/3086953492/gokit/jwt"
 	"github.com/3086953492/gokit/logger"
 	"gorm.io/gorm"
 
-	"goauth/dto/oauth"
-	"goauth/models/oauth"
-	"goauth/repositories/oauth"
+	oauthdto "goauth/dto/oauth"
+	oauthmodels "goauth/models/oauth"
+	oauthrepositories "goauth/repositories/oauth"
 	"goauth/services"
 	"goauth/utils"
 )
@@ -159,9 +158,9 @@ func (s *OAuthTokenService) ExchangeAccessToken(ctx context.Context, form *oauth
 			return errors.New("创建OAuth访问令牌失败")
 		}
 
-		// 在事务中生成并保存 refresh token
+		// 在事务中生成并保存 refresh token（JWT sub 用 user.Subject，数据库存 userID）
 		var genErr error
-		refreshTokenString, genErr = s.GenerateRefreshTokenWithTx(ctx, tx, accessToken.ID, accessToken.ClientID, accessToken.Scope, oauthAuthorizationCode.UserID, user.Username, user.Role)
+		refreshTokenString, genErr = s.GenerateRefreshTokenWithTx(ctx, tx, accessToken.ID, accessToken.ClientID, accessToken.Scope, oauthAuthorizationCode.UserID, user.Subject)
 		if genErr != nil {
 			return genErr
 		}
@@ -263,9 +262,9 @@ func (s *OAuthTokenService) RefreshAccessToken(ctx context.Context, form *oauthd
 			return err
 		}
 
-		// 在事务中生成新的 refresh token
+		// 在事务中生成新的 refresh token（JWT sub 用 user.Subject，数据库存 userID）
 		var genErr error
-		newRefreshTokenString, genErr = s.GenerateRefreshTokenWithTx(ctx, tx, accessToken.ID, refreshToken.ClientID, refreshToken.Scope, refreshToken.UserID, user.Username, user.Role)
+		newRefreshTokenString, genErr = s.GenerateRefreshTokenWithTx(ctx, tx, accessToken.ID, refreshToken.ClientID, refreshToken.Scope, refreshToken.UserID, user.Subject)
 		if genErr != nil {
 			return genErr
 		}
@@ -291,12 +290,13 @@ func (s *OAuthTokenService) RefreshAccessToken(ctx context.Context, form *oauthd
 	}, nil
 }
 
-func (s *OAuthTokenService) GenerateRefreshToken(ctx context.Context, accessTokenID uint, clientID string, scope string, userID uint, username string, role string) (string, error) {
+func (s *OAuthTokenService) GenerateRefreshToken(ctx context.Context, accessTokenID uint, clientID string, scope string, userID uint, subject string) (string, error) {
 	jwtManager := s.refreshTokenJwtManager(ctx, clientID)
 	if jwtManager == nil {
 		return "", errors.New("系统繁忙，请稍后再试")
 	}
-	refreshTokenString, err := jwtManager.GenerateRefreshToken(strconv.FormatUint(uint64(userID), 10))
+	// 使用 user.Subject 作为 JWT 的 sub（对外统一用 subject）
+	refreshTokenString, err := jwtManager.GenerateRefreshToken(subject)
 	if err != nil {
 		s.logMgr.Error("生成刷新令牌失败", "error", err)
 		return "", errors.New("生成刷新令牌失败")
@@ -313,7 +313,7 @@ func (s *OAuthTokenService) GenerateRefreshToken(ctx context.Context, accessToke
 		AccessTokenID: accessTokenID,
 		ClientID:      clientID,
 		Scope:         scope,
-		UserID:        userID,
+		UserID:        userID, // 数据库仍存 userID（对内用主键）
 		ExpiresAt:     time.Now().Add(time.Duration(oauthClient.RefreshTokenExpire) * time.Second),
 	}
 
@@ -326,12 +326,13 @@ func (s *OAuthTokenService) GenerateRefreshToken(ctx context.Context, accessToke
 }
 
 // GenerateRefreshTokenWithTx 在事务中生成并保存刷新令牌
-func (s *OAuthTokenService) GenerateRefreshTokenWithTx(ctx context.Context, tx *gorm.DB, accessTokenID uint, clientID string, scope string, userID uint, username string, role string) (string, error) {
+func (s *OAuthTokenService) GenerateRefreshTokenWithTx(ctx context.Context, tx *gorm.DB, accessTokenID uint, clientID string, scope string, userID uint, subject string) (string, error) {
 	jwtManager := s.refreshTokenJwtManager(ctx, clientID)
 	if jwtManager == nil {
 		return "", errors.New("系统繁忙，请稍后再试")
 	}
-	refreshTokenString, err := jwtManager.GenerateRefreshToken(strconv.FormatUint(uint64(userID), 10))
+	// 使用 user.Subject 作为 JWT 的 sub（对外统一用 subject）
+	refreshTokenString, err := jwtManager.GenerateRefreshToken(subject)
 	if err != nil {
 		s.logMgr.Error("生成刷新令牌失败", "error", err)
 		return "", errors.New("生成刷新令牌失败")
@@ -348,7 +349,7 @@ func (s *OAuthTokenService) GenerateRefreshTokenWithTx(ctx context.Context, tx *
 		AccessTokenID: accessTokenID,
 		ClientID:      clientID,
 		Scope:         scope,
-		UserID:        userID,
+		UserID:        userID, // 数据库仍存 userID（对内用主键）
 		ExpiresAt:     time.Now().Add(time.Duration(oauthClient.RefreshTokenExpire) * time.Second),
 	}
 
