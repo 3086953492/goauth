@@ -3,7 +3,6 @@ package controllers
 import (
 	"time"
 
-	// "github.com/3086953492/gokit/cookie"
 	"github.com/3086953492/gokit/ginx/cookie"
 	"github.com/3086953492/gokit/ginx/problem"
 	"github.com/3086953492/gokit/ginx/response"
@@ -17,7 +16,7 @@ import (
 type AuthController struct {
 	authService      *services.AuthService
 	validatorManager *validator.Manager
-	cookieMgr *cookie.TokenCookies
+	cookieMgr        *cookie.TokenCookies
 }
 
 func NewAuthController(authService *services.AuthService, validatorManager *validator.Manager, cookieMgr *cookie.TokenCookies) *AuthController {
@@ -48,7 +47,7 @@ func (ctrl *AuthController) LoginHandler(ctx *gin.Context) {
 		User:                 userResp,
 		AccessTokenExpireAt:  time.Now().Add(time.Duration(accessTokenExpire) * time.Second),
 		RefreshTokenExpireAt: time.Now().Add(time.Duration(refreshTokenExpire) * time.Second),
-	},response.WithMessage("登录成功"))
+	}, response.WithMessage("登录成功"))
 }
 
 func (ctrl *AuthController) LogoutHandler(ctx *gin.Context) {
@@ -64,7 +63,8 @@ func (ctrl *AuthController) RefreshTokenHandler(ctx *gin.Context) {
 	}
 	accessToken, accessTokenExpire, err := ctrl.authService.RefreshToken(ctx.Request.Context(), token)
 	if err != nil {
-		problem.Fail(ctx, 500, "INTERNAL_SERVER_ERROR", err.Error(), "about:blank")
+		// 刷新令牌失败通常是令牌无效或过期，应返回 401 而非 500
+		problem.Fail(ctx, 401, "UNAUTHORIZED", err.Error(), "about:blank")
 		return
 	}
 
