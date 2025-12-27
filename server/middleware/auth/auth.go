@@ -3,7 +3,8 @@ package auth
 import (
 	"strconv"
 
-	"github.com/3086953492/gokit/cookie"
+	// "github.com/3086953492/gokit/cookie"
+	"github.com/3086953492/gokit/ginx/cookie"
 	"github.com/3086953492/gokit/jwt"
 	"github.com/3086953492/gokit/ginx/problem"
 	"github.com/gin-gonic/gin"
@@ -12,10 +13,10 @@ import (
 )
 
 // Auth 访问令牌验证中间件
-func AuthTokenMiddleware(jwtManager *jwt.Manager) gin.HandlerFunc {
+func AuthTokenMiddleware(jwtManager *jwt.Manager, cookieMgr *cookie.TokenCookies) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 从 Cookie 中获取令牌
-		token, err := cookie.GetAccessToken(c)
+		token, err := cookieMgr.GetAccess(c)
 		if err != nil || token == "" {
 			problem.Fail(c, 401, "UNAUTHORIZED", "令牌为空", "about:blank")
 			c.Abort()

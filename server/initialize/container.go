@@ -3,6 +3,7 @@ package initialize
 import (
 	"github.com/3086953492/gokit/cache"
 	"github.com/3086953492/gokit/config"
+	"github.com/3086953492/gokit/ginx/cookie"
 	"github.com/3086953492/gokit/jwt"
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
@@ -23,8 +24,9 @@ import (
 )
 
 type Container struct {
-	JwtManager *jwt.Manager
-	LogManager *logger.Manager
+	JwtManager     *jwt.Manager
+	CookieMgr      *cookie.TokenCookies
+	LogManager     *logger.Manager
 	SubjectManager *subject.Manager
 
 	UserRepository *repositories.UserRepository
@@ -62,11 +64,11 @@ type Container struct {
 	MiddlewareManager *middleware.Manager
 }
 
-func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager *validator.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager, jwtMgr *jwt.Manager, logMgr *logger.Manager, passwordMgr *password.Manager, subjectMgr *subject.Manager, cfg *config.Config) *Container {
+func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager *validator.Manager, redisMgr *redis.Manager, cacheMgr *cache.Manager, jwtMgr *jwt.Manager, logMgr *logger.Manager, passwordMgr *password.Manager, subjectMgr *subject.Manager, cookieMgr *cookie.TokenCookies, cfg *config.Config) *Container {
 	c := &Container{}
 
 	c.LogManager = logMgr
-
+	c.CookieMgr = cookieMgr
 	c.SubjectManager = subjectMgr
 
 	c.UserRepository = repositories.NewUserRepository(db)
@@ -78,7 +80,7 @@ func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager
 	c.JwtManager.SetExtraResolver(c.UserService)
 
 	c.AuthService = services.NewAuthService(c.UserRepository, c.UserService, c.LogManager, c.JwtManager, passwordMgr, cfg)
-	c.AuthController = controllers.NewAuthController(c.AuthService, validatorManager)
+	c.AuthController = controllers.NewAuthController(c.AuthService, validatorManager, c.CookieMgr)
 
 	c.OAuthClientRepository = oauthrepositories.NewOAuthClientRepository(db)
 	c.OAuthClientService = oauthservices.NewOAuthClientService(c.OAuthClientRepository, cacheMgr, c.LogManager)
@@ -105,7 +107,7 @@ func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager
 
 	c.ValidatorManager = validatorManager
 
-	c.MiddlewareManager = middleware.NewManager(&cfg.Middleware, c.JwtManager)
+	c.MiddlewareManager = middleware.NewManager(&cfg.Middleware, c.JwtManager, c.CookieMgr)
 
 	return c
 }

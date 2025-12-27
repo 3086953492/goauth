@@ -10,8 +10,8 @@ import (
 
 	"github.com/3086953492/gokit/cache"
 	"github.com/3086953492/gokit/config"
-	"github.com/3086953492/gokit/cookie"
 	"github.com/3086953492/gokit/database"
+	"github.com/3086953492/gokit/ginx/cookie"
 	"github.com/3086953492/gokit/jwt"
 	"github.com/3086953492/gokit/logger"
 	"github.com/3086953492/gokit/redis"
@@ -24,7 +24,7 @@ import (
 
 	"goauth/initialize"
 	"goauth/models"
-	"goauth/models/oauth"
+	oauthmodels "goauth/models/oauth"
 )
 
 func main() {
@@ -127,7 +127,7 @@ func main() {
 		return
 	}
 
-	cookie.Init(cfg.Server.Mode != "debug")
+	cookieMgr := cookie.New(cookie.WithDomain(cfg.Server.Domain), cookie.WithSecure(cfg.Server.Mode != "debug"), cookie.WithAccessMaxAge(int(cfg.AuthToken.AccessTokenExpire.Seconds())), cookie.WithRefreshMaxAge(int(cfg.AuthToken.RefreshTokenExpire.Seconds())))
 
 	validatorManager, err := validator.New()
 	if err != nil {
@@ -141,7 +141,7 @@ func main() {
 		return
 	}
 
-	subjectMgr, err := subject.NewManager(	// 暂时先硬编码，后续再优化
+	subjectMgr, err := subject.NewManager( // 暂时先硬编码，后续再优化
 		subject.WithSecretString(cfg.Subject.Secret),
 		subject.WithLength(cfg.Subject.Length),
 		subject.WithPrefix(cfg.Subject.Prefix),
@@ -151,7 +151,7 @@ func main() {
 		return
 	}
 
-	container := initialize.NewContainer(dbManager.DB(), storageManager, validatorManager, redisMgr, cacheMgr, jwtMgr, logMgr, passwordMgr, subjectMgr, &cfg)
+	container := initialize.NewContainer(dbManager.DB(), storageManager, validatorManager, redisMgr, cacheMgr, jwtMgr, logMgr, passwordMgr, subjectMgr, cookieMgr, &cfg)
 
 	if err := initialize.RegisterValidations(container); err != nil {
 		logMgr.Error("注册自定义验证规则失败", "error", err)

@@ -3,6 +3,7 @@ package middleware
 import (
 	"github.com/3086953492/gokit/config/types"
 	"github.com/3086953492/gokit/jwt"
+	"github.com/3086953492/gokit/ginx/cookie"
 	"github.com/gin-gonic/gin"
 
 	"goauth/middleware/auth"
@@ -13,13 +14,15 @@ import (
 type Manager struct {
 	config *types.MiddlewareConfig
 	jwtManager *jwt.Manager
+	cookieMgr *cookie.TokenCookies
 }
 
 // 创建管理器（通过注入配置）
-func NewManager(cfg *types.MiddlewareConfig, jwtManager *jwt.Manager) *Manager {
+func NewManager(cfg *types.MiddlewareConfig, jwtManager *jwt.Manager, cookieMgr *cookie.TokenCookies) *Manager {
 	return &Manager{
 		config: cfg,
 		jwtManager: jwtManager,
+		cookieMgr: cookieMgr,
 	}
 }
 
@@ -38,7 +41,7 @@ func (m *Manager) CORS() gin.HandlerFunc {
 }
 
 func (m *Manager) Auth() gin.HandlerFunc {
-	return auth.AuthTokenMiddleware(m.jwtManager)
+	return auth.AuthTokenMiddleware(m.jwtManager, m.cookieMgr)
 }
 
 func (m *Manager) Role(requiredRole string) gin.HandlerFunc {

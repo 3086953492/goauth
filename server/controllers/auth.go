@@ -3,7 +3,8 @@ package controllers
 import (
 	"time"
 
-	"github.com/3086953492/gokit/cookie"
+	// "github.com/3086953492/gokit/cookie"
+	"github.com/3086953492/gokit/ginx/cookie"
 	"github.com/3086953492/gokit/ginx/problem"
 	"github.com/3086953492/gokit/ginx/response"
 	"github.com/3086953492/gokit/validator"
@@ -16,10 +17,11 @@ import (
 type AuthController struct {
 	authService      *services.AuthService
 	validatorManager *validator.Manager
+	cookieMgr *cookie.TokenCookies
 }
 
-func NewAuthController(authService *services.AuthService, validatorManager *validator.Manager) *AuthController {
-	return &AuthController{authService: authService, validatorManager: validatorManager}
+func NewAuthController(authService *services.AuthService, validatorManager *validator.Manager, cookieMgr *cookie.TokenCookies) *AuthController {
+	return &AuthController{authService: authService, validatorManager: validatorManager, cookieMgr: cookieMgr}
 }
 
 func (ctrl *AuthController) LoginHandler(ctx *gin.Context) {
@@ -39,8 +41,8 @@ func (ctrl *AuthController) LoginHandler(ctx *gin.Context) {
 		return
 	}
 
-	cookie.SetAccessToken(ctx, accessToken, accessTokenExpire, "", "/")
-	cookie.SetRefreshToken(ctx, refreshToken, refreshTokenExpire, "", "/")
+	ctrl.cookieMgr.SetAccess(ctx, accessToken)
+	ctrl.cookieMgr.SetRefresh(ctx, refreshToken)
 
 	response.OK(ctx, dto.LoginResponse{
 		User:                 userResp,
@@ -50,12 +52,12 @@ func (ctrl *AuthController) LoginHandler(ctx *gin.Context) {
 }
 
 func (ctrl *AuthController) LogoutHandler(ctx *gin.Context) {
-	cookie.ClearTokens(ctx, "", "/")
+	ctrl.cookieMgr.Clear(ctx)
 	response.OK(ctx, nil, response.WithMessage("退出登录成功"))
 }
 
 func (ctrl *AuthController) RefreshTokenHandler(ctx *gin.Context) {
-	token, err := cookie.GetRefreshToken(ctx)
+	token, err := ctrl.cookieMgr.GetRefresh(ctx)
 	if err != nil {
 		problem.Fail(ctx, 401, "UNAUTHORIZED", "刷新令牌不存在", "about:blank")
 		return
@@ -66,7 +68,7 @@ func (ctrl *AuthController) RefreshTokenHandler(ctx *gin.Context) {
 		return
 	}
 
-	cookie.SetAccessToken(ctx, accessToken, accessTokenExpire, "", "/")
+	ctrl.cookieMgr.SetAccess(ctx, accessToken)
 
 	response.OK(ctx, dto.RefreshTokenResponse{
 		AccessTokenExpireAt: time.Now().Add(time.Duration(accessTokenExpire) * time.Second),
