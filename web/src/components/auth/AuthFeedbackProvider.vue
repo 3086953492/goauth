@@ -6,11 +6,11 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useAuth } from '@/composables/useAuth'
 import { onAuthEvent, offAuthEvent, type AuthEventType, type AuthEventPayload } from '@/utils/authFeedbackBus'
 
 const router = useRouter()
-const authStore = useAuthStore()
+const { handleLogout } = useAuth()
 
 // 防抖标志，避免多个401请求重复重定向
 let isRedirecting = false
@@ -65,7 +65,7 @@ const handleAuthEvent = (type: AuthEventType, payload: AuthEventPayload) => {
 /**
  * 处理登录失效/未登录事件
  */
-const handleLoginRequired = (payload: AuthEventPayload) => {
+const handleLoginRequired = async (payload: AuthEventPayload) => {
   // 计算最终提示消息
   const message = payload.message || '登录已过期，请重新登录'
 
@@ -79,8 +79,8 @@ const handleLoginRequired = (payload: AuthEventPayload) => {
 
   isRedirecting = true
 
-  // 清理登录态
-  authStore.logout()
+  // 调用登出接口并清理登录态（包含停止令牌刷新、调用后端登出接口、清除前端状态）
+  await handleLogout()
 
   // 仅在时间窗允许时展示提示
   if (shouldShowToast) {
