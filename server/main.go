@@ -127,7 +127,7 @@ func main() {
 		return
 	}
 
-	cookieMgr := cookie.New(cookie.WithDomain(cfg.Server.Domain), cookie.WithSecure(cfg.Server.Mode != "debug"), cookie.WithAccessMaxAge(int(cfg.AuthToken.AccessTokenExpire.Seconds())), cookie.WithRefreshMaxAge(int(cfg.AuthToken.RefreshTokenExpire.Seconds())))
+	cookieMgr := cookie.New(cookie.WithDomain(cfg.Server.Domain), cookie.WithSecure(cfg.Server.Mode != "debug"), cookie.WithAccessMaxAge(int(cfg.AuthToken.AccessTokenExpire.Seconds())), cookie.WithRefreshMaxAge(int(cfg.AuthToken.RefreshTokenExpire.Seconds())),cookie.WithAccessName("goauth_access_token"),cookie.WithRefreshName("goauth_refresh_token"))
 
 	validatorManager, err := validator.New()
 	if err != nil {
