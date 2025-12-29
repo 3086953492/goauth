@@ -384,3 +384,59 @@ func (s *OAuthTokenService) GetOAuthRefreshToken(ctx context.Context, conds map[
 	}
 	return refreshToken, nil
 }
+
+// IssueClientCredentialsAccessToken 客户端凭证模式签发 access token（不签发 refresh token）
+func (s *OAuthTokenService) IssueClientCredentialsAccessToken(ctx context.Context, form *oauthdto.ClientCredentialsAccessTokenForm, clientID, clientSecret string) (*oauthdto.ClientCredentialsAccessTokenResponse, error) {
+	// 校验客户端凭证
+	oauthClient, err := s.oauthClientService.GetOAuthClient(ctx, map[string]any{"id": clientID, "client_secret": clientSecret})
+	if err != nil {
+		return nil, err
+	}
+
+	// 校验客户端是否支持 client_credentials 授权类型
+	if !utils.IsGrantTypeValid("client_credentials", oauthClient.GrantTypes) {
+		return nil, errors.New("客户端不支持client_credentials授权类型")
+	}
+
+	// 校验请求的 scope 是否在客户端允许范围内（scope 为空直接通过）
+	if !utils.IsScopeValid(form.Scope, oauthClient.Scopes) {
+		return nil, errors.New("请求的scope超出客户端允许范围")
+	}
+
+	// 获取 JWT 管理器
+	jwtManager := s.accessTokenJwtManager(ctx, clientID)
+	if jwtManager == nil {
+		return nil, errors.New("系统繁忙，请稍后再试")
+	}
+
+	// 生成 access token，sub 使用 "client:<client_id>"
+	subject := "client:" + clientID
+	accessTokenString, err := jwtManager.GenerateAccessToken(subject, map[string]any{})
+	if err != nil {
+		s.logMgr.Error("生成访问令牌失败", "error", err)
+		return nil, errors.New("生成访问令牌失败")
+	}
+
+	// 构建 access token 模型（UserID 为空）
+	accessToken := &oauthmodels.OAuthAccessToken{
+		AccessToken: accessTokenString,
+		TokenType:   "Bearer",
+		ExpiresAt:   time.Now().Add(time.Duration(oauthClient.AccessTokenExpire) * time.Second),
+		ClientID:    clientID,
+		Scope:       form.Scope,
+		UserID:      nil, // 客户端凭证模式无用户
+	}
+
+	// 落库
+	if err := s.oauthAccessTokenRepository.Create(ctx, accessToken); err != nil {
+		s.logMgr.Error("创建OAuth访问令牌失败", "error", err)
+		return nil, errors.New("创建OAuth访问令牌失败")
+	}
+
+	return &oauthdto.ClientCredentialsAccessTokenResponse{
+		AccessToken: accessTokenString,
+		ExpiresIn:   oauthClient.AccessTokenExpire,
+		TokenType:   "Bearer",
+		Scope:       form.Scope,
+	}, nil
+}
