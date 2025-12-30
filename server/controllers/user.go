@@ -8,6 +8,7 @@ import (
 	"github.com/3086953492/gokit/validator"
 	"github.com/gin-gonic/gin"
 
+	"goauth/apperrors"
 	"goauth/dto"
 	"goauth/services"
 	"goauth/utils"
@@ -88,7 +89,17 @@ func (ctrl *UserController) GetUserHandler(ctx *gin.Context) {
 	userID := ctx.Param("user_id")
 	user, err := ctrl.userService.GetUser(ctx.Request.Context(), map[string]any{"id": userID})
 	if err != nil {
-		problem.Fail(ctx, 500, "INTERNAL_SERVER_ERROR", err.Error(), "about:blank")
+		var status int
+		var title string
+		switch err {
+		case apperrors.ErrUserNotFound:
+			status = 404
+			title = "USER_NOT_FOUND"
+		default:
+			status = 500
+			title = "INTERNAL_SERVER_ERROR"
+		}
+		problem.Fail(ctx, status, title, err.Error(), "about:blank")
 		return
 	}
 	response.OK(ctx, user, response.WithMessage("获取用户详情成功"))
