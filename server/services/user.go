@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 
 	"goauth/dto"
+	"goauth/apperrors"
 	"goauth/models"
 	"goauth/repositories"
 	"goauth/utils"
@@ -43,14 +44,14 @@ func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, a
 	lockKey := fmt.Sprintf("user:create:%s", req.Username)
 	lock := s.redisMgr.NewDistributedLock(lockKey, 10*time.Second)
 	if err := lock.Acquire(ctx); err != nil {
-		return errors.New("系统繁忙，请稍后再试")
+		return apperrors.ErrUserSystemBusy
 	}
 	defer lock.Release(ctx)
 
 	hashedPassword, err := s.passwordMgr.Hash(req.Password)
 	if err != nil {
 		s.logMgr.Error("密码哈希失败", "error", err)
-		return errors.New("密码哈希失败")
+		return apperrors.ErrUserPasswordHashFailed
 	}
 
 	var avatarURL string
@@ -58,7 +59,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, a
 		f, err := avatarFile.FileHeader.Open()
 		if err != nil {
 			s.logMgr.Error("文件读取失败", "error", err)
-			return errors.New("文件读取失败")
+			return apperrors.ErrUserFileReadFailed
 		}
 		defer f.Close()
 
@@ -66,7 +67,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, a
 		meta, err := s.storageManager.Upload(ctx, objectKey, f, storage.WithContentType(avatarFile.ContentType))
 		if err != nil {
 			s.logMgr.Error("头像上传失败", "error", err)
-			return errors.New("头像上传失败")
+			return apperrors.ErrUserAvatarUploadFailed
 		}
 		avatarURL = meta.URL
 	}
@@ -83,18 +84,18 @@ func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserForm, a
 	err = s.userRepository.DB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := s.userRepository.CreateWithTx(ctx, tx, user); err != nil {
 			s.logMgr.Error("创建用户失败", "error", err, "user", user)
-			return errors.New("创建用户失败")
+			return apperrors.ErrUserCreateFailed
 		}
 
 		subject, err := s.subjectMgr.Sub(strconv.FormatUint(uint64(user.ID), 10))
 		if err != nil {
 			s.logMgr.Error("生成用户标识失败", "error", err)
-			return errors.New("生成用户标识失败")
+			return apperrors.ErrUserSubjectGenFailed
 		}
 
 		if err := s.userRepository.UpdateWithTx(ctx, tx, user.ID, map[string]any{"subject": subject}); err != nil {
 			s.logMgr.Error("更新用户标识失败", "error", err)
-			return errors.New("更新用户标识失败")
+			return apperrors.ErrUserSubjectUpdateFailed
 		}
 
 		user.Subject = subject
@@ -117,16 +118,16 @@ func (s *UserService) GetUser(ctx context.Context, conds map[string]any) (*model
 				return nil, err
 			}
 			s.logMgr.Error("获取用户失败", "error", err, "conds", conds)
-			return nil, errors.New("系统繁忙，请稍后再试")
+			return nil, apperrors.ErrUserSystemBusy
 		}
 		return user, nil
 	})
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("用户不存在")
+			return nil, apperrors.ErrUserNotFound
 		}
 		s.logMgr.Error("获取用户失败", "error", err, "conds", conds)
-		return nil, errors.New("系统繁忙，请稍后再试")
+		return nil, apperrors.ErrUserSystemBusy
 	}
 	return user, nil
 }
@@ -136,10 +137,10 @@ func (s *UserService) GetUserWithDeleted(ctx context.Context, conds map[string]a
 	user, err := s.userRepository.GetWithDeleted(ctx, conds)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("用户不存在")
+			return nil, apperrors.ErrUserNotFound
 		}
 		s.logMgr.Error("获取用户失败", "error", err, "conds", conds)
-		return nil, errors.New("系统繁忙，请稍后再试")
+		return nil, apperrors.ErrUserSystemBusy
 	}
 	return user, nil
 }
@@ -163,7 +164,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.Upd
 		hashedPassword, err := s.passwordMgr.Hash(user.Password)
 		if err != nil {
 			s.logMgr.Error("密码哈希失败", "error", err)
-			return errors.New("密码哈希失败")
+			return apperrors.ErrUserPasswordHashFailed
 		}
 		updates["password"] = hashedPassword
 	}
@@ -172,7 +173,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.Upd
 		f, err := avatarFile.FileHeader.Open()
 		if err != nil {
 			s.logMgr.Error("文件读取失败", "error", err)
-			return errors.New("文件读取失败")
+			return apperrors.ErrUserFileReadFailed
 		}
 		defer f.Close()
 
@@ -180,7 +181,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.Upd
 		meta, err := s.storageManager.Upload(ctx, objectKey, f, storage.WithContentType(avatarFile.ContentType))
 		if err != nil {
 			s.logMgr.Error("头像上传失败", "error", err)
-			return errors.New("头像上传失败")
+			return apperrors.ErrUserAvatarUploadFailed
 		}
 		if err := s.storageManager.DeleteByURL(ctx, existingUser.Avatar); err != nil {
 			s.logMgr.Warn("旧头像清理失败", "error", err)
@@ -199,7 +200,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, user *dto.Upd
 	// 执行更新
 	if err := s.userRepository.Update(ctx, userID, updates); err != nil {
 		s.logMgr.Error("更新用户失败", "error", err, "user", user)
-		return errors.New("更新用户失败")
+		return apperrors.ErrUserUpdateFailed
 	}
 
 	// 删除相关缓存
@@ -218,7 +219,7 @@ func (s *UserService) ListUsers(ctx context.Context, page, pageSize int, conds m
 		users, total, err := s.userRepository.List(ctx, page, pageSize, conds)
 		if err != nil {
 			s.logMgr.Error("获取用户列表失败", "error", err, "conds", conds)
-			return nil, errors.New("获取用户列表失败")
+			return nil, apperrors.ErrUserListFailed
 		}
 		usersResponse := make([]dto.UserListResponse, len(users))
 		for i, user := range users {
@@ -248,7 +249,7 @@ func (s *UserService) DeleteUser(ctx context.Context, userID uint) error {
 	lockKey := fmt.Sprintf("user:delete:%v", userID)
 	lock := s.redisMgr.NewDistributedLock(lockKey, 10*time.Second)
 	if err := lock.Acquire(ctx); err != nil {
-		return errors.New("系统繁忙，请稍后再试")
+		return apperrors.ErrUserSystemBusy
 	}
 	defer lock.Release(ctx)
 
@@ -259,7 +260,7 @@ func (s *UserService) DeleteUser(ctx context.Context, userID uint) error {
 
 	if err := s.userRepository.Delete(ctx, userID); err != nil {
 		s.logMgr.Error("删除用户失败", "error", err, "user_id", userID)
-		return errors.New("删除用户失败")
+		return apperrors.ErrUserDeleteFailed
 	}
 
 	if err := s.cacheMgr.DeleteByContainsList(ctx, "user", []map[string]any{{"id": userID}, {"nickname": user.Nickname}, {"username": user.Username}}); err != nil {
@@ -272,7 +273,7 @@ func (s *UserService) DeleteUser(ctx context.Context, userID uint) error {
 	return nil
 }
 
-func (s *UserService) ResolveExtra(ctx context.Context, userIDStr string) ( map[string]any, error) {
+func (s *UserService) ResolveExtra(ctx context.Context, userIDStr string) (map[string]any, error) {
 	userID, err := strconv.ParseUint(userIDStr, 10, 64)
 	if err != nil {
 		return nil, err
