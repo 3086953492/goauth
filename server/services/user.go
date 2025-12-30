@@ -115,7 +115,7 @@ func (s *UserService) GetUser(ctx context.Context, conds map[string]any) (*model
 		user, err := s.userRepository.Get(ctx, conds)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, err
+				return nil, apperrors.ErrUserNotFound
 			}
 			s.logMgr.Error("获取用户失败", "error", err, "conds", conds)
 			return nil, apperrors.ErrUserSystemBusy
@@ -123,11 +123,7 @@ func (s *UserService) GetUser(ctx context.Context, conds map[string]any) (*model
 		return user, nil
 	})
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, apperrors.ErrUserNotFound
-		}
-		s.logMgr.Error("获取用户失败", "error", err, "conds", conds)
-		return nil, apperrors.ErrUserSystemBusy
+		return nil, err
 	}
 	return user, nil
 }
