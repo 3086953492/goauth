@@ -107,7 +107,7 @@ func NewContainer(db *gorm.DB, storageManager *storage.Manager, validatorManager
 
 	c.ValidatorManager = validatorManager
 
-	c.MiddlewareManager = middleware.NewManager(&cfg.Middleware, c.JwtManager, c.CookieMgr)
+	c.MiddlewareManager = middleware.NewManager(&cfg.Middleware, c.JwtManager, c.CookieMgr, c.OAuthAccessTokenRepository)
 
 	return c
 }

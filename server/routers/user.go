@@ -5,12 +5,13 @@ import (
 
 	"goauth/controllers"
 	"goauth/middleware"
+	"goauth/middleware/auth"
 )
 
 func LoadUserRoutes(router *gin.Engine, ctrl *controllers.UserController, m *middleware.Manager) {
 	userRouter := router.Group("/api/v1/users")
 	userRouter.POST("", ctrl.CreateUserHandler)
-	userRouter.GET("/:user_id", m.Auth(), m.ResourceOwner("param"), ctrl.GetUserHandler)
+	userRouter.GET("/:user_id", m.AuthBearerOrCookie(auth.BearerAllowClient()), m.ResourceOwner("param"), m.Scope("profile"), ctrl.GetUserHandler)
 	userRouter.PATCH("/:user_id", m.Auth(), m.ResourceOwner("param"), ctrl.UpdateUserHandler)
 	userRouter.GET("", m.Auth(), m.Role("admin"), ctrl.ListUsersHandler)
 	userRouter.DELETE("/:user_id", m.Auth(), m.Role("admin"), ctrl.DeleteUserHandler)
